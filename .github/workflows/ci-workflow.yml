@@ -136,12 +136,11 @@ jobs:
           name: epsilon-android.apk
           path: output/release/simulator/android/epsilon.apk
   n0100:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04-arm
     steps:
       - run: |
           sudo apt-get update
-          sudo apt-get install build-essential imagemagick libfreetype6-dev libjpeg-dev libpng-dev pkg-config
-      - uses: numworks/setup-arm-toolchain@2020-q2
+          sudo apt-get install build-essential imagemagick libfreetype6-dev libjpeg-dev libpng-dev pkg-config gcc-arm-none-eabi binutils-arm-none-eabi
       - uses: actions/checkout@v4
         with:
           submodules: 'recursive'
@@ -191,12 +190,11 @@ jobs:
           name: epsilon-binpack-n0100.tgz
           path: binpack-n0100.tgz
   n0110:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04-arm
     steps:
       - run: |
           sudo apt-get update
-          sudo apt-get install build-essential imagemagick libfreetype6-dev libjpeg-dev libpng-dev pkg-config
-      - uses: numworks/setup-arm-toolchain@2020-q2
+          sudo apt-get install build-essential imagemagick libfreetype6-dev libjpeg-dev libpng-dev pkg-config gcc-arm-none-eabi binutils-arm-none-eabi
       - uses: actions/checkout@v4
         with:
           submodules: 'recursive'
@@ -228,12 +226,11 @@ jobs:
           name: epsilon-binpack-n0110.tgz
           path: output/release/device/n0110/binpack-n0110.tgz
   bootloader:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04-arm
     steps:
       - run: |
           sudo apt-get update
-          sudo apt-get install build-essential imagemagick libfreetype6-dev libjpeg-dev libpng-dev pkg-config
-      - uses: numworks/setup-arm-toolchain@2022-08
+          sudo apt-get install build-essential imagemagick libfreetype6-dev libjpeg-dev libpng-dev pkg-config gcc-arm-none-eabi binutils-arm-none-eabi
       - uses: actions/checkout@v4
         with:
           submodules: 'recursive'
