@@ -63,7 +63,7 @@ public:
                  * switching to DFU mode. It does not apply to the calculator.*/
         2048,   // wTransferSize: Maximum number of bytes that the device can accept per control-write transaction
         0x0100),// bcdDFUVersion
-    m_interfaceDescriptor(
+    m_interfaceDescriptor1(
         0,      // bInterfaceNumber
         k_dfuInterfaceAlternateSetting,      // bAlternateSetting
         0,      // bNumEndpoints: Other than endpoint 0
@@ -72,9 +72,20 @@ public:
         2,      // bInterfaceProtocol: DFU Mode (not DFU Runtime, which would be 1)
         4,      // iInterface: Index of the Interface string, see m_descriptor
         &m_dfuFunctionalDescriptor),
+    m_interfaceDescriptor2(
+        0,      // bInterfaceNumber
+        k_dfuInterfaceAlternateSetting + 1,      // bAlternateSetting
+        0,      // bNumEndpoints: Other than endpoint 0
+        0xFE,   // bInterfaceClass: DFU (https://www.usb.org/defined-class-codes)
+        1,      // bInterfaceSubClass: DFU
+        2,      // bInterfaceProtocol: DFU Mode (not DFU Runtime, which would be 1)
+        // TODO: Use real descriptor, not required for now as the descriptor isn't
+        // used anywhere in DFU firmware, but is only present so NumWorks website work.
+        4,      // iInterface: Index of the Interface string, see m_descriptor
+        &m_dfuFunctionalDescriptor),
     m_configurationDescriptor(
-        9 + 9 + 9, // wTotalLength: configuration descriptor + interface descriptor + dfu functional descriptor lengths
-        1,      // bNumInterfaces
+        9 + 18 + 18, // wTotalLength: configuration descriptor + interface descriptor + dfu functional descriptor lengths
+        2,      // bNumInterfaces
         k_bConfigurationValue, // bConfigurationValue
         0,      // iConfiguration: No string descriptor for the configuration
         0x80,   /* bmAttributes:
@@ -83,7 +94,7 @@ public:
                  * Bit 5: Remote Wakeup (allows the device to wake up the host when the host is in suspend)
                  * Bit 4..0: Reserved, set to 0 */
         0x32,   // bMaxPower: half of the Maximum Power Consumption
-        &m_interfaceDescriptor),
+        &m_interfaceDescriptor1),
     m_webUSBPlatformDescriptor(
         k_webUSBVendorCode,
         k_webUSBLandingPageIndex),
@@ -99,6 +110,9 @@ public:
     //m_interfaceStringDescriptor("@SRAM/0x20000000/01*256Ke"),
     /* Switch to this descriptor to use dfu-util to write in the SRAM.
      * FIXME Should be an alternate Interface. */
+    // Epsilon 25.6.0 descriptors for example
+    // @SRAM/0x20000000/01*252Ke
+    // @Flash/0x90030000/61*064Kg,64*064Kg
     m_microsoftOSStringDescriptor(k_microsoftOSVendorCode),
     m_workshopURLDescriptor(URLDescriptor::Scheme::HTTPS, "getupsilon.web.app"),
     m_extendedCompatIdDescriptor("WINUSB"),
@@ -141,7 +155,8 @@ private:
   // Descriptors
   DeviceDescriptor m_deviceDescriptor;
   DFUFunctionalDescriptor m_dfuFunctionalDescriptor;
-  InterfaceDescriptor m_interfaceDescriptor;
+  InterfaceDescriptor m_interfaceDescriptor1;
+  InterfaceDescriptor m_interfaceDescriptor2;
   ConfigurationDescriptor m_configurationDescriptor;
   WebUSBPlatformDescriptor m_webUSBPlatformDescriptor;
   BOSDescriptor m_bosDescriptor;
