@@ -71,7 +71,7 @@ public:
         1,      // bInterfaceSubClass: DFU
         2,      // bInterfaceProtocol: DFU Mode (not DFU Runtime, which would be 1)
         4,      // iInterface: Index of the Interface string, see m_descriptor
-        &m_dfuFunctionalDescriptor),
+        &m_interfaceDescriptor2),
     m_interfaceDescriptor2(
         0,      // bInterfaceNumber
         k_dfuInterfaceAlternateSetting + 1,      // bAlternateSetting
@@ -84,8 +84,8 @@ public:
         4,      // iInterface: Index of the Interface string, see m_descriptor
         &m_dfuFunctionalDescriptor),
     m_configurationDescriptor(
-        9 + 18 + 18, // wTotalLength: configuration descriptor + interface descriptor + dfu functional descriptor lengths
-        2,      // bNumInterfaces
+        9 + 9 + 9 + 9, // wTotalLength: configuration descriptor + interface descriptor 1 + interface descriptor 2 + dfu functional descriptor lengths2
+        1,      // bNumInterfaces
         k_bConfigurationValue, // bConfigurationValue
         0,      // iConfiguration: No string descriptor for the configuration
         0x80,   /* bmAttributes:
