@@ -186,10 +186,9 @@ wsl --set-default-version 2
 
 WSL is now installed.
 
+6. Then Install GCC cross compiler for ARM. In your Ubuntu teminal, run:
 <!-- TODO: Test if `wsl --install` works better, and if WSL2 has not became the
 default -->
-
-6. Then install GCC cross compiler for ARM.
 
 ```bash
 sudo apt-get update
