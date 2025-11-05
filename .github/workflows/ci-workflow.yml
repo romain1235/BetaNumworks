@@ -146,49 +146,66 @@ jobs:
           submodules: 'recursive'
       - run: mkdir final-output
       - run: make -j2 MODEL=n0100 EPSILON_I18N=en output/release/device/n0100/epsilon.onboarding.two_binaries
-      - run: mv output/release/device/n0100/epsilon.onboarding.internal.bin final-output/epsilon.onboarding.internal.en.bin
+      - run: make -j2 MODEL=n0100 EPSILON_I18N=en output/release/device/n0100/epsilon.onboarding.two_binaries
+      - run: mv output/release/device/n0100/epsilon.onboarding.internal.bin final-output/epsilon.onboarding.en.internal.bin
       - run: rm output/release/device/n0100/apps/i18n.o output/release/device/n0100/apps/i18n.cpp
+      # We need to duplicate make to work around i18n generator race condition in Makefile leading to inconsistent incremental rebuilds
       - run: make -j2 MODEL=n0100 EPSILON_I18N=fr output/release/device/n0100/epsilon.onboarding.two_binaries
-      - run: mv output/release/device/n0100/epsilon.onboarding.internal.bin final-output/epsilon.onboarding.internal.fr.bin
+      - run: make -j2 MODEL=n0100 EPSILON_I18N=fr output/release/device/n0100/epsilon.onboarding.two_binaries
+      - run: mv output/release/device/n0100/epsilon.onboarding.internal.bin final-output/epsilon.onboarding.fr.internal.bin
       - run: rm output/release/device/n0100/apps/i18n.o output/release/device/n0100/apps/i18n.cpp
       - run: make -j2 MODEL=n0100 EPSILON_I18N=nl output/release/device/n0100/epsilon.onboarding.two_binaries
-      - run: mv output/release/device/n0100/epsilon.onboarding.internal.bin final-output/epsilon.onboarding.internal.nl.bin
+      - run: make -j2 MODEL=n0100 EPSILON_I18N=nl output/release/device/n0100/epsilon.onboarding.two_binaries
+      - run: mv output/release/device/n0100/epsilon.onboarding.internal.bin final-output/epsilon.onboarding.nl.internal.bin
       - run: rm output/release/device/n0100/apps/i18n.o output/release/device/n0100/apps/i18n.cpp
       - run: make -j2 MODEL=n0100 EPSILON_I18N=pt output/release/device/n0100/epsilon.onboarding.two_binaries
-      - run: mv output/release/device/n0100/epsilon.onboarding.internal.bin final-output/epsilon.onboarding.internal.pt.bin
+      - run: make -j2 MODEL=n0100 EPSILON_I18N=pt output/release/device/n0100/epsilon.onboarding.two_binaries
+      - run: mv output/release/device/n0100/epsilon.onboarding.internal.bin final-output/epsilon.onboarding.pt.internal.bin
       - run: rm output/release/device/n0100/apps/i18n.o output/release/device/n0100/apps/i18n.cpp
       - run: make -j2 MODEL=n0100 EPSILON_I18N=it output/release/device/n0100/epsilon.onboarding.two_binaries
-      - run: mv output/release/device/n0100/epsilon.onboarding.internal.bin final-output/epsilon.onboarding.internal.it.bin
+      - run: make -j2 MODEL=n0100 EPSILON_I18N=it output/release/device/n0100/epsilon.onboarding.two_binaries
+      - run: mv output/release/device/n0100/epsilon.onboarding.internal.bin final-output/epsilon.onboarding.it.internal.bin
       - run: rm output/release/device/n0100/apps/i18n.o output/release/device/n0100/apps/i18n.cpp
       - run: make -j2 MODEL=n0100 EPSILON_I18N=de output/release/device/n0100/epsilon.onboarding.two_binaries
-      - run: mv output/release/device/n0100/epsilon.onboarding.internal.bin final-output/epsilon.onboarding.internal.de.bin
+      - run: make -j2 MODEL=n0100 EPSILON_I18N=de output/release/device/n0100/epsilon.onboarding.two_binaries
+      - run: mv output/release/device/n0100/epsilon.onboarding.internal.bin final-output/epsilon.onboarding.de.internal.bin
       - run: rm output/release/device/n0100/apps/i18n.o output/release/device/n0100/apps/i18n.cpp
       - run: make -j2 MODEL=n0100 EPSILON_I18N=es output/release/device/n0100/epsilon.onboarding.two_binaries
-      - run: mv output/release/device/n0100/epsilon.onboarding.internal.bin final-output/epsilon.onboarding.internal.es.bin
+      - run: make -j2 MODEL=n0100 EPSILON_I18N=es output/release/device/n0100/epsilon.onboarding.two_binaries
+      - run: mv output/release/device/n0100/epsilon.onboarding.internal.bin final-output/epsilon.onboarding.es.internal.bin
       - run: rm output/release/device/n0100/apps/i18n.o output/release/device/n0100/apps/i18n.cpp
       - run: make -j2 MODEL=n0100 EPSILON_I18N=hu output/release/device/n0100/epsilon.onboarding.two_binaries
-      - run: mv output/release/device/n0100/epsilon.onboarding.internal.bin final-output/epsilon.onboarding.internal.hu.bin
+      - run: make -j2 MODEL=n0100 EPSILON_I18N=hu output/release/device/n0100/epsilon.onboarding.two_binaries
+      - run: mv output/release/device/n0100/epsilon.onboarding.internal.bin final-output/epsilon.onboarding.hu.internal.bin
       - run: rm output/release/device/n0100/apps/i18n.o output/release/device/n0100/apps/i18n.cpp
       - run: make -j2 MODEL=n0100 output/release/device/n0100/flasher.light.bin
       - run: mv output/release/device/n0100/flasher.light.bin final-output/flasher.light.bin
+      - run: make -j2 MODEL=n0100 output/release/device/n0100/flasher.verbose.bin
+      - run: mv output/release/device/n0100/flasher.verbose.bin final-output/flasher.verbose.bin
       - run: find final-output/ -type f -exec bash -c "shasum -a 256 -b {} > {}.sha256" \;
       - run: tar cvfz binpack-n0100.tgz final-output/*
-      - id: 'auth'
-        if: ${{ github.event_name == 'push' && github.ref_name == 'upsilon-dev' && github.repository == 'UpsilonNumworks/Upsilon'}}
-        uses: 'google-github-actions/auth@v0'
-        with:
-          credentials_json: '${{secrets.GOOGLE_CREDENTIALS}}'
-      - id: 'upload-directory'
-        if: ${{ github.event_name == 'push' && github.ref_name == 'upsilon-dev' && github.repository == 'UpsilonNumworks/Upsilon'}}
-        uses: 'google-github-actions/upload-cloud-storage@v0'
-        with:
-          path: 'final-output/'
-          destination: 'upsilon-binfiles.appspot.com/dev/n100/'
-          parent: false
       - uses: actions/upload-artifact@v4
         with:
           name: epsilon-binpack-n0100.tgz
           path: binpack-n0100.tgz
+      - uses: actions/checkout@v5
+        with:
+          repository: Yaya-Cout/Upsilon-binfiles
+          ref: 'main'
+          token:  ${{ secrets.PAT_UPSILON_BINFILES }}
+          path: 'binfiles'
+      # TODO: Handle git conflicts using rebase
+      - name: Upload binary files to website
+        if: ${{ github.event_name == 'push' && github.ref_name == 'upsilon-dev' && github.repository == 'UpsilonNumworks/Upsilon'}}
+        run: |
+          cp -r final-output/* binfiles/binaries/dev/n100
+          cd binfiles
+          git add -A
+          git config --global user.email "ci@github.com"
+          git config --global user.name "GitHub Upsilon CI"
+          git pull
+          git commit -m "Update from CI"
+          git push
   n0110:
     runs-on: ubuntu-24.04-arm
     steps:
@@ -204,34 +221,43 @@ jobs:
       - run: make -j2 MODEL=n0110 epsilon.onboarding.beta.dfu
       - run: make -j2 MODEL=n0110 flasher.light.dfu
       - run: make -j2 MODEL=n0110 flasher.verbose.dfu
-      # We  don't need bench as it is used only in factory
-      # - run: make -j2 bench.ram.dfu
-      # - run: make -j2 bench.flash.dfu
+      - run: make -j2 MODEL=n0110 flasher.verbose.bin
+      - run: make -j2 MODEL=n0110 bench.ram.dfu
+      # - run: make -j2 MODEL=n0110 bench.flash.dfu
       - run: make -j2 MODEL=n0110 binpack
       - run: cp output/release/device/n0110/binpack-n0110-`git rev-parse HEAD | head -c 7`.tgz output/release/device/n0110/binpack-n0110.tgz
-      - id: 'auth'
-        if: ${{ github.event_name == 'push' && github.ref_name == 'upsilon-dev' && github.repository == 'UpsilonNumworks/Upsilon' }}
-        uses: 'google-github-actions/auth@v0'
-        with:
-          credentials_json: '${{secrets.GOOGLE_CREDENTIALS}}'
-      - id: 'upload-directory'
-        if: ${{ github.event_name == 'push' && github.ref_name == 'upsilon-dev' && github.repository == 'UpsilonNumworks/Upsilon' }}
-        uses: 'google-github-actions/upload-cloud-storage@v0'
-        with:
-          path: 'output/release/device/n0110/binpack/'
-          destination: 'upsilon-binfiles.appspot.com/dev/n110/'
-          parent: false
+      - run: cp output/release/device/n0110/flasher.verbose.bin output/release/device/n0110/binpack/
+      - run: cd output/release/device/n0110 && for binary in *.bin; do shasum -a 256 -b binpack/${binary} > binpack/${binary}.sha256;done
+      - run: cp output/release/device/n0110/binpack-n0110-`git rev-parse HEAD | head -c 7`.tgz output/release/device/n0110/binpack/binpack.tgz
       - uses: actions/upload-artifact@v4
         with:
           name: epsilon-binpack-n0110.tgz
           path: output/release/device/n0110/binpack-n0110.tgz
+      - uses: actions/checkout@v5
+        with:
+          repository: Yaya-Cout/Upsilon-binfiles
+          ref: 'main'
+          token:  ${{ secrets.PAT_UPSILON_BINFILES }}
+          path: 'binfiles'
+      # TODO: Handle git conflicts using rebase
+      - name: Upload binary files to website
+        if: ${{ github.event_name == 'push' && github.ref_name == 'upsilon-dev' && github.repository == 'UpsilonNumworks/Upsilon'}}
+        run: |
+          cp -r output/release/device/n0110/binpack/* binfiles/binaries/dev/n110
+          cd binfiles
+          git add -A
+          git config --global user.email "ci@github.com"
+          git config --global user.name "GitHub Upsilon CI"
+          git pull
+          git commit -m "Update from CI"
+          git push
   bootloader:
     runs-on: ubuntu-24.04-arm
     steps:
       - run: |
           sudo apt-get update
           sudo apt-get install build-essential imagemagick libfreetype6-dev libjpeg-dev libpng-dev pkg-config gcc-arm-none-eabi binutils-arm-none-eabi
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           submodules: 'recursive'
       - run: make -j2 MODEL=n0110 bootloader
@@ -248,22 +274,28 @@ jobs:
       - run: cp output/release/device/n0110/bootloader.bin output/release/device/bootloader/
       - run: cd output/release/device/bootloader && for binary in *.bin; do shasum -a 256 -b binpack/${binary} > binpack/${binary}.sha256;done
       - run: cd output/release/device/bootloader && tar cvfz binpack-bootloader.tgz binpack/*
-      - id: 'auth'
-        if: ${{ github.event_name == 'push' && github.ref_name == 'upsilon-dev' && github.repository == 'UpsilonNumworks/Upsilon' }}
-        uses: 'google-github-actions/auth@v0'
-        with:
-          credentials_json: '${{secrets.GOOGLE_CREDENTIALS}}'
-      - id: 'upload-directory'
-        if: ${{ github.event_name == 'push' && github.ref_name == 'upsilon-dev' && github.repository == 'UpsilonNumworks/Upsilon' }}
-        uses: 'google-github-actions/upload-cloud-storage@v0'
-        with:
-          path: 'output/release/device/bootloader/binpack/'
-          destination: 'upsilon-binfiles.appspot.com/dev/n110/'
-          parent: false
       - uses: actions/upload-artifact@v4
         with:
           name: epsilon-binpack-bootloader.tgz
           path: output/release/device/bootloader/binpack-bootloader.tgz
+      - uses: actions/checkout@v5
+        with:
+          repository: Yaya-Cout/Upsilon-binfiles
+          ref: 'main'
+          token:  ${{ secrets.PAT_UPSILON_BINFILES }}
+          path: 'binfiles'
+      # TODO: Handle git conflicts using rebase
+      - name: Upload binary files to website
+        if: ${{ github.event_name == 'push' && github.ref_name == 'upsilon-dev' && github.repository == 'UpsilonNumworks/Upsilon'}}
+        run: |
+          cp -r output/release/device/bootloader/binpack/* binfiles/binaries/dev/n110
+          cd binfiles
+          git add -A
+          git config --global user.email "ci@github.com"
+          git config --global user.name "GitHub Upsilon CI"
+          git pull
+          git commit -m "Update from CI"
+          git push
   windows:
     runs-on: windows-latest
     defaults:

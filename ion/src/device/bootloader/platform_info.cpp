@@ -24,6 +24,8 @@ namespace Ion {
 extern char staticStorageArea[];
 }
 constexpr void * storageAddress = &(Ion::staticStorageArea);
+typedef void (*recoveryStartPointerType)();
+constexpr recoveryStartPointerType recoveryStartPointer = &(recovery_start);
 
 class KernelHeader {
 public:
@@ -77,16 +79,12 @@ public:
     m_osType(OSType),
     m_upsilonMagicFooter(UpsilonMagic),
     m_upsilonExtraMagicHeader(UpsilonExtraMagic),
-    // FIXME: Since GCC 13, we can't longer store a pointer to a function in the
-    // class initialization. I don't know if it's a problem in GCC or our code,
-    // but it's a bit suspicious as the whole class is blank (0x00) in the
-    // binary with the data available nowhere else (searching for the username
-    // returns nothing).
-    // As a workaround, we fixed the address of recovery_start in flash using
-    // LD script (ion/src/device/bootloader/bootloader_common.ld).
-    // This line works on GCC 12
+    // We need to be careful with the pointer to the recovery entrypoint as GCC
+    // will simply generate a blank userland header if it wasn't able to
+    // generate it. This code used to work on GCC 12, but is broken since GCC 13
+    // probably due to the cast preventing LD to just copy the address:
     // m_recoveryAddress((uint32_t)recovery_start + 1),
-    m_recoveryAddress(0x90010080 + 1),
+    m_recoveryAddress(recoveryStartPointer),
     m_extraVersion(1),
     m_upsilonExtraMagicFooter(UpsilonExtraMagic) { }
 
@@ -146,7 +144,7 @@ private:
   uint32_t m_osType;
   uint32_t m_upsilonMagicFooter;
   uint32_t m_upsilonExtraMagicHeader;
-  uint32_t m_recoveryAddress;
+  recoveryStartPointerType m_recoveryAddress;
   uint32_t m_extraVersion;
   uint32_t m_upsilonExtraMagicFooter;
 };
