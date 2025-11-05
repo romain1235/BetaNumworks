@@ -2,7 +2,7 @@
 #define REGS_SYSCFG_H
 
 #include "register.h"
-#include <regs/config/syscfg.h>
+// #include <regs/config/syscfg.h>
 #include "gpio.h"
 
 #define REGS_SYSCFG_CONFIG_F412 1

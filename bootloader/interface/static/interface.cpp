@@ -69,7 +69,12 @@ void Interface::drawLoading() {
   for (uint8_t i = 0; i < strlen(Messages::mainTitle); i++) {
     char tmp[2] = {Messages::mainTitle[i], '\0'};
     ctx->drawString(tmp, KDPoint(initPos + i * (fontSize.width()), ImageStore::Computer->height() + 25 + 10), KDFont::LargeFont, KDColorBlack, KDColorWhite);
-    Ion::Timing::msleep(50);
+
+    int t = 50;
+    Ion::Events::Event e = Ion::Events::getEvent(&t);
+    if (e.isKeyboardEvent()){
+      return;
+    }
   }
   Ion::Timing::msleep(500);
 }

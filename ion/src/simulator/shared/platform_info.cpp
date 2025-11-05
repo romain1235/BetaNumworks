@@ -22,7 +22,7 @@
 #endif
 
 namespace Ion {
-extern char staticStorageArea[];
+extern __attribute__((weak)) char staticStorageArea[];
 }
 constexpr void * storageAddress = &(Ion::staticStorageArea);
 

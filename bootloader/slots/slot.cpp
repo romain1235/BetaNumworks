@@ -3,6 +3,8 @@
 #include <ion/src/device/shared/drivers/flash.h>
 #include <ion/src/device/shared/drivers/external_flash.h>
 #include <bootloader/boot.h>
+#include <assert.h>
+#include <ion.h>
 
 extern "C" void jump_to_firmware(const uint32_t* stackPtr, const void(*startPtr)(void));
 
@@ -18,6 +20,15 @@ const Slot Slot::B() {
 
 const Slot Slot::Khi() {
   return Slot(0x90180000);
+}
+
+const bool Slot::hasUpsilon() {
+  return (isFullyValid(A()) && A().userlandHeader()->isUpsilon()) || (isFullyValid(B()) && B().userlandHeader()->isUpsilon());
+}
+
+const Slot Slot::Upsilon() {
+  assert(hasUpsilon());
+  return (isFullyValid(A()) && A().userlandHeader()->isUpsilon()) ? A() : B();
 }
 
 const KernelHeader* Slot::kernelHeader() const {

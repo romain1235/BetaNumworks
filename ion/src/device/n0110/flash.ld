@@ -71,6 +71,7 @@ SECTIONS {
     *(.text.__assert)
     *(.text.memcpy)
     *(.text.memset)
+    *(.text.__udivmoddi4)
     /*
     *(.text.strlen)
     *(.text.strncmp)
