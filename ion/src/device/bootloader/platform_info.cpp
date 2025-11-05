@@ -17,10 +17,15 @@
 #error This file expects UPSILON_VERSION to be defined
 #endif
 
+extern "C" {
+  extern void recovery_start();
+}
 namespace Ion {
 extern char staticStorageArea[];
 }
 constexpr void * storageAddress = &(Ion::staticStorageArea);
+typedef void (*recoveryStartPointerType)();
+constexpr recoveryStartPointerType recoveryStartPointer = &(recovery_start);
 
 class KernelHeader {
 public:
@@ -72,7 +77,16 @@ public:
     m_upsilonMagicHeader(UpsilonMagic),
     m_UpsilonVersion{UPSILON_VERSION},
     m_osType(OSType),
-    m_upsilonMagicFooter(UpsilonMagic) { }
+    m_upsilonMagicFooter(UpsilonMagic),
+    m_upsilonExtraMagicHeader(UpsilonExtraMagic),
+    // We need to be careful with the pointer to the recovery entrypoint as GCC
+    // will simply generate a blank userland header if it wasn't able to
+    // generate it. This code used to work on GCC 12, but is broken since GCC 13
+    // probably due to the cast preventing LD to just copy the address:
+    // m_recoveryAddress((uint32_t)recovery_start + 1),
+    m_recoveryAddress(recoveryStartPointer),
+    m_extraVersion(1),
+    m_upsilonExtraMagicFooter(UpsilonExtraMagic) { }
 
   const char * omegaVersion() const {
     assert(m_storageAddressRAM != nullptr);
@@ -109,6 +123,7 @@ private:
   constexpr static uint32_t OmegaMagic = 0xEFBEADDE;
   constexpr static uint32_t UpsilonMagic = 0x55707369;
   constexpr static uint32_t OSType = 0x79827178;
+  constexpr static uint32_t UpsilonExtraMagic = 0xaa7073ff;
   uint32_t m_header;
   const char m_expectedEpsilonVersion[8];
   void * m_storageAddressRAM;
@@ -128,6 +143,10 @@ private:
   const char m_UpsilonVersion[16];
   uint32_t m_osType;
   uint32_t m_upsilonMagicFooter;
+  uint32_t m_upsilonExtraMagicHeader;
+  recoveryStartPointerType m_recoveryAddress;
+  uint32_t m_extraVersion;
+  uint32_t m_upsilonExtraMagicFooter;
 };
 
 const UserlandHeader __attribute__((section(".userland_header"), used)) k_userlandHeader;

@@ -36,6 +36,8 @@ public:
   void setAutocomplete(bool autocomple) { m_autoComplete = autocomple; }
   bool syntaxhighlighting() const { return m_syntaxhighlighting; }
   void setSyntaxhighlighting(bool syntaxhighlight) { m_syntaxhighlighting = syntaxhighlight; }
+  bool clearShift() const { return m_clearshift; }
+  void setClearShift(bool clearalphashift) { m_clearshift = clearalphashift; }
   int brightnessLevel() const { return m_brightnessLevel; }
   void setBrightnessLevel(int brightnessLevel);
   const KDFont * font() const { return m_font; }
@@ -63,6 +65,7 @@ private:
     m_dfuUnlocked(false),
     m_autoComplete(true),
     m_syntaxhighlighting(true),
+    m_clearshift(true),
     m_brightnessLevel(Ion::Backlight::MaxBrightness),
     m_idleBeforeSuspendSeconds(55),
     m_idleBeforeDimmingSeconds(45),
@@ -80,6 +83,7 @@ private:
   bool m_dfuUnlocked;
   bool m_autoComplete;
   bool m_syntaxhighlighting;
+  bool m_clearshift;
   int m_brightnessLevel;
   int m_idleBeforeSuspendSeconds;
   int m_idleBeforeDimmingSeconds;

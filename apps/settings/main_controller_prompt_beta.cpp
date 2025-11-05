@@ -1,6 +1,7 @@
-#include "main_controller.h"
-#include "../exam_mode_configuration.h"
 #include <apps/i18n.h>
+
+#include "../exam_mode_configuration.h"
+#include "main_controller.h"
 
 using namespace Shared;
 
@@ -17,7 +18,6 @@ constexpr SettingsMessageTree s_modelMenu[] =
     SettingsMessageTree(I18n::Message::CodeApp, s_codeChildren),
 #endif
     SettingsMessageTree(I18n::Message::BetaPopUp),
-    //SettingsMessageTree(I18n::Message::UsbSetting, s_usbProtectionChildren),
     SettingsMessageTree(I18n::Message::ExternalApps, s_externalChildren),
     SettingsMessageTree(I18n::Message::Accessibility, s_accessibilityChildren),
     SettingsMessageTree(I18n::Message::About, s_modelAboutChildren)};

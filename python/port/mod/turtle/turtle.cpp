@@ -33,6 +33,7 @@ void Turtle::reset() {
   m_y = 0;
   m_heading = 0;
   m_color = k_defaultColor;
+  m_bgcolor = k_defaultColorBG;
   m_penDown = true;
   m_visible = true;
   m_speed = k_defaultSpeed;
@@ -40,6 +41,7 @@ void Turtle::reset() {
   m_mileage = 0;
 
   // Draw the turtle
+  drawBg();
   draw(true);
 }
 
@@ -74,19 +76,22 @@ void Turtle::left(mp_float_t angle) {
 void Turtle::circle(mp_int_t radius, mp_float_t angle) {
   mp_float_t oldHeading = heading();
   mp_float_t length = std::fabs(angle * k_headingScale * radius);
+  int direction = 1; // 1=forward, -1=backward
+  if (angle < 0) { direction =-1; } 
   if (length > 1) {
     for (int i = 1; i < length; i++) {
       mp_float_t progress = i / length;
       // Move the turtle forward
-      if (forward(1)) {
+      if (forward(direction)) {
         // Keyboard interruption. Return now to let MicroPython process it.
         return;
       }
-      setHeadingPrivate(oldHeading+std::copysign(angle*progress, radius));
+      setHeadingPrivate(oldHeading+std::copysign(angle*progress, direction*radius));
     }
-    forward(1);
-    setHeading(oldHeading+angle);
+    forward(direction);
+    setHeading(oldHeading+std::copysign(angle, direction*radius));
   }
+
 }
 
 bool Turtle::goTo(mp_float_t x, mp_float_t y) {
@@ -201,6 +206,19 @@ void Turtle::viewDidDisappear() {
 bool Turtle::isOutOfBounds() const {
   return absF(x()) > k_maxPosition || absF(y()) > k_maxPosition;
 };
+
+void Turtle::drawBg() {
+  MicroPython::ExecutionEnvironment::currentExecutionEnvironment()->displaySandbox();
+
+  KDContext * ctx = KDIonContext::sharedContext();
+
+  KDRect bg = KDRect(
+    0,
+    0,
+    320,
+    229);
+  ctx->fillRect(bg, m_bgcolor);
+}
 
 // Private functions
 

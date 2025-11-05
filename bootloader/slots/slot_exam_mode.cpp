@@ -41,48 +41,56 @@ size_t numberOfBitsAfterLeadingZeroes(int i) {
 }
 
 uint8_t SlotsExamMode::FetchSlotExamMode(const char * version, const char * Slot) {
-	// Get start and end from version and slot
-	uint32_t start = 0;
-	uint32_t end = 0;
+  // Get start and end from version and slot
+  uint32_t start = 0;
+  uint32_t end = 0;
   if (Slot == "A") {
-		// If version under 16 get old addresses
-		if (version[0] < '1' || (version[0] == '1' && version[1] < '6')) {
-		  start = getSlotAStartExamAddress(0);
+    // If version under 16 get old addresses
+    if (version[0] < '1' || (version[0] == '1' && version[1] < '6')) {
+      start = getSlotAStartExamAddress(0);
       end = getSlotAEndExamAddress(0);
-		}
-		// Else get new addresses
-		else {
+    }
+    // Else versions before 22
+    else if ((version[0] == '2' && version[1] < '2') || (version[0] == '1')) {
       start = getSlotAStartExamAddress(1);
       end = getSlotAEndExamAddress(1);
-		}
-	}
-	else if (Slot == "B") {
-		// If version under 16 get old
-		if (version[0] < '1' || (version[0] == '1' && version[1] < '6')) {
+    }
+    // Else Epsilon 22 +
+    else {
+      start = getSlotAStartExamAddress(2);
+      end = getSlotAEndExamAddress(2);
+    }
+  }
+  else if (Slot == "B") {
+    // If version under 16 get old
+    if (version[0] < '1' || (version[0] == '1' && version[1] < '6')) {
       start = getSlotBStartExamAddress(0);
       end = getSlotBEndExamAddress(0);
-		}
-		// Else get new
-		else {
+    }
+    // Else versions before 22
+    else if ((version[0] == '2' && version[1] < '2') || (version[0] == '1')) {
       start = getSlotBStartExamAddress(1);
-			end = getSlotBEndExamAddress(1);
-		}
-	} else if (Slot == "Khi") {
+      end = getSlotBEndExamAddress(1);
+    }
+    // Else Epsilon 22 +
+    else {
+      start = getSlotBStartExamAddress(2);
+      end = getSlotBEndExamAddress(2);
+    }
+  } else if (Slot == "Khi") {
     // We directly get the address of the Khi exam mode without checking the
     // version, because on Khi, version is KhiCAS version, not the OS version
     start = getSlotKhiStartExamAddress();
     end = getSlotKhiEndExamAddress();
   }
 
-	if (strcmp("15.9.0", version) >= 0) {
+  if (strcmp("15.9.0", version) >= 0) {
     return examFetch15(start, end);
   } else if (strcmp("16.9.0", version) > 0) {
     return examFetch16(start, end);
-  }
-  else if (strcmp("19.0.0", version) > 0) {
+  } else if (strcmp("19.0.0", version) > 0) {
     return examFetch1718(start, end);
-  }
-  else {
+  } else {
     return examFetch19(start, end);
   }
 }
@@ -157,47 +165,80 @@ uint8_t SlotsExamMode::examFetch19(uint32_t start, uint32_t end) {
   uint16_t* start16 = (uint16_t*)start;
   uint16_t* end16 = (uint16_t*)end;
 
-  while (start16 + 1 <= end16 && *start16 != 0xFFFF) {
-    start16++;
+  for (uint16_t* i = end16 - 2; i > start16; i--) {
+    if (*i != 0xFFFF)  {
+      uint8_t highByte = *i >> 8;
+      uint8_t lowByte = *i & 0xFF;
+      if (highByte > lowByte) {
+        return highByte;
+      }
+      else {
+        return lowByte;
+      }
+    }
   }
-
-  return *(start16 - 1) >> 8;
+  return 0;
 }
 
 uint32_t SlotsExamMode::getSlotAStartExamAddress(int ExamVersion) {
-	if (ExamVersion == 0) {
-        return SlotAExamModeBufferStartOldVersions;
-	}
-	else {
-		return SlotAExamModeBufferStartNewVersions;
-	}
+  if (ExamVersion == 0) {
+        return SlotAExamModeBufferStartBefore16;
+  }
+  if (ExamVersion == 1) {
+    return SlotAExamModeBufferStartEpsilon16;
+  }
+  if (ExamVersion == 2) {
+    return SlotAExamModeBufferStartEpsilon22;
+  }
+  assert(false);
+  // Should not happen
+  return SlotAExamModeBufferStartEpsilon22;
 }
 
 uint32_t SlotsExamMode::getSlotAEndExamAddress(int ExamVersion) {
-	if (ExamVersion == 0) {
-		return SlotAExamModeBufferEndOldVersions;
-	}
-	else {
-        return SlotAExamModeBufferEndNewVersions;;
-	}
+  if (ExamVersion == 0) {
+    return SlotAExamModeBufferEndBefore16;
+  }
+  if (ExamVersion == 1) {
+    return SlotAExamModeBufferEndEpsilon16;
+  }
+  if (ExamVersion == 2) {
+    return SlotAExamModeBufferEndEpsilon22;
+  }
+  assert(false);
+  // Should not happen
+  return SlotAExamModeBufferEndEpsilon22;
+
 }
 
 uint32_t SlotsExamMode::getSlotBStartExamAddress(int ExamVersion) {
-	if (ExamVersion == 0) {
-		return SlotBExamModeBufferStartOldVersions;
-	}
-	else {
-		return SlotBExamModeBufferStartNewVersions;
-	}
+  if (ExamVersion == 0) {
+    return SlotBExamModeBufferStartBeforeEpsilon16;
+  }
+  if (ExamVersion == 1) {
+    return SlotBExamModeBufferStartEpsilon16;
+  }
+  if (ExamVersion == 2) {
+    return SlotBExamModeBufferStartEpsilon22;
+  }
+  assert(false);
+  // Should not happen
+  return SlotBExamModeBufferStartEpsilon22;
 }
 
 uint32_t SlotsExamMode::getSlotBEndExamAddress(int ExamVersion) {
-	if (ExamVersion == 0) {
-		return SlotBExamModeBufferEndOldVersions;
-	}
-	else {
-		return SlotBExamModeBufferEndNewVersions;
-	}
+  if (ExamVersion == 0) {
+    return SlotBExamModeBufferEndBeforeEpsilon16;
+  }
+  if (ExamVersion == 1) {
+    return SlotBExamModeBufferEndEpsilon16;
+  }
+  if (ExamVersion == 2) {
+    return SlotBExamModeBufferEndEpsilon22;
+  }
+  assert(false);
+  // Should not happen
+  return SlotBExamModeBufferEndEpsilon22;
 }
 
 uint32_t SlotsExamMode::getSlotKhiStartExamAddress() {

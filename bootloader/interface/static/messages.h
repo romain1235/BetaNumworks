@@ -6,7 +6,7 @@ namespace Bootloader {
 class Messages {
 public:
   constexpr static const char * mainTitle = "Upsilon Calculator";
-  
+
   // Home menu
   constexpr static const char * homeTitle = "Select a slot";
 
@@ -53,12 +53,21 @@ public:
   constexpr static const char * recoveryMessage4 = "Press Back to continue.";
   constexpr static const char * recoveryMessage5 = "(you will not be able to recover your data !)";
 
+  // Upsilon Recovery menu
+  constexpr static const char * upsilonRecoveryTitle = "Upsilon Recovery";
+
+  constexpr static const char * upsilonRecoveryMessage1 = "The bootloader has detected a crash.";
+  constexpr static const char * upsilonRecoveryMessage2 = "Because you also have an Upsilon slot,";
+  constexpr static const char * upsilonRecoveryMessage3 = "you can recover your data by booting";
+  constexpr static const char * upsilonRecoveryMessage4 = "the Upsilon slot.";
+  constexpr static const char * upsilonRecoveryMessage5 = "Press OK to continue, BACK to cancel";
+
   // Warning menu
   constexpr static const char * epsilonWarningTitle = "Epsilon Slot";
 
   constexpr static const char * epsilonWarningMessage1 = "!! WARNING !! ";
-  constexpr static const char * epsilonWarningMessage2 = "This version of Epsilon";
-  constexpr static const char * epsilonWarningMessage3 = "can lock the calculator.";
+  constexpr static const char * epsilonWarningMessage2 = "This version of Epsilon can lock the";
+  constexpr static const char * epsilonWarningMessage3 = "calculator or be incompatible.";
   constexpr static const char * epsilonWarningMessage4 = "Proceed the boot ?";
   constexpr static const char * epsilonWarningMessage5 = "EXE - Yes";
   constexpr static const char * epsilonWarningMessage6 = "BACK - No";
@@ -72,11 +81,11 @@ public:
   constexpr static const char * aboutMessage4 = "and select the OS";
   constexpr static const char * aboutMessage5 = "to boot.";
 
-  constexpr static const char * bootloaderVersion = "Version 1.0.2 - FREED0M.20";
+  constexpr static const char * bootloaderVersion = "Version 1.1.2 - RECOVER.24.4";
 
   //USB NAMES
-  constexpr static const char * usbUpsilonBootloader = "Upsilon Bootloader";
-  constexpr static const char * usbUpsilonRecovery = "Upsilon Recovery";
+  constexpr static const char * usbUpsilonBootloader = "NumWorks Calculator";
+  constexpr static const char * usbUpsilonRecovery = "NumWorks Calculator";
   constexpr static const char * usbBootloaderUpdate = "Bootloader Update";
 
 };

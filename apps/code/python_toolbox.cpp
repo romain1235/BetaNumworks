@@ -338,6 +338,7 @@ const ToolboxMessageTree TurtleModuleChildren[] = {
   ToolboxMessageTree::Leaf(I18n::Message::PythonTurtleCommandHideturtle, I18n::Message::PythonTurtleHideturtle, false),
   ToolboxMessageTree::Leaf(I18n::Message::PythonTurtleCommandColor, I18n::Message::PythonTurtleColor),
   ToolboxMessageTree::Leaf(I18n::Message::PythonTurtleCommandColorMode, I18n::Message::PythonTurtleColorMode),
+  ToolboxMessageTree::Leaf(I18n::Message::PythonTurtleCommandBgcolor, I18n::Message::PythonTurtleBgcolor),
   ToolboxMessageTree::Leaf(I18n::Message::PythonCommandColorBlue, I18n::Message::PythonColorBlue, false),
   ToolboxMessageTree::Leaf(I18n::Message::PythonCommandColorRed, I18n::Message::PythonColorRed, false),
   ToolboxMessageTree::Leaf(I18n::Message::PythonCommandColorGreen, I18n::Message::PythonColorGreen, false),
@@ -503,6 +504,15 @@ const ToolboxMessageTree modulesChildren[] = {
 
 const ToolboxMessageTree catalogChildren[] = {
   ToolboxMessageTree::Leaf(I18n::Message::PythonCommandPound, I18n::Message::PythonPound, false),
+  #ifdef _FXCG
+  // There is no question mark button on the fx-CG calculators
+  ToolboxMessageTree::Leaf(I18n::Message::PythonCommandColon, I18n::Message::PythonColon, false),
+  ToolboxMessageTree::Leaf(I18n::Message::PythonCommandSemicon, I18n::Message::PythonSemicon, false),
+  ToolboxMessageTree::Leaf(I18n::Message::PythonCommandExclamationMark, I18n::Message::PythonExclamationMark, false),
+  ToolboxMessageTree::Leaf(I18n::Message::PythonCommandLessThan, I18n::Message::PythonLessThan, false),
+  ToolboxMessageTree::Leaf(I18n::Message::PythonCommandGreaterThan, I18n::Message::PythonGreaterThan, false),
+  ToolboxMessageTree::Leaf(I18n::Message::PythonCommandQuestionMark, I18n::Message::PythonQuestionMark, false),
+  #endif
   ToolboxMessageTree::Leaf(I18n::Message::PythonCommandPercent, I18n::Message::PythonPercent, false),
   ToolboxMessageTree::Leaf(I18n::Message::PythonCommand1J, I18n::Message::Python1J, false),
   ToolboxMessageTree::Leaf(I18n::Message::PythonCommandLF, I18n::Message::PythonLF, false),
@@ -533,6 +543,7 @@ const ToolboxMessageTree catalogChildren[] = {
   ToolboxMessageTree::Leaf(I18n::Message::PythonCommandCmathFunction, I18n::Message::PythonCmathFunction, false, I18n::Message::PythonCommandCmathFunctionWithoutArg),
   ToolboxMessageTree::Leaf(I18n::Message::PythonCommandColor, I18n::Message::PythonColor),
   ToolboxMessageTree::Leaf(I18n::Message::PythonTurtleCommandColorMode, I18n::Message::PythonTurtleColorMode),
+  ToolboxMessageTree::Leaf(I18n::Message::PythonTurtleCommandBgcolor, I18n::Message::PythonTurtleBgcolor),
   ToolboxMessageTree::Leaf(I18n::Message::PythonCommandComplex, I18n::Message::PythonComplex),
   ToolboxMessageTree::Leaf(I18n::Message::PythonCommandCopySign, I18n::Message::PythonCopySign),
   ToolboxMessageTree::Leaf(I18n::Message::PythonCommandCos, I18n::Message::PythonCos),

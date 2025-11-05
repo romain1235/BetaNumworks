@@ -10,6 +10,7 @@
 #ifdef __EMSCRIPTEN__
 #include <emscripten.h>
 
+__attribute__((noinline))
 void python_error_start(const char* type) {
   EM_ASM({
     Module.___temp_python_error = new Object();
@@ -18,6 +19,7 @@ void python_error_start(const char* type) {
   }, type);
 }
 
+__attribute__((noinline))
 void python_error_add_trace(const char* file, int line, const char* block) {
   EM_ASM({
     var temp_obj = new Object();
@@ -28,16 +30,36 @@ void python_error_add_trace(const char* file, int line, const char* block) {
   }, file, line, block);
 }
 
+__attribute__((noinline))
 void python_error_end() {
   EM_ASM({
     if (typeof Module.onPythonError === "function") {
-      Module.onPythonError(Module.___temp_python_error); 
+      Module.onPythonError(Module.___temp_python_error);
     }
     delete Module.___temp_python_error;
   });
 }
 #endif
 
+#if defined _FXCG || defined NSPIRE_NEWLIB
+#ifdef _FXCG
+#include <gint/bfile.h>
+#include <gint/display-cg.h>
+#include <gint/gint.h>
+#include <gint/display.h>
+#include <gint/keyboard.h>
+#endif
+
+#include <stddef.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <unistd.h>
+#include <dirent.h>
+#endif
 
 /* py/parsenum.h is a C header which uses C keyword restrict.
  * It does not exist in C++ so we define it here in order to be able to include
@@ -55,6 +77,7 @@ extern "C" {
 #include "py/mphal.h"
 #include "py/nlr.h"
 #include "py/parsenum.h"
+#include "py/pystack.h"
 #include "py/repl.h"
 #include "py/runtime.h"
 #include "py/stackctrl.h"
@@ -163,6 +186,10 @@ extern "C" {
 }
 
 void MicroPython::init(void * heapStart, void * heapEnd) {
+#if __EMSCRIPTEN__
+  static mp_obj_t pystack[1024];
+  mp_pystack_init(pystack, &pystack[MP_ARRAY_SIZE(pystack)]);
+#endif
   /* We delimit the stack part that will be used by Python. The stackTop is the
    * address of the first object that can be allocated on Python stack. This
    * boundaries are used:
@@ -346,23 +373,119 @@ void nlr_jump_fail(void *val) {
     while (1);
 }
 
+
+#if defined _FXCG || defined NSPIRE_NEWLIB
+void do_mp_lexer_new_from_file(const char * filename,mp_lexer_t ** res) {
+  mp_reader_t reader;
+  mp_reader_new_file(&reader, filename);
+  *res=mp_lexer_new(qstr_from_str(filename), reader);
+}
+
+// Code from MicroPython's reader.c
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <unistd.h>
+
+typedef struct _mp_reader_posix_t {
+    bool close_fd;
+    int fd;
+    size_t len;
+    size_t pos;
+    byte buf[20];
+} mp_reader_posix_t;
+
+STATIC mp_uint_t mp_reader_posix_readbyte(void *data) {
+    mp_reader_posix_t *reader = (mp_reader_posix_t *)data;
+    if (reader->pos >= reader->len) {
+        if (reader->len == 0) {
+            return MP_READER_EOF;
+        } else {
+            MP_THREAD_GIL_EXIT();
+            int n = read(reader->fd, reader->buf, sizeof(reader->buf));
+            MP_THREAD_GIL_ENTER();
+            if (n <= 0) {
+                reader->len = 0;
+                return MP_READER_EOF;
+            }
+            reader->len = n;
+            reader->pos = 0;
+        }
+    }
+    return reader->buf[reader->pos++];
+}
+
+STATIC void mp_reader_posix_close(void *data) {
+    mp_reader_posix_t *reader = (mp_reader_posix_t *)data;
+    if (reader->close_fd) {
+        MP_THREAD_GIL_EXIT();
+        close(reader->fd);
+        MP_THREAD_GIL_ENTER();
+    }
+    m_del_obj(mp_reader_posix_t, reader);
+}
+
+void mp_reader_new_file_from_fd(mp_reader_t *reader, int fd, bool close_fd) {
+    mp_reader_posix_t *rp = m_new_obj(mp_reader_posix_t);
+    rp->close_fd = close_fd;
+    rp->fd = fd;
+    MP_THREAD_GIL_EXIT();
+    int n = read(rp->fd, rp->buf, sizeof(rp->buf));
+    if (n == -1) {
+        if (close_fd) {
+            close(fd);
+        }
+        MP_THREAD_GIL_ENTER();
+        mp_raise_OSError(errno);
+    }
+    MP_THREAD_GIL_ENTER();
+    rp->len = n;
+    rp->pos = 0;
+    reader->data = rp;
+    reader->readbyte = mp_reader_posix_readbyte;
+    reader->close = mp_reader_posix_close;
+}
+void mp_reader_new_file(mp_reader_t *reader, const char *filename) {
+    MP_THREAD_GIL_EXIT();
+    int fd = open(filename, O_RDONLY, 0644);
+    MP_THREAD_GIL_ENTER();
+    if (fd < 0) {
+        mp_raise_OSError(errno);
+    }
+    mp_reader_new_file_from_fd(reader, fd, true);
+}
+#endif
+
 mp_lexer_t * mp_lexer_new_from_file(const char * filename) {
   if (sScriptProvider != nullptr) {
     const char * script = sScriptProvider->contentOfScript(filename, true);
     if (script != nullptr) {
       return mp_lexer_new_from_str_len(qstr_from_str(filename), script, strlen(script), 0 /* size_t free_len*/);
-    } else {
-      mp_raise_OSError(MP_ENOENT);
     }
-  } else {
-    mp_raise_OSError(MP_ENOENT);
   }
+#ifdef _FXCG
+  mp_lexer_t * res=0;
+  gint_world_switch(GINT_CALL(do_mp_lexer_new_from_file,filename,&res));
+  return res;
+#endif
+#ifdef NSPIRE_NEWLIB
+  mp_lexer_t * res=0;
+  do_mp_lexer_new_from_file(filename,&res);
+  return res;  
+#endif
+  mp_raise_OSError(MP_ENOENT);
 }
 
 mp_import_stat_t mp_import_stat(const char *path) {
   if (sScriptProvider && sScriptProvider->contentOfScript(path, false)) {
     return MP_IMPORT_STAT_FILE;
   }
+#if defined _FXCG || defined NSPIRE_NEWLIB
+  FILE * f=fopen(path,"rb");
+  if (f) {
+    fclose(f);
+    return MP_IMPORT_STAT_FILE;
+  }
+#endif
   return MP_IMPORT_STAT_NO_EXIST;
 }
 

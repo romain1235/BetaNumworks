@@ -23,10 +23,10 @@ MEMORY {
  * overwritten (for instance, vtables that live in the .rodata section). */
 
 /* The image is quite large too!
- * So we put the stack to 18K so there's still space
+ * So we put the stack to 17K so there's still space
  * for our image, if not LD will throw an error. */
 
-STACK_SIZE = 18K;
+STACK_SIZE = 17K;
 
 SECTIONS {
   .isr_vector_table ORIGIN(RAM_BUFFER) : {

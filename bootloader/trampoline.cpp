@@ -10,6 +10,8 @@ namespace Bootloader {
 
 void __attribute__((noinline)) suspend() {
   Ion::Device::Power::internalFlashSuspend(true);
+  // Restore slotInfo magic header (broken on Epsilon, IDK why)
+  *(uint8_t *)0x20000000 = 0xBA;
 }
 
 void* Trampolines[TRAMPOLINES_COUNT]
