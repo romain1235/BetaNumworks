@@ -416,6 +416,26 @@ Le simulateur se trouve dans `output/release/simulator/web/simulator.zip`
 
 <details>
 
+<summary><b>Simulateur Android</b></summary>
+
+Assurez-vous d'avoir JDK 25 d'installé.
+Ensuite, téléchargez la toolchain Android version r21e comme suit :
+```
+export ANDROID_HOME=$PWD/android-sdk
+wget -nv https://gitlab.com/fdroid/sdkmanager/-/raw/master/sdkmanager.py
+python3 sdkmanager.py --licenses
+python3 sdkmanager.py --install "ndk-bundle;r21e"
+```
+Il ne vous reste plus qu'à lancer cette commande pour compiler Upsilon.
+```
+make -j$(nproc) PLATFORM=simulator TARGET=android
+```
+Le fichier compilé nommé `epsilon.apk` sera celui à installer sur le téléphone depuis votre gestionnaire de fichier. Fonctionne normalement à partir de Android 4.
+
+</details>
+
+<details>
+
 <summary><b>Simulateur pour 3DS</b></summary>
 
 Il vous faut devkitPro et devkitARM installés et dans votre path (les instructions sont [ici](https://devkitpro.org/wiki/Getting_Started))

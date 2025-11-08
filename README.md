@@ -442,7 +442,25 @@ You can then put epsilon.3dsx on a SD card to run it from the HBC or use 3dslink
 
 </details>
 
-<br>
+<details>
+
+<summary><b>Android Simulator</b></summary>
+
+Make sure you have JDK 25 installed.
+Then, download the Android toolchain r21e as following :
+```
+export ANDROID_HOME=$PWD/android-sdk
+wget -nv https://gitlab.com/fdroid/sdkmanager/-/raw/master/sdkmanager.py
+python3 sdkmanager.py --licenses
+python3 sdkmanager.py --install "ndk-bundle;r21e"
+```
+All you have to do is run this command to compile Upsilon.
+```
+make -j$(nproc) PLATFORM=simulator TARGET=android
+```
+The compiled file named `epsilon.apk` will be the one to install on the phone from your file manager. Shoudl work on Android 4.1+.
+
+</details>
 
 <details>
   <summary><b>Casio fx-CG-series Port</b></summary>
