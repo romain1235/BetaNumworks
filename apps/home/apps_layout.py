@@ -18,8 +18,8 @@ args = parser.parse_args()
 
 with io.open(args.layouts, "w", encoding="utf-8") as f:
     ordered = args.apps_layout.split()
-    line1 = 'Default,'+','.join(ordered)+'\n'
-    line2 = 'HidePython,'+','.join(ordered)+'\n'
+    line1 = 'Default,'+','.join(ordered)[:-1]+'\n'
+    line2 = 'HidePython,'+','.join(ordered)[:-1]+'\n'
     after = line1 + line2
     f.truncate()
     f.write(after)
