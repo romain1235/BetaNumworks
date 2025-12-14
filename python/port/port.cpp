@@ -66,11 +66,14 @@ void python_execution_end() {
     }, name, content, size);
   }
 
+  // window isn't defined on Node (CI)
   EM_ASM({
-    window.postMessage({
-      type: 'epsilon_micropython_executionEnvironment_runCode_finished',
-      value: Module.___temp_storage_dump,
-    });
+    if (window) {
+      window.postMessage({
+        type: 'epsilon_micropython_executionEnvironment_runCode_finished',
+        value: Module.___temp_storage_dump,
+      });
+    }
     delete Module.___temp_storage_dump;
   });
 
