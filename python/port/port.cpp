@@ -68,7 +68,7 @@ void python_execution_end() {
 
   // window isn't defined on Node (CI)
   EM_ASM({
-    if (window) {
+    if (typeof variable !== 'undefined') {
       window.postMessage({
         type: 'epsilon_micropython_executionEnvironment_runCode_finished',
         value: Module.___temp_storage_dump,
