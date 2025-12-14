@@ -54,6 +54,9 @@ function Calculator(emModule) {
   function eventHandler(keyHandler) {
     return function(ev) {
       var key = this.getAttribute('data-key');
+      /* We use eval as "emModule._IonSimulatorKeyboardKeyDown" is still missing
+       * even after loading Epsilon, probably due to some async init */
+      keyHandler = eval(keyHandler);
       keyHandler(key);
       /* Always prevent default action of event.
        * First, this will prevent the browser from delaying that event. Indeed
@@ -69,8 +72,8 @@ function Calculator(emModule) {
       ev.preventDefault();
     };
   }
-  var downHandler = eventHandler(emModule._IonSimulatorKeyboardKeyDown);
-  var upHandler = eventHandler(emModule._IonSimulatorKeyboardKeyUp);
+  var downHandler = eventHandler("emModule._IonSimulatorKeyboardKeyDown");
+  var upHandler = eventHandler("emModule._IonSimulatorKeyboardKeyUp");
 
   calculatorElement.querySelectorAll('span').forEach(function(span){
     /* We decide to hook both to touch and mouse events
