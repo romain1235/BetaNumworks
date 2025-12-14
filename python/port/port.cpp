@@ -39,6 +39,43 @@ void python_error_end() {
     delete Module.___temp_python_error;
   });
 }
+
+__attribute__((noinline))
+void python_execution_end() {
+  EM_ASM({
+    Module.___temp_storage_dump = [];
+  });
+
+  for(size_t i = 0; i < (size_t)Ion::Storage::sharedStorage()->numberOfRecords(); i++) {
+    Ion::Storage::Record record = Ion::Storage::sharedStorage()->recordAtIndex(i);
+    const char * name = record.fullName();
+    const char * content = (const char *)record.value().buffer;
+    size_t size = record.value().size;
+
+    EM_ASM({
+      const filename = Module.UTF8ToString($0);
+      const name = filename.replace(/\\.[^/.]+$/, "");
+      const type = filename.split('.').pop();
+
+      const code = type == "py" ? Module.UTF8ToString($1 + 1, $2) : Module.UTF8ToString($1, $2);
+      Module.___temp_storage_dump.push({
+        name,
+        type,
+        code,
+      });
+    }, name, content, size);
+  }
+
+  EM_ASM({
+    window.postMessage({
+      type: 'epsilon_micropython_executionEnvironment_runCode_finished',
+      value: Module.___temp_storage_dump,
+    });
+    delete Module.___temp_storage_dump;
+  });
+
+
+}
 #endif
 
 #if defined _FXCG || defined NSPIRE_NEWLIB
@@ -173,6 +210,11 @@ bool MicroPython::ExecutionEnvironment::runCode(const char * str) {
 
   assert(sCurrentExecutionEnvironment == this);
   sCurrentExecutionEnvironment = nullptr;
+
+  #ifdef __EMSCRIPTEN__
+  python_execution_end();
+  #endif
+
   return runSucceeded;
 }
 
@@ -470,7 +512,7 @@ mp_lexer_t * mp_lexer_new_from_file(const char * filename) {
 #ifdef NSPIRE_NEWLIB
   mp_lexer_t * res=0;
   do_mp_lexer_new_from_file(filename,&res);
-  return res;  
+  return res;
 #endif
   mp_raise_OSError(MP_ENOENT);
 }
