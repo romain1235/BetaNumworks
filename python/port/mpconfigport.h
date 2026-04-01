@@ -155,7 +155,8 @@ typedef long mp_off_t;
 // Enable setjmp in debug mode. This is to avoid some optimizations done
 // specifically for x86_64 using inline assembly, which makes the debug binary
 // crash with an illegal instruction
-#ifndef NDEBUG
-  #define MICROPY_NLR_SETJMP 1
-#endif
+// #ifndef NDEBUG
+// We need this to build on GCC 14+ until we upgrade MPY, see https://github.com/micropython/micropython/issues/14115
+#define MICROPY_NLR_SETJMP 1
+// #endif
 
