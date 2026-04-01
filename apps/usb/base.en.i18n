@@ -1,7 +1,7 @@
 USBConnected = "THE CALCULATOR IS CONNECTED"
 ConnectedMessage1 = "To transfer data, browse"
 ConnectedMessage2 = "our page from your computer"
-ConnectedMessage3 = "getomega.dev/ide"
+ConnectedMessage3 = "yaya-cout.github.io/Upsilon-Workshop"
 ConnectedMessage4 = "Press the BACK key of your"
 ConnectedMessage5 = "calculator or unplug it to"
 ConnectedMessage6 = "disconnect it."
