@@ -15,30 +15,29 @@
 */
 
 // MicroPython part
-
 extern const struct _mp_obj_module_t mp_module___main__;
-#undef MODULE_DEF_MP_QSTR___MAIN__
-#define MODULE_DEF_MP_QSTR___MAIN__ { MP_ROM_QSTR(MP_QSTR___main__), MP_ROM_PTR(&mp_module___main__) },
+#undef MODULE_DEF___MAIN__
+#define MODULE_DEF___MAIN__ { MP_ROM_QSTR(MP_QSTR___main__), MP_ROM_PTR(&mp_module___main__) },
 
 extern const struct _mp_obj_module_t mp_module_builtins;
-#undef MODULE_DEF_MP_QSTR_BUILTINS
-#define MODULE_DEF_MP_QSTR_BUILTINS { MP_ROM_QSTR(MP_QSTR_builtins), MP_ROM_PTR(&mp_module_builtins) },
+#undef MODULE_DEF_BUILTINS
+#define MODULE_DEF_BUILTINS { MP_ROM_QSTR(MP_QSTR_builtins), MP_ROM_PTR(&mp_module_builtins) },
 
 extern const struct _mp_obj_module_t mp_module_cmath;
-#undef MODULE_DEF_MP_QSTR_CMATH
-#define MODULE_DEF_MP_QSTR_CMATH { MP_ROM_QSTR(MP_QSTR_cmath), MP_ROM_PTR(&mp_module_cmath) },
+#undef MODULE_DEF_CMATH
+#define MODULE_DEF_CMATH { MP_ROM_QSTR(MP_QSTR_cmath), MP_ROM_PTR(&mp_module_cmath) },
 
 extern const struct _mp_obj_module_t mp_module_math;
-#undef MODULE_DEF_MP_QSTR_MATH
-#define MODULE_DEF_MP_QSTR_MATH { MP_ROM_QSTR(MP_QSTR_math), MP_ROM_PTR(&mp_module_math) },
+#undef MODULE_DEF_MATH
+#define MODULE_DEF_MATH { MP_ROM_QSTR(MP_QSTR_math), MP_ROM_PTR(&mp_module_math) },
 
 extern const struct _mp_obj_module_t mp_module_micropython;
-#undef MODULE_DEF_MP_QSTR_MICROPYTHON
-#define MODULE_DEF_MP_QSTR_MICROPYTHON { MP_ROM_QSTR(MP_QSTR_micropython), MP_ROM_PTR(&mp_module_micropython) },
+#undef MODULE_DEF_MICROPYTHON
+#define MODULE_DEF_MICROPYTHON { MP_ROM_QSTR(MP_QSTR_micropython), MP_ROM_PTR(&mp_module_micropython) },
 
-extern const struct _mp_obj_module_t mp_module_urandom;
-#undef MODULE_DEF_MP_QSTR_URANDOM
-#define MODULE_DEF_MP_QSTR_URANDOM { MP_ROM_QSTR(MP_QSTR_urandom), MP_ROM_PTR(&mp_module_urandom) },
+extern const struct _mp_obj_module_t mp_module_random;
+#undef MODULE_DEF_RANDOM
+#define MODULE_DEF_RANDOM { MP_ROM_QSTR(MP_QSTR_random), MP_ROM_PTR(&mp_module_random) },
 
 // Upsilon's modules part
 
@@ -53,10 +52,6 @@ extern const struct _mp_obj_module_t modkandinsky_module;
 extern const struct _mp_obj_module_t modmatplotlib_module;
 #undef MODULE_DEF_MP_QSTR_MATPLOTLIB
 #define MODULE_DEF_MP_QSTR_MATPLOTLIB { MP_ROM_QSTR(MP_QSTR_matplotlib), MP_ROM_PTR(&modmatplotlib_module) },
-
-extern const struct _mp_obj_module_t modpyplot_module;
-#undef MODULE_DEF_MP_QSTR_PYPLOT
-#define MODULE_DEF_MP_QSTR_PYPLOT { MP_ROM_QSTR(MP_QSTR_matplotlib_dot_pyplot), MP_ROM_PTR(&modpyplot_module) },
 
 extern const struct _mp_obj_module_t modtime_module;
 #undef MODULE_DEF_MP_QSTR_TIME
@@ -73,17 +68,16 @@ extern const struct _mp_obj_module_t modturtle_module;
 #if !defined(INCLUDE_ULAB)
 
 #define MICROPY_REGISTERED_MODULES \
-    MODULE_DEF_MP_QSTR_BUILTINS \
-    MODULE_DEF_MP_QSTR_CMATH \
-    MODULE_DEF_MP_QSTR_MATH \
-    MODULE_DEF_MP_QSTR_MICROPYTHON \
-    MODULE_DEF_MP_QSTR_URANDOM \
-    MODULE_DEF_MP_QSTR___MAIN__ \
+    MODULE_DEF_BUILTINS \
+    MODULE_DEF_CMATH \
+    MODULE_DEF_MATH \
+    MODULE_DEF_MICROPYTHON \
+    MODULE_DEF_RANDOM \
+    MODULE_DEF___MAIN__ \
 /* Upsilon's modules part */ \
     MODULE_DEF_MP_QSTR_ION \
     MODULE_DEF_MP_QSTR_KANDINSKY \
     MODULE_DEF_MP_QSTR_MATPLOTLIB \
-    MODULE_DEF_MP_QSTR_PYPLOT \
     MODULE_DEF_MP_QSTR_TIME \
     MODULE_DEF_MP_QSTR_OS \
     MODULE_DEF_MP_QSTR_TURTLE
@@ -93,17 +87,16 @@ extern const struct _mp_obj_module_t ulab_user_cmodule;
 #define MODULE_DEF_MP_QSTR_ULAB { MP_ROM_QSTR(MP_QSTR_ulab), MP_ROM_PTR(&ulab_user_cmodule) },
 
 #define MICROPY_REGISTERED_MODULES \
-    MODULE_DEF_MP_QSTR_BUILTINS \
-    MODULE_DEF_MP_QSTR_CMATH \
-    MODULE_DEF_MP_QSTR_MATH \
-    MODULE_DEF_MP_QSTR_MICROPYTHON \
-    MODULE_DEF_MP_QSTR_URANDOM \
-    MODULE_DEF_MP_QSTR___MAIN__ \
+    MODULE_DEF_BUILTINS \
+    MODULE_DEF_CMATH \
+    MODULE_DEF_MATH \
+    MODULE_DEF_MICROPYTHON \
+    MODULE_DEF_RANDOM \
+    MODULE_DEF___MAIN__ \
 /* Upsilon's modules part */ \
     MODULE_DEF_MP_QSTR_ION \
     MODULE_DEF_MP_QSTR_KANDINSKY \
     MODULE_DEF_MP_QSTR_MATPLOTLIB \
-    MODULE_DEF_MP_QSTR_PYPLOT \
     MODULE_DEF_MP_QSTR_TIME \
     MODULE_DEF_MP_QSTR_OS \
     MODULE_DEF_MP_QSTR_TURTLE \

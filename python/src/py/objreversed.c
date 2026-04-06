@@ -37,7 +37,7 @@ typedef struct _mp_obj_reversed_t {
     mp_uint_t cur_index;    // current index, plus 1; 0=no more, 1=last one (index 0)
 } mp_obj_reversed_t;
 
-STATIC mp_obj_t reversed_make_new(const mp_obj_type_t *type, size_t n_args, size_t n_kw, const mp_obj_t *args) {
+static mp_obj_t reversed_make_new(const mp_obj_type_t *type, size_t n_args, size_t n_kw, const mp_obj_t *args) {
     mp_arg_check_num(n_args, n_kw, 1, 1, false);
 
     // check if __reversed__ exists, and if so delegate to it
@@ -54,7 +54,7 @@ STATIC mp_obj_t reversed_make_new(const mp_obj_type_t *type, size_t n_args, size
     return MP_OBJ_FROM_PTR(o);
 }
 
-STATIC mp_obj_t reversed_iternext(mp_obj_t self_in) {
+static mp_obj_t reversed_iternext(mp_obj_t self_in) {
     mp_check_self(mp_obj_is_type(self_in, &mp_type_reversed));
     mp_obj_reversed_t *self = MP_OBJ_TO_PTR(self_in);
 
@@ -68,12 +68,12 @@ STATIC mp_obj_t reversed_iternext(mp_obj_t self_in) {
     return mp_obj_subscr(self->seq, MP_OBJ_NEW_SMALL_INT(self->cur_index), MP_OBJ_SENTINEL);
 }
 
-const mp_obj_type_t mp_type_reversed = {
-    { &mp_type_type },
-    .name = MP_QSTR_reversed,
-    .make_new = reversed_make_new,
-    .getiter = mp_identity_getiter,
-    .iternext = reversed_iternext,
-};
+MP_DEFINE_CONST_OBJ_TYPE(
+    mp_type_reversed,
+    MP_QSTR_reversed,
+    MP_TYPE_FLAG_ITER_IS_ITERNEXT,
+    make_new, reversed_make_new,
+    iter, reversed_iternext
+    );
 
 #endif // MICROPY_PY_BUILTINS_REVERSED

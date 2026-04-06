@@ -1,0 +1,6 @@
+#ifndef LIBAXX_CLIMITS
+#define LIBAXX_CLIMITS
+
+#include <limits.h>
+
+#endif

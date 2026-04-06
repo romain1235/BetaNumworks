@@ -500,7 +500,8 @@ void mp_reader_new_file(mp_reader_t *reader, const char *filename) {
 }
 #endif
 
-mp_lexer_t * mp_lexer_new_from_file(const char * filename) {
+mp_lexer_t * mp_lexer_new_from_file(qstr file_qstr) {
+  const char * filename = qstr_str(file_qstr);
   if (sScriptProvider != nullptr) {
     const char * script = sScriptProvider->contentOfScript(filename, true);
     if (script != nullptr) {

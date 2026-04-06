@@ -34,12 +34,12 @@
 
 #if MICROPY_PY_BUILTINS_STR_UNICODE
 
-STATIC mp_obj_t mp_obj_new_str_iterator(mp_obj_t str, mp_obj_iter_buf_t *iter_buf);
+static mp_obj_t mp_obj_new_str_iterator(mp_obj_t str, mp_obj_iter_buf_t *iter_buf);
 
 /******************************************************************************/
 /* str                                                                        */
 
-STATIC void uni_print_quoted(const mp_print_t *print, const byte *str_data, uint str_len) {
+static void uni_print_quoted(const mp_print_t *print, const byte *str_data, uint str_len) {
     // this escapes characters, but it will be very slow to print (calling print many times)
     bool has_single_quote = false;
     bool has_double_quote = false;
@@ -83,9 +83,9 @@ STATIC void uni_print_quoted(const mp_print_t *print, const byte *str_data, uint
     mp_printf(print, "%c", quote_char);
 }
 
-STATIC void uni_print(const mp_print_t *print, mp_obj_t self_in, mp_print_kind_t kind) {
+static void uni_print(const mp_print_t *print, mp_obj_t self_in, mp_print_kind_t kind) {
     GET_STR_DATA_LEN(self_in, str_data, str_len);
-    #if MICROPY_PY_UJSON
+    #if MICROPY_PY_JSON
     if (kind == PRINT_JSON) {
         mp_str_print_json(print, str_data, str_len);
         return;
@@ -98,7 +98,7 @@ STATIC void uni_print(const mp_print_t *print, mp_obj_t self_in, mp_print_kind_t
     }
 }
 
-STATIC mp_obj_t uni_unary_op(mp_unary_op_t op, mp_obj_t self_in) {
+static mp_obj_t uni_unary_op(mp_unary_op_t op, mp_obj_t self_in) {
     GET_STR_DATA_LEN(self_in, str_data, str_len);
     switch (op) {
         case MP_UNARY_OP_BOOL:
@@ -116,7 +116,11 @@ const byte *str_index_to_ptr(const mp_obj_type_t *type, const byte *self_data, s
     mp_obj_t index, bool is_slice) {
     // All str functions also handle bytes objects, and they call str_index_to_ptr(),
     // so it must handle bytes.
-    if (type == &mp_type_bytes) {
+    if (type == &mp_type_bytes
+        #if MICROPY_PY_BUILTINS_BYTEARRAY
+        || type == &mp_type_bytearray
+        #endif
+        ) {
         // Taken from objstr.c:str_index_to_ptr()
         size_t index_val = mp_get_index(type, self_len, index, is_slice);
         return self_data + index_val;
@@ -174,7 +178,7 @@ const byte *str_index_to_ptr(const mp_obj_type_t *type, const byte *self_data, s
     return s;
 }
 
-STATIC mp_obj_t str_subscr(mp_obj_t self_in, mp_obj_t index, mp_obj_t value) {
+static mp_obj_t str_subscr(mp_obj_t self_in, mp_obj_t index, mp_obj_t value) {
     const mp_obj_type_t *type = mp_obj_get_type(self_in);
     assert(type == &mp_type_str);
     GET_STR_DATA_LEN(self_in, self_data, self_len);
@@ -225,60 +229,19 @@ STATIC mp_obj_t str_subscr(mp_obj_t self_in, mp_obj_t index, mp_obj_t value) {
     }
 }
 
-STATIC const mp_rom_map_elem_t struni_locals_dict_table[] = {
-    #if MICROPY_CPYTHON_COMPAT
-    { MP_ROM_QSTR(MP_QSTR_encode), MP_ROM_PTR(&str_encode_obj) },
-    #endif
-    { MP_ROM_QSTR(MP_QSTR_find), MP_ROM_PTR(&str_find_obj) },
-    { MP_ROM_QSTR(MP_QSTR_rfind), MP_ROM_PTR(&str_rfind_obj) },
-    { MP_ROM_QSTR(MP_QSTR_index), MP_ROM_PTR(&str_index_obj) },
-    { MP_ROM_QSTR(MP_QSTR_rindex), MP_ROM_PTR(&str_rindex_obj) },
-    { MP_ROM_QSTR(MP_QSTR_join), MP_ROM_PTR(&str_join_obj) },
-    { MP_ROM_QSTR(MP_QSTR_split), MP_ROM_PTR(&str_split_obj) },
-    #if MICROPY_PY_BUILTINS_STR_SPLITLINES
-    { MP_ROM_QSTR(MP_QSTR_splitlines), MP_ROM_PTR(&str_splitlines_obj) },
-    #endif
-    { MP_ROM_QSTR(MP_QSTR_rsplit), MP_ROM_PTR(&str_rsplit_obj) },
-    { MP_ROM_QSTR(MP_QSTR_startswith), MP_ROM_PTR(&str_startswith_obj) },
-    { MP_ROM_QSTR(MP_QSTR_endswith), MP_ROM_PTR(&str_endswith_obj) },
-    { MP_ROM_QSTR(MP_QSTR_strip), MP_ROM_PTR(&str_strip_obj) },
-    { MP_ROM_QSTR(MP_QSTR_lstrip), MP_ROM_PTR(&str_lstrip_obj) },
-    { MP_ROM_QSTR(MP_QSTR_rstrip), MP_ROM_PTR(&str_rstrip_obj) },
-    { MP_ROM_QSTR(MP_QSTR_format), MP_ROM_PTR(&str_format_obj) },
-    { MP_ROM_QSTR(MP_QSTR_replace), MP_ROM_PTR(&str_replace_obj) },
-    #if MICROPY_PY_BUILTINS_STR_COUNT
-    { MP_ROM_QSTR(MP_QSTR_count), MP_ROM_PTR(&str_count_obj) },
-    #endif
-    #if MICROPY_PY_BUILTINS_STR_PARTITION
-    { MP_ROM_QSTR(MP_QSTR_partition), MP_ROM_PTR(&str_partition_obj) },
-    { MP_ROM_QSTR(MP_QSTR_rpartition), MP_ROM_PTR(&str_rpartition_obj) },
-    #endif
-    #if MICROPY_PY_BUILTINS_STR_CENTER
-    { MP_ROM_QSTR(MP_QSTR_center), MP_ROM_PTR(&str_center_obj) },
-    #endif
-    { MP_ROM_QSTR(MP_QSTR_lower), MP_ROM_PTR(&str_lower_obj) },
-    { MP_ROM_QSTR(MP_QSTR_upper), MP_ROM_PTR(&str_upper_obj) },
-    { MP_ROM_QSTR(MP_QSTR_isspace), MP_ROM_PTR(&str_isspace_obj) },
-    { MP_ROM_QSTR(MP_QSTR_isalpha), MP_ROM_PTR(&str_isalpha_obj) },
-    { MP_ROM_QSTR(MP_QSTR_isdigit), MP_ROM_PTR(&str_isdigit_obj) },
-    { MP_ROM_QSTR(MP_QSTR_isupper), MP_ROM_PTR(&str_isupper_obj) },
-    { MP_ROM_QSTR(MP_QSTR_islower), MP_ROM_PTR(&str_islower_obj) },
-};
-
-STATIC MP_DEFINE_CONST_DICT(struni_locals_dict, struni_locals_dict_table);
-
-const mp_obj_type_t mp_type_str = {
-    { &mp_type_type },
-    .name = MP_QSTR_str,
-    .print = uni_print,
-    .make_new = mp_obj_str_make_new,
-    .unary_op = uni_unary_op,
-    .binary_op = mp_obj_str_binary_op,
-    .subscr = str_subscr,
-    .getiter = mp_obj_new_str_iterator,
-    .buffer_p = { .get_buffer = mp_obj_str_get_buffer },
-    .locals_dict = (mp_obj_dict_t *)&struni_locals_dict,
-};
+MP_DEFINE_CONST_OBJ_TYPE(
+    mp_type_str,
+    MP_QSTR_str,
+    MP_TYPE_FLAG_ITER_IS_GETITER,
+    make_new, mp_obj_str_make_new,
+    print, uni_print,
+    unary_op, uni_unary_op,
+    binary_op, mp_obj_str_binary_op,
+    subscr, str_subscr,
+    iter, mp_obj_new_str_iterator,
+    buffer, mp_obj_str_get_buffer,
+    locals_dict, &mp_obj_str_locals_dict
+    );
 
 /******************************************************************************/
 /* str iterator                                                               */
@@ -290,7 +253,7 @@ typedef struct _mp_obj_str_it_t {
     size_t cur;
 } mp_obj_str_it_t;
 
-STATIC mp_obj_t str_it_iternext(mp_obj_t self_in) {
+static mp_obj_t str_it_iternext(mp_obj_t self_in) {
     mp_obj_str_it_t *self = MP_OBJ_TO_PTR(self_in);
     GET_STR_DATA_LEN(self->str, str, len);
     if (self->cur < len) {
@@ -304,7 +267,7 @@ STATIC mp_obj_t str_it_iternext(mp_obj_t self_in) {
     }
 }
 
-STATIC mp_obj_t mp_obj_new_str_iterator(mp_obj_t str, mp_obj_iter_buf_t *iter_buf) {
+static mp_obj_t mp_obj_new_str_iterator(mp_obj_t str, mp_obj_iter_buf_t *iter_buf) {
     assert(sizeof(mp_obj_str_it_t) <= sizeof(mp_obj_iter_buf_t));
     mp_obj_str_it_t *o = (mp_obj_str_it_t *)iter_buf;
     o->base.type = &mp_type_polymorph_iter;

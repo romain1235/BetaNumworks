@@ -69,16 +69,21 @@ size_t mp_binary_get_size(char struct_type, char val_type, size_t *palign) {
                 case 'Q':
                     size = 8;
                     break;
+                #if MICROPY_PY_STRUCT_UNSAFE_TYPECODES
                 case 'P':
                 case 'O':
                 case 'S':
                     size = sizeof(void *);
                     break;
+                #endif
+                case 'e':
+                    size = 2;
+                    break;
                 case 'f':
-                    size = sizeof(float);
+                    size = 4;
                     break;
                 case 'd':
-                    size = sizeof(double);
+                    size = 8;
                     break;
             }
             break;
@@ -116,11 +121,17 @@ size_t mp_binary_get_size(char struct_type, char val_type, size_t *palign) {
                     align = alignof(long long);
                     size = sizeof(long long);
                     break;
+                #if MICROPY_PY_STRUCT_UNSAFE_TYPECODES
                 case 'P':
                 case 'O':
                 case 'S':
                     align = alignof(void *);
                     size = sizeof(void *);
+                    break;
+                #endif
+                case 'e':
+                    align = 2;
+                    size = 2;
                     break;
                 case 'f':
                     align = alignof(float);
@@ -143,6 +154,99 @@ size_t mp_binary_get_size(char struct_type, char val_type, size_t *palign) {
     }
     return size;
 }
+
+#if MICROPY_PY_BUILTINS_FLOAT && MICROPY_FLOAT_USE_NATIVE_FLT16
+
+static inline float mp_decode_half_float(uint16_t hf) {
+    union {
+        uint16_t i;
+        _Float16 f;
+    } fpu = { .i = hf };
+    return fpu.f;
+}
+
+static inline uint16_t mp_encode_half_float(float x) {
+    union {
+        uint16_t i;
+        _Float16 f;
+    } fp_sp = { .f = (_Float16)x };
+    return fp_sp.i;
+}
+
+#elif MICROPY_PY_BUILTINS_FLOAT
+
+static float mp_decode_half_float(uint16_t hf) {
+    union {
+        uint32_t i;
+        float f;
+    } fpu;
+
+    uint16_t m = hf & 0x3ff;
+    int e = (hf >> 10) & 0x1f;
+    if (e == 0x1f) {
+        // Half-float is infinity.
+        e = 0xff;
+    } else if (e) {
+        // Half-float is normal.
+        e += 127 - 15;
+    } else if (m) {
+        // Half-float is subnormal, make it normal.
+        e = 127 - 15;
+        while (!(m & 0x400)) {
+            m <<= 1;
+            --e;
+        }
+        m -= 0x400;
+        ++e;
+    }
+
+    fpu.i = ((hf & 0x8000u) << 16) | (e << 23) | (m << 13);
+    return fpu.f;
+}
+
+static uint16_t mp_encode_half_float(float x) {
+    union {
+        uint32_t i;
+        float f;
+    } fpu = { .f = x };
+
+    uint16_t m = (fpu.i >> 13) & 0x3ff;
+    if (fpu.i & (1 << 12)) {
+        // Round up.
+        ++m;
+    }
+    int e = (fpu.i >> 23) & 0xff;
+
+    if (e == 0xff) {
+        // Infinity.
+        e = 0x1f;
+    } else if (e != 0) {
+        e -= 127 - 15;
+        if (e < 0) {
+            // Underflow: denormalized, or zero.
+            if (e >= -11) {
+                m = (m | 0x400) >> -e;
+                if (m & 1) {
+                    m = (m >> 1) + 1;
+                } else {
+                    m >>= 1;
+                }
+            } else {
+                m = 0;
+            }
+            e = 0;
+        } else if (e > 0x3f) {
+            // Overflow: infinity.
+            e = 0x1f;
+            m = 0;
+        }
+    }
+
+    uint16_t bits = ((fpu.i >> 16) & 0x8000) | (e << 10) | m;
+    return bits;
+}
+
+#endif
 
 mp_obj_t mp_binary_get_val_array(char typecode, void *p, size_t index) {
     mp_int_t val = 0;
@@ -180,12 +284,14 @@ mp_obj_t mp_binary_get_val_array(char typecode, void *p, size_t index) {
         case 'd':
             return mp_obj_new_float_from_d(((double *)p)[index]);
         #endif
-        // Extension to CPython: array of objects
+            // Extension to CPython: array of objects
+        #if MICROPY_PY_STRUCT_UNSAFE_TYPECODES
         case 'O':
             return ((mp_obj_t *)p)[index];
         // Extension to CPython: array of pointers
         case 'P':
             return mp_obj_new_int((mp_int_t)(uintptr_t)((void **)p)[index]);
+        #endif
     }
     return MP_OBJ_NEW_SMALL_INT(val);
 }
@@ -234,20 +340,24 @@ mp_obj_t mp_binary_get_val(char struct_type, char val_type, byte *p_base, byte *
 
     long long val = mp_binary_get_int(size, is_signed(val_type), (struct_type == '>'), p);
 
-    if (val_type == 'O') {
+    if (MICROPY_PY_STRUCT_UNSAFE_TYPECODES && val_type == 'O') {
         return (mp_obj_t)(mp_uint_t)val;
-    } else if (val_type == 'S') {
+    } else if (MICROPY_PY_STRUCT_UNSAFE_TYPECODES && val_type == 'S') {
         const char *s_val = (const char *)(uintptr_t)(mp_uint_t)val;
-        return mp_obj_new_str(s_val, strlen(s_val));
+        return mp_obj_new_str_from_cstr(s_val);
     #if MICROPY_PY_BUILTINS_FLOAT
+    } else if (val_type == 'e') {
+        return mp_obj_new_float_from_f(mp_decode_half_float(val));
     } else if (val_type == 'f') {
-        union { uint32_t i;
-                float f;
+        union {
+            uint32_t i;
+            float f;
         } fpu = {val};
         return mp_obj_new_float_from_f(fpu.f);
     } else if (val_type == 'd') {
-        union { uint64_t i;
-                double f;
+        union {
+            uint64_t i;
+            double f;
         } fpu = {val};
         return mp_obj_new_float_from_d(fpu.f);
     #endif
@@ -303,22 +413,29 @@ void mp_binary_set_val(char struct_type, char val_type, mp_obj_t val_in, byte *p
 
     mp_uint_t val;
     switch (val_type) {
+        #if MICROPY_PY_STRUCT_UNSAFE_TYPECODES
         case 'O':
             val = (mp_uint_t)val_in;
             break;
+        #endif
         #if MICROPY_PY_BUILTINS_FLOAT
+        case 'e':
+            val = mp_encode_half_float(mp_obj_get_float_to_f(val_in));
+            break;
         case 'f': {
-            union { uint32_t i;
-                    float f;
+            union {
+                uint32_t i;
+                float f;
             } fp_sp;
             fp_sp.f = mp_obj_get_float_to_f(val_in);
             val = fp_sp.i;
             break;
         }
         case 'd': {
-            union { uint64_t i64;
-                    uint32_t i32[2];
-                    double f;
+            union {
+                uint64_t i64;
+                uint32_t i32[2];
+                double f;
             } fp_dp;
             fp_dp.f = mp_obj_get_float_to_d(val_in);
             if (MP_BYTES_PER_OBJ_WORD == 8) {
@@ -334,7 +451,7 @@ void mp_binary_set_val(char struct_type, char val_type, mp_obj_t val_in, byte *p
         #endif
         default:
             #if MICROPY_LONGINT_IMPL != MICROPY_LONGINT_IMPL_NONE
-            if (mp_obj_is_type(val_in, &mp_type_int)) {
+            if (mp_obj_is_exact_type(val_in, &mp_type_int)) {
                 mp_obj_int_to_bytes_impl(val_in, struct_type == '>', size, p);
                 return;
             }
@@ -365,13 +482,15 @@ void mp_binary_set_val_array(char typecode, void *p, size_t index, mp_obj_t val_
             ((double *)p)[index] = mp_obj_get_float_to_d(val_in);
             break;
         #endif
+        #if MICROPY_PY_STRUCT_UNSAFE_TYPECODES
         // Extension to CPython: array of objects
         case 'O':
             ((mp_obj_t *)p)[index] = val_in;
             break;
+        #endif
         default:
             #if MICROPY_LONGINT_IMPL != MICROPY_LONGINT_IMPL_NONE
-            if (mp_obj_is_type(val_in, &mp_type_int)) {
+            if (mp_obj_is_exact_type(val_in, &mp_type_int)) {
                 size_t size = mp_binary_get_size('@', typecode, NULL);
                 mp_obj_int_to_bytes_impl(val_in, MP_ENDIANNESS_BIG,
                     size, (uint8_t *)p + index * size);
@@ -425,9 +544,11 @@ void mp_binary_set_val_array_from_int(char typecode, void *p, size_t index, mp_i
             ((double *)p)[index] = (double)val;
             break;
         #endif
-        // Extension to CPython: array of pointers
+            // Extension to CPython: array of pointers
+        #if MICROPY_PY_STRUCT_UNSAFE_TYPECODES
         case 'P':
             ((void **)p)[index] = (void *)(uintptr_t)val;
             break;
+        #endif
     }
 }

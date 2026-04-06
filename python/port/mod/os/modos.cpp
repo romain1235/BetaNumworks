@@ -22,21 +22,21 @@ extern "C" {
 #error This file expects UPSILON_VERSION to be defined
 #endif
 
-STATIC const MP_DEFINE_STR_OBJ(modos_uname_info_sysname_obj, "NumWorks");
-STATIC const MP_DEFINE_STR_OBJ(modos_uname_info_nodename_obj, "");
+static const MP_DEFINE_STR_OBJ(modos_uname_info_sysname_obj, "NumWorks");
+static const MP_DEFINE_STR_OBJ(modos_uname_info_nodename_obj, "");
 
-STATIC const MP_DEFINE_STR_OBJ(modos_uname_info_release_obj, "O" MP_STRINGIFY(OMEGA_VERSION) "E-" MP_STRINGIFY(EPSILON_VERSION) "U-" MP_STRINGIFY(UPSILON_VERSION));
-STATIC const MP_DEFINE_STR_OBJ(modos_uname_info_version_obj, MICROPY_VERSION_STRING);
+static const MP_DEFINE_STR_OBJ(modos_uname_info_release_obj, "O" MP_STRINGIFY(OMEGA_VERSION) "E-" MP_STRINGIFY(EPSILON_VERSION) "U-" MP_STRINGIFY(UPSILON_VERSION));
+static const MP_DEFINE_STR_OBJ(modos_uname_info_version_obj, MICROPY_VERSION_STRING);
 
 #if defined(DEVICE_N0110)
-STATIC const MP_DEFINE_STR_OBJ(modos_uname_info_machine_obj, "NumWorks N0110");
+static const MP_DEFINE_STR_OBJ(modos_uname_info_machine_obj, "NumWorks N0110");
 #elif defined(DEVICE_N0100)
-STATIC const MP_DEFINE_STR_OBJ(modos_uname_info_machine_obj, "NumWorks N0100");
+static const MP_DEFINE_STR_OBJ(modos_uname_info_machine_obj, "NumWorks N0100");
 #else
-STATIC const MP_DEFINE_STR_OBJ(modos_uname_info_machine_obj, "NumWorks Simulator");
+static const MP_DEFINE_STR_OBJ(modos_uname_info_machine_obj, "NumWorks Simulator");
 #endif
 
-STATIC const mp_rom_map_elem_t modos_uname_info_table[] = {
+static const mp_rom_map_elem_t modos_uname_info_table[] = {
   { MP_ROM_QSTR(MP_QSTR_sysname), &modos_uname_info_sysname_obj },
   { MP_ROM_QSTR(MP_QSTR_nodename), &modos_uname_info_nodename_obj },
   { MP_ROM_QSTR(MP_QSTR_release), &modos_uname_info_release_obj },
@@ -44,7 +44,7 @@ STATIC const mp_rom_map_elem_t modos_uname_info_table[] = {
   { MP_ROM_QSTR(MP_QSTR_machine), &modos_uname_info_machine_obj },
 };
 
-STATIC MP_DEFINE_CONST_DICT(modos_uname_info_obj, modos_uname_info_table);
+static MP_DEFINE_CONST_DICT(modos_uname_info_obj, modos_uname_info_table);
 
 mp_obj_t modos_uname(void) {
   return (mp_obj_t)&modos_uname_info_obj;
@@ -67,7 +67,7 @@ mp_obj_t modos_remove(mp_obj_t o_file_name) {
   }
 
   record.destroy();
-  
+
   return mp_const_none;
 }
 
@@ -84,7 +84,7 @@ mp_obj_t modos_rename(mp_obj_t o_old_name, mp_obj_t o_new_name) {
   if (record == Ion::Storage::Record()) {
     mp_raise_OSError(2);
   }
-  
+
   Ion::Storage::Record::ErrorStatus status = record.setName(new_name);
 
   switch (status) {
@@ -103,7 +103,7 @@ mp_obj_t modos_rename(mp_obj_t o_old_name, mp_obj_t o_new_name) {
     default:
       break;
   }
-  
+
   return mp_const_none;
 }
 
@@ -113,11 +113,11 @@ mp_obj_t modos_listdir(void) {
   for(size_t i = 0; i < (size_t)Ion::Storage::sharedStorage()->numberOfRecords(); i++) {
     Ion::Storage::Record record = Ion::Storage::sharedStorage()->recordAtIndex(i);
     size_t file_name_length = strlen(record.fullName());
-    
+
     mp_obj_t file_name = mp_obj_new_str(record.fullName(), file_name_length);
     mp_obj_list_append(list, file_name);
   }
-  
+
   return list;
 }
 

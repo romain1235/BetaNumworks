@@ -1,5 +1,3 @@
-from __future__ import print_function
-
 import collections
 import re
 import sys
@@ -24,7 +22,7 @@ def check_non_ascii(msg):
 
 
 # Replace <char><space> with <char | 0x80>.
-# Trival scheme to demo/test.
+# Trivial scheme to demo/test.
 def space_compression(error_strings):
     for line in error_strings:
         check_non_ascii(line)

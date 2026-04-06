@@ -14,7 +14,8 @@
 
 // Global configuration
 QCFG(BYTES_IN_LEN, (1))
-QCFG(BYTES_IN_HASH, (2))
+QCFG(BYTES_IN_HASH, (1))
+
 
 // MicroPython QSTRs
 Q()
@@ -72,6 +73,7 @@ Q(__bool__)
 Q(__build_class__)
 Q(__call__)
 Q(__class__)
+Q(__complex__)
 Q(__contains__)
 Q(__delitem__)
 Q(__dir__)
@@ -79,6 +81,8 @@ Q(__divmod__)
 Q(__enter__)
 Q(__eq__)
 Q(__exit__)
+Q(__file__)
+Q(__float__)
 Q(__floordiv__)
 Q(__ge__)
 Q(__getattr__)

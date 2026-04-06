@@ -30,6 +30,7 @@
 #include "py/obj.h"
 #include "py/misc.h"
 #include "py/asmbase.h"
+#include "py/persistentcode.h"
 
 #if MICROPY_EMIT_MACHINE_CODE
 
@@ -52,18 +53,23 @@ void mp_asm_base_start_pass(mp_asm_base_t *as, int pass) {
     } else {
         // allocating executable RAM is platform specific
         MP_PLAT_ALLOC_EXEC(as->code_offset, (void **)&as->code_base, &as->code_size);
-        assert(as->code_base != NULL);
+        assert(as->code_size == 0 || as->code_base != NULL);
     }
     as->pass = pass;
+    as->suppress = false;
     as->code_offset = 0;
 }
 
 // all functions must go through this one to emit bytes
 // if as->pass < MP_ASM_PASS_EMIT, then this function just counts the number
 // of bytes needed and returns NULL, and callers should not store any data
+// It also returns NULL if generated code should be suppressed at this point.
 uint8_t *mp_asm_base_get_cur_to_write_bytes(void *as_in, size_t num_bytes_to_write) {
     mp_asm_base_t *as = as_in;
     uint8_t *c = NULL;
+    if (as->suppress) {
+        return c;
+    }
     if (as->pass == MP_ASM_PASS_EMIT) {
         assert(as->code_offset + num_bytes_to_write <= as->code_size);
         c = as->code_base + as->code_offset;
@@ -74,6 +80,11 @@ uint8_t *mp_asm_base_get_cur_to_write_bytes(void *as_in, size_t num_bytes_to_wri
 
 void mp_asm_base_label_assign(mp_asm_base_t *as, size_t label) {
     assert(label < as->max_num_labels);
+
+    // Assigning a label ends any dead-code region, and all following machine
+    // code should be emitted (until another mp_asm_base_suppress_code() call).
+    as->suppress = false;
+
     if (as->pass < MP_ASM_PASS_EMIT) {
         // assign label offset
         assert(as->label_offsets[label] == (size_t)-1);
@@ -81,12 +92,17 @@ void mp_asm_base_label_assign(mp_asm_base_t *as, size_t label) {
     } else {
         // ensure label offset has not changed from PASS_COMPUTE to PASS_EMIT
         assert(as->label_offsets[label] == as->code_offset);
+        #if MICROPY_DYNAMIC_COMPILER && MICROPY_EMIT_NATIVE_DEBUG
+        if (mp_dynamic_compiler.native_arch == MP_NATIVE_ARCH_DEBUG) {
+            mp_printf(MICROPY_EMIT_NATIVE_DEBUG_PRINTER, "label(label_%u)\n", (unsigned int)label);
+        }
+        #endif
     }
 }
 
 // align must be a multiple of 2
 void mp_asm_base_align(mp_asm_base_t *as, unsigned int align) {
-    as->code_offset = (as->code_offset + align - 1) & (~(align - 1));
+    as->code_offset = (as->code_offset + align - 1) & (~(size_t)(align - 1));
 }
 
 // this function assumes a little endian machine

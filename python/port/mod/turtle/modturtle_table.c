@@ -1,36 +1,36 @@
 #include "modturtle.h"
 
-STATIC MP_DEFINE_CONST_FUN_OBJ_1(modturtle_forward_obj, modturtle_forward);
-STATIC MP_DEFINE_CONST_FUN_OBJ_1(modturtle_backward_obj, modturtle_backward);
-STATIC MP_DEFINE_CONST_FUN_OBJ_1(modturtle_right_obj, modturtle_right);
-STATIC MP_DEFINE_CONST_FUN_OBJ_1(modturtle_left_obj, modturtle_left);
-STATIC MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(modturtle_goto_obj, 1, 2, modturtle_goto);
-STATIC MP_DEFINE_CONST_FUN_OBJ_1(modturtle_setheading_obj, modturtle_setheading);
-STATIC MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(modturtle_circle_obj, 1, 2, modturtle_circle);
-STATIC MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(modturtle_speed_obj, 0, 1, modturtle_speed);
+static MP_DEFINE_CONST_FUN_OBJ_1(modturtle_forward_obj, modturtle_forward);
+static MP_DEFINE_CONST_FUN_OBJ_1(modturtle_backward_obj, modturtle_backward);
+static MP_DEFINE_CONST_FUN_OBJ_1(modturtle_right_obj, modturtle_right);
+static MP_DEFINE_CONST_FUN_OBJ_1(modturtle_left_obj, modturtle_left);
+static MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(modturtle_goto_obj, 1, 2, modturtle_goto);
+static MP_DEFINE_CONST_FUN_OBJ_1(modturtle_setheading_obj, modturtle_setheading);
+static MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(modturtle_circle_obj, 1, 2, modturtle_circle);
+static MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(modturtle_speed_obj, 0, 1, modturtle_speed);
 
-STATIC MP_DEFINE_CONST_FUN_OBJ_0(modturtle_position_obj, modturtle_position);
-STATIC MP_DEFINE_CONST_FUN_OBJ_0(modturtle_heading_obj, modturtle_heading);
+static MP_DEFINE_CONST_FUN_OBJ_0(modturtle_position_obj, modturtle_position);
+static MP_DEFINE_CONST_FUN_OBJ_0(modturtle_heading_obj, modturtle_heading);
 
-STATIC MP_DEFINE_CONST_FUN_OBJ_0(modturtle_pendown_obj, modturtle_pendown);
-STATIC MP_DEFINE_CONST_FUN_OBJ_0(modturtle_penup_obj, modturtle_penup);
-STATIC MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(modturtle_pensize_obj, 0, 1, modturtle_pensize);
-STATIC MP_DEFINE_CONST_FUN_OBJ_0(modturtle_isdown_obj, modturtle_isdown);
+static MP_DEFINE_CONST_FUN_OBJ_0(modturtle_pendown_obj, modturtle_pendown);
+static MP_DEFINE_CONST_FUN_OBJ_0(modturtle_penup_obj, modturtle_penup);
+static MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(modturtle_pensize_obj, 0, 1, modturtle_pensize);
+static MP_DEFINE_CONST_FUN_OBJ_0(modturtle_isdown_obj, modturtle_isdown);
 
-STATIC MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(modturtle_pencolor_obj, 0, 3, modturtle_pencolor);
-STATIC MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(modturtle_bgcolor_obj, 0, 3, modturtle_bgcolor);
-STATIC MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(modturtle_colormode_obj, 0, 1, modturtle_colormode);
+static MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(modturtle_pencolor_obj, 0, 3, modturtle_pencolor);
+static MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(modturtle_bgcolor_obj, 0, 3, modturtle_bgcolor);
+static MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(modturtle_colormode_obj, 0, 1, modturtle_colormode);
 
-STATIC MP_DEFINE_CONST_FUN_OBJ_0(modturtle_reset_obj, modturtle_reset);
+static MP_DEFINE_CONST_FUN_OBJ_0(modturtle_reset_obj, modturtle_reset);
 
-STATIC MP_DEFINE_CONST_FUN_OBJ_0(modturtle_showturtle_obj, modturtle_showturtle);
-STATIC MP_DEFINE_CONST_FUN_OBJ_0(modturtle_hideturtle_obj, modturtle_hideturtle);
-STATIC MP_DEFINE_CONST_FUN_OBJ_0(modturtle_isvisible_obj, modturtle_isvisible);
-STATIC MP_DEFINE_CONST_FUN_OBJ_1(modturtle_write_obj, modturtle_write);
+static MP_DEFINE_CONST_FUN_OBJ_0(modturtle_showturtle_obj, modturtle_showturtle);
+static MP_DEFINE_CONST_FUN_OBJ_0(modturtle_hideturtle_obj, modturtle_hideturtle);
+static MP_DEFINE_CONST_FUN_OBJ_0(modturtle_isvisible_obj, modturtle_isvisible);
+static MP_DEFINE_CONST_FUN_OBJ_1(modturtle_write_obj, modturtle_write);
 
-STATIC MP_DEFINE_CONST_FUN_OBJ_0(modturtle___init___obj, modturtle___init__);
+static MP_DEFINE_CONST_FUN_OBJ_0(modturtle___init___obj, modturtle___init__);
 
-STATIC const mp_rom_map_elem_t modturtle_module_globals_table[] = {
+static const mp_rom_map_elem_t modturtle_module_globals_table[] = {
   { MP_ROM_QSTR(MP_QSTR___name__), MP_ROM_QSTR(MP_QSTR_turtle) },
   { MP_ROM_QSTR(MP_QSTR___init__), (mp_obj_t)&modturtle___init___obj },
 
@@ -80,7 +80,7 @@ STATIC const mp_rom_map_elem_t modturtle_module_globals_table[] = {
   { MP_ROM_QSTR(MP_QSTR_write), (mp_obj_t)&modturtle_write_obj },
 };
 
-STATIC MP_DEFINE_CONST_DICT(modturtle_module_globals, modturtle_module_globals_table);
+static MP_DEFINE_CONST_DICT(modturtle_module_globals, modturtle_module_globals_table);
 
 const mp_obj_module_t modturtle_module = {
   .base = { &mp_type_module },
