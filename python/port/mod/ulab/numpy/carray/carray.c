@@ -25,9 +25,11 @@
 
 #if ULAB_SUPPORTS_COMPLEX
 
+//| import builtins
+//|
 //| import ulab.numpy
 
-//| def real(val):
+//| def real(val: ulab.numpy.ndarray) -> ulab.numpy.ndarray:
 //|     """
 //|     Return the real part of the complex argument, which can be
 //|     either an ndarray, or a scalar."""
@@ -47,14 +49,14 @@ mp_obj_t carray_real(mp_obj_t _source) {
             return MP_OBJ_FROM_PTR(target);
         }
     } else {
-        mp_raise_NotImplementedError(translate("function is implemented for ndarrays only"));
+        mp_raise_NotImplementedError(MP_ERROR_TEXT("function is implemented for ndarrays only"));
     }
     return mp_const_none;
 }
 
 MP_DEFINE_CONST_FUN_OBJ_1(carray_real_obj, carray_real);
 
-//| def imag(val):
+//| def imag(val: ulab.numpy.ndarray) -> ulab.numpy.ndarray:
 //|     """
 //|     Return the imaginary part of the complex argument, which can be
 //|     either an ndarray, or a scalar."""
@@ -73,7 +75,7 @@ mp_obj_t carray_imag(mp_obj_t _source) {
             return MP_OBJ_FROM_PTR(target);
         }
     } else {
-        mp_raise_NotImplementedError(translate("function is implemented for ndarrays only"));
+        mp_raise_NotImplementedError(MP_ERROR_TEXT("function is implemented for ndarrays only"));
     }
     return mp_const_none;
 }
@@ -82,7 +84,9 @@ MP_DEFINE_CONST_FUN_OBJ_1(carray_imag_obj, carray_imag);
 
 #if ULAB_NUMPY_HAS_CONJUGATE
 
-//| def conjugate(val):
+//| def conjugate(
+//|     val: builtins.complex | ulab.numpy.ndarray
+//| ) -> builtins.complex | ulab.numpy.ndarray:
 //|     """
 //|     Return the conjugate of the complex argument, which can be
 //|     either an ndarray, or a scalar."""
@@ -111,7 +115,7 @@ mp_obj_t carray_conjugate(mp_obj_t _source) {
         } else if(mp_obj_is_int(_source) || mp_obj_is_float(_source)) {
             return _source;
         } else {
-            mp_raise_TypeError(translate("input must be an ndarray, or a scalar"));
+            mp_raise_TypeError(MP_ERROR_TEXT("input must be an ndarray, or a scalar"));
         }
     }
     // this should never happen
@@ -183,16 +187,20 @@ static void carray_sort_complex_(mp_float_t *array, size_t len) {
 
 mp_obj_t carray_sort_complex(mp_obj_t _source) {
     if(!mp_obj_is_type(_source, &ulab_ndarray_type)) {
-        mp_raise_TypeError(translate("input must be a 1D ndarray"));
+        mp_raise_TypeError(MP_ERROR_TEXT("input must be a 1D ndarray"));
     }
     ndarray_obj_t *source = MP_OBJ_TO_PTR(_source);
     if(source->ndim != 1) {
-        mp_raise_TypeError(translate("input must be a 1D ndarray"));
+        mp_raise_TypeError(MP_ERROR_TEXT("input must be a 1D ndarray"));
     }
 
     ndarray_obj_t *ndarray = ndarray_copy_view_convert_type(source, NDARRAY_COMPLEX);
-    mp_float_t *array = (mp_float_t *)ndarray->array;
-    carray_sort_complex_(array, ndarray->len);
+
+    if(ndarray->len != 0) {
+        mp_float_t *array = (mp_float_t *)ndarray->array;
+        carray_sort_complex_(array, ndarray->len);
+    }
+    
     return MP_OBJ_FROM_PTR(ndarray);
 }
 

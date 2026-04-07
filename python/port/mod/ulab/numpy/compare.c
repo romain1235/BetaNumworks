@@ -6,7 +6,7 @@
  *
  * The MIT License (MIT)
  *
- * Copyright (c) 2020-2021 Zoltán Vörös
+ * Copyright (c) 2020-2025 Zoltán Vörös
  *               2020 Jeff Epler for Adafruit Industries
 */
 
@@ -23,6 +23,136 @@
 #include "carray/carray_tools.h"
 #include "compare.h"
 
+#ifdef ULAB_NUMPY_HAS_BINCOUNT
+mp_obj_t compare_bincount(size_t n_args, const mp_obj_t *pos_args, mp_map_t *kw_args) {
+    static const mp_arg_t allowed_args[] = {
+        { MP_QSTR_, MP_ARG_REQUIRED | MP_ARG_OBJ, { .u_rom_obj = MP_ROM_NONE} } ,
+        { MP_QSTR_weights, MP_ARG_OBJ | MP_ARG_KW_ONLY, { .u_rom_obj = MP_ROM_NONE } },
+        { MP_QSTR_minlength, MP_ARG_OBJ | MP_ARG_KW_ONLY, { .u_rom_obj = MP_ROM_NONE } },
+    };
+
+    mp_arg_val_t args[MP_ARRAY_SIZE(allowed_args)];
+    mp_arg_parse_all(n_args, pos_args, kw_args, MP_ARRAY_SIZE(allowed_args), allowed_args, args);
+
+    if(!mp_obj_is_type(args[0].u_obj, &ulab_ndarray_type)) {
+        mp_raise_TypeError(MP_ERROR_TEXT("input must be an ndarray"));
+    }
+    ndarray_obj_t *input = MP_OBJ_TO_PTR(args[0].u_obj);
+
+    #if ULAB_MAX_DIMS > 1
+    // no need to check anything, if the maximum number of dimensions is 1
+    if(input->ndim != 1) {
+        mp_raise_ValueError(MP_ERROR_TEXT("object too deep for desired array"));
+    }
+    #endif
+    if((input->dtype != NDARRAY_UINT8) && (input->dtype != NDARRAY_UINT16)) {
+        mp_raise_TypeError(MP_ERROR_TEXT("cannot cast array data from dtype"));
+    }
+
+    // first find the maximum of the array, and figure out how long the result should be
+    size_t length = 0;
+    int32_t stride = input->strides[ULAB_MAX_DIMS - 1];
+    if(input->dtype == NDARRAY_UINT8) {
+        uint8_t *iarray = (uint8_t *)input->array;
+        for(size_t i = 0; i < input->len; i++) {
+            if(*iarray > length) {
+                length = *iarray;
+            }
+            iarray += stride;
+        }
+    } else if(input->dtype == NDARRAY_UINT16) {
+        stride /= 2;
+        uint16_t *iarray = (uint16_t *)input->array;
+        for(size_t i = 0; i < input->len; i++) {
+            if(*iarray > length) {
+                length = *iarray;
+            }
+            iarray += stride;
+        }
+    }
+    length += 1;
+
+    if(args[2].u_obj != mp_const_none) {
+        int32_t minlength = mp_obj_get_int(args[2].u_obj);
+        if(minlength < 0) {
+            mp_raise_ValueError(MP_ERROR_TEXT("minlength must not be negative"));
+        }
+        if((size_t)minlength > length) {
+            length = minlength;
+        }
+    } else {
+        if(input->len == 0) {
+            length = 0;
+        }
+    }
+
+    ndarray_obj_t *result = NULL;
+    ndarray_obj_t *weights = NULL;
+
+    if(args[1].u_obj == mp_const_none) {
+        result = ndarray_new_linear_array(length, NDARRAY_UINT16);
+    } else {
+        if(!mp_obj_is_type(args[1].u_obj, &ulab_ndarray_type)) {
+            mp_raise_TypeError(MP_ERROR_TEXT("input must be an ndarray"));
+        }
+        weights = MP_OBJ_TO_PTR(args[1].u_obj);
+        if(weights->len < input->len) {
+            mp_raise_ValueError(MP_ERROR_TEXT("the weights and list don't have the same length"));
+        }
+        #if ULAB_SUPPORTS_COMPLEX
+        if(weights->dtype == NDARRAY_COMPLEX) {
+            mp_raise_TypeError(MP_ERROR_TEXT("cannot cast weigths to float"));
+        }
+        #endif /* ULAB_SUPPORTS_COMPLEX */
+
+        result = ndarray_new_linear_array(length, NDARRAY_FLOAT);
+    }
+    
+    // now we can do the binning
+    if(result->dtype == NDARRAY_UINT16) {
+        uint16_t *rarray = (uint16_t *)result->array;
+        if(input->dtype == NDARRAY_UINT8) {
+            uint8_t *iarray = (uint8_t *)input->array;
+            for(size_t i = 0; i < input->len; i++) {
+                rarray[*iarray] += 1;
+                iarray += stride;
+            }
+        } else if(input->dtype == NDARRAY_UINT16) {
+            uint16_t *iarray = (uint16_t *)input->array;
+            for(size_t i = 0; i < input->len; i++) {
+                rarray[*iarray] += 1;
+                iarray += stride;
+            }
+        }
+    } else {
+        mp_float_t *rarray = (mp_float_t *)result->array;
+
+        mp_float_t (*get_weights)(void *) = ndarray_get_float_function(weights->dtype);
+        uint8_t *warray = (uint8_t *)weights->array;
+
+        if(input->dtype == NDARRAY_UINT8) {
+            uint8_t *iarray = (uint8_t *)input->array;
+            for(size_t i = 0; i < input->len; i++) {
+                rarray[*iarray] += get_weights(warray);
+                iarray += stride;
+                warray += weights->strides[ULAB_MAX_DIMS - 1];
+            }
+        } else if(input->dtype == NDARRAY_UINT16) {
+            uint16_t *iarray = (uint16_t *)input->array;
+            for(size_t i = 0; i < input->len; i++) {
+                rarray[*iarray] += get_weights(warray);
+                iarray += stride;
+                warray += weights->strides[ULAB_MAX_DIMS - 1];
+            }
+        }
+    }
+    
+    return MP_OBJ_FROM_PTR(result);
+}
+
+MP_DEFINE_CONST_FUN_OBJ_KW(compare_bincount_obj, 1, compare_bincount);
+#endif /* ULAB_NUMPY_HAS_BINCOUNT */
+
 static mp_obj_t compare_function(mp_obj_t x1, mp_obj_t x2, uint8_t op) {
     ndarray_obj_t *lhs = ndarray_from_mp_obj(x1, 0);
     ndarray_obj_t *rhs = ndarray_from_mp_obj(x2, 0);
@@ -36,7 +166,7 @@ static mp_obj_t compare_function(mp_obj_t x1, mp_obj_t x2, uint8_t op) {
     int32_t *lstrides = m_new(int32_t, ULAB_MAX_DIMS);
     int32_t *rstrides = m_new(int32_t, ULAB_MAX_DIMS);
     if(!ndarray_can_broadcast(lhs, rhs, &ndim, shape, lstrides, rstrides)) {
-        mp_raise_ValueError(translate("operands could not be broadcast together"));
+        mp_raise_ValueError(MP_ERROR_TEXT("operands could not be broadcast together"));
         m_del(size_t, shape, ULAB_MAX_DIMS);
         m_del(int32_t, lstrides, ULAB_MAX_DIMS);
         m_del(int32_t, rstrides, ULAB_MAX_DIMS);
@@ -125,6 +255,7 @@ static mp_obj_t compare_function(mp_obj_t x1, mp_obj_t x2, uint8_t op) {
     return mp_const_none; // we should never reach this point
 }
 
+#if ULAB_NUMPY_HAS_EQUAL | ULAB_NUMPY_HAS_NOTEQUAL
 static mp_obj_t compare_equal_helper(mp_obj_t x1, mp_obj_t x2, uint8_t comptype) {
     // scalar comparisons should return a single object of mp_obj_t type
     mp_obj_t result = compare_function(x1, x2, comptype);
@@ -136,9 +267,26 @@ static mp_obj_t compare_equal_helper(mp_obj_t x1, mp_obj_t x2, uint8_t comptype)
     }
     return result;
 }
+#endif
 
 #if ULAB_NUMPY_HAS_CLIP
-
+//| def clip(
+//|     a: _ScalarOrArrayLike,
+//|     a_min: _ScalarOrArrayLike,
+//|     a_max: _ScalarOrArrayLike,
+//| ) -> _ScalarOrNdArray:
+//|     """
+//|     Clips (limits) the values in an array.
+//|
+//|     :param a: Scalar or array containing elements to clip.
+//|     :param a_min: Minimum value, it will be broadcast against ``a``.
+//|     :param a_max: Maximum value, it will be broadcast against ``a``.
+//|     :return:
+//|         A scalar or array with the elements of ``a``, but where
+//|         values < ``a_min`` are replaced with ``a_min``, and those
+//|         > ``a_max`` with ``a_max``.
+//|     """
+//|     ...
 mp_obj_t compare_clip(mp_obj_t x1, mp_obj_t x2, mp_obj_t x3) {
     // Note: this function could be made faster by implementing a single-loop comparison in
     // RUN_COMPARE_LOOP. However, that would add around 2 kB of compile size, while we
@@ -164,7 +312,18 @@ MP_DEFINE_CONST_FUN_OBJ_3(compare_clip_obj, compare_clip);
 #endif
 
 #if ULAB_NUMPY_HAS_EQUAL
-
+//| def equal(x: _ScalarOrArrayLike, y: _ScalarOrArrayLike) -> _ScalarOrNdArray:
+//|     """
+//|     Returns ``x == y`` element-wise.
+//|
+//|     :param x, y:
+//|         Input scalar or array. If ``x.shape != y.shape`` they must
+//|         be broadcastable to a common shape (which becomes the
+//|         shape of the output.)
+//|     :return:
+//|         A boolean scalar or array with the element-wise result of ``x == y``.
+//|     """
+//|     ...
 mp_obj_t compare_equal(mp_obj_t x1, mp_obj_t x2) {
     return compare_equal_helper(x1, x2, COMPARE_EQUAL);
 }
@@ -173,7 +332,21 @@ MP_DEFINE_CONST_FUN_OBJ_2(compare_equal_obj, compare_equal);
 #endif
 
 #if ULAB_NUMPY_HAS_NOTEQUAL
-
+//| def not_equal(
+//|     x: _ScalarOrArrayLike,
+//|     y: _ScalarOrArrayLike,
+//| ) -> Union[_bool, ulab.numpy.ndarray]:
+//|     """
+//|     Returns ``x != y`` element-wise.
+//|
+//|     :param x, y:
+//|         Input scalar or array. If ``x.shape != y.shape`` they must
+//|         be broadcastable to a common shape (which becomes the
+//|         shape of the output.)
+//|     :return:
+//|         A boolean scalar or array with the element-wise result of ``x != y``.
+//|     """
+//|     ...
 mp_obj_t compare_not_equal(mp_obj_t x1, mp_obj_t x2) {
     return compare_equal_helper(x1, x2, COMPARE_NOT_EQUAL);
 }
@@ -213,61 +386,37 @@ static mp_obj_t compare_isinf_isfinite(mp_obj_t _x, uint8_t mask) {
                 // ...so flip all values in the array, if the function was called from isfinite
                 memset(rarray, 1, results->len);
             }
-            return results;
+            return MP_OBJ_FROM_PTR(results);
         }
         uint8_t *xarray = (uint8_t *)x->array;
 
-        #if ULAB_MAX_DIMS > 3
-        size_t i = 0;
-        do {
-        #endif
-            #if ULAB_MAX_DIMS > 2
-            size_t j = 0;
-            do {
-            #endif
-                #if ULAB_MAX_DIMS > 1
-                size_t k = 0;
-                do {
-                #endif
-                    size_t l = 0;
-                    do {
-                        mp_float_t value = *(mp_float_t *)xarray;
-                        if(isnan(value)) {
-                            *rarray++ = 0;
-                        } else {
-                            *rarray++ = isinf(value) ? mask : 1 - mask;
-                        }
-                        xarray += x->strides[ULAB_MAX_DIMS - 1];
-                        l++;
-                    } while(l < x->shape[ULAB_MAX_DIMS - 1]);
-                #if ULAB_MAX_DIMS > 1
-                    xarray -= x->strides[ULAB_MAX_DIMS - 1] * x->shape[ULAB_MAX_DIMS-1];
-                    xarray += x->strides[ULAB_MAX_DIMS - 2];
-                    k++;
-                } while(k < x->shape[ULAB_MAX_DIMS - 2]);
-                #endif
-            #if ULAB_MAX_DIMS > 2
-                xarray -= x->strides[ULAB_MAX_DIMS - 2] * x->shape[ULAB_MAX_DIMS-2];
-                xarray += x->strides[ULAB_MAX_DIMS - 3];
-                j++;
-            } while(j < x->shape[ULAB_MAX_DIMS - 3]);
-            #endif
-        #if ULAB_MAX_DIMS > 3
-            xarray -= x->strides[ULAB_MAX_DIMS - 3] * x->shape[ULAB_MAX_DIMS-3];
-            xarray += x->strides[ULAB_MAX_DIMS - 4];
-            i++;
-        } while(i < x->shape[ULAB_MAX_DIMS - 4]);
-        #endif
-
-        return results;
+        ITERATOR_HEAD();
+            mp_float_t value = *(mp_float_t *)xarray;
+            if(isnan(value)) {
+                *rarray++ = 0;
+            } else {
+                *rarray++ = isinf(value) ? mask : 1 - mask;
+            }
+        ITERATOR_TAIL(x, xarray);
+        return MP_OBJ_FROM_PTR(results);
     } else {
-        mp_raise_TypeError(translate("wrong input type"));
+        mp_raise_TypeError(MP_ERROR_TEXT("wrong input type"));
     }
     return mp_const_none;
 }
 #endif
 
 #if ULAB_NUMPY_HAS_ISFINITE
+//| def isfinite(x: _ScalarOrNdArray) -> Union[_bool, ulab.numpy.ndarray]:
+//|     """
+//|     Tests element-wise for finiteness (i.e., it should not be infinity or a NaN).
+//|
+//|     :param x: Input scalar or ndarray.
+//|     :return:
+//|         A boolean scalar or array with True where ``x`` is finite, and
+//|         False otherwise.
+//|     """
+//|     ...
 mp_obj_t compare_isfinite(mp_obj_t _x) {
     return compare_isinf_isfinite(_x, 0);
 }
@@ -276,6 +425,16 @@ MP_DEFINE_CONST_FUN_OBJ_1(compare_isfinite_obj, compare_isfinite);
 #endif
 
 #if ULAB_NUMPY_HAS_ISINF
+//| def isinf(x: _ScalarOrNdArray) -> Union[_bool, ulab.numpy.ndarray]:
+//|     """
+//|     Tests element-wise for positive or negative infinity.
+//|
+//|     :param x: Input scalar or ndarray.
+//|     :return:
+//|         A boolean scalar or array with True where ``x`` is positive or
+//|         negative infinity, and False otherwise.
+//|     """
+//|     ...
 mp_obj_t compare_isinf(mp_obj_t _x) {
     return compare_isinf_isfinite(_x, 1);
 }
@@ -284,6 +443,18 @@ MP_DEFINE_CONST_FUN_OBJ_1(compare_isinf_obj, compare_isinf);
 #endif
 
 #if ULAB_NUMPY_HAS_MAXIMUM
+//| def maximum(x1: _ScalarOrArrayLike, x2: _ScalarOrArrayLike) -> _ScalarOrNdArray:
+//|     """
+//|     Returns the element-wise maximum.
+//|
+//|     :param x1, x2:
+//|         Input scalar or array. If ``x.shape != y.shape`` they must
+//|         be broadcastable to a common shape (which becomes the
+//|         shape of the output.)
+//|     :return:
+//|         A scalar or array with the element-wise maximum of ``x1`` and ``x2``.
+//|     """
+//|     ...
 mp_obj_t compare_maximum(mp_obj_t x1, mp_obj_t x2) {
     // extra round, so that we can return maximum(3, 4) properly
     mp_obj_t result = compare_function(x1, x2, COMPARE_MAXIMUM);
@@ -299,6 +470,18 @@ MP_DEFINE_CONST_FUN_OBJ_2(compare_maximum_obj, compare_maximum);
 
 #if ULAB_NUMPY_HAS_MINIMUM
 
+//| def minimum(x1: _ScalarOrArrayLike, x2: _ScalarOrArrayLike) -> _ScalarOrNdArray:
+//|     """
+//|     Returns the element-wise minimum.
+//|
+//|     :param x1, x2:
+//|         Input scalar or array. If ``x.shape != y.shape`` they must
+//|         be broadcastable to a common shape (which becomes the
+//|         shape of the output.)
+//|     :return:
+//|         A scalar or array with the element-wise minimum of ``x1`` and ``x2``.
+//|     """
+//|     ...
 mp_obj_t compare_minimum(mp_obj_t x1, mp_obj_t x2) {
     // extra round, so that we can return minimum(3, 4) properly
     mp_obj_t result = compare_function(x1, x2, COMPARE_MINIMUM);
@@ -312,8 +495,170 @@ mp_obj_t compare_minimum(mp_obj_t x1, mp_obj_t x2) {
 MP_DEFINE_CONST_FUN_OBJ_2(compare_minimum_obj, compare_minimum);
 #endif
 
+#if ULAB_NUMPY_HAS_NONZERO
+
+//| def nonzero(x: _ScalarOrArrayLike) -> ulab.numpy.ndarray:
+//|     """
+//|     Returns the indices of elements that are non-zero.
+//|
+//|     :param x:
+//|         Input scalar or array. If ``x`` is a scalar, it is treated
+//|         as a single-element 1-d array.
+//|     :return:
+//|         An array of indices that are non-zero.
+//|     """
+//|     ...
+mp_obj_t compare_nonzero(mp_obj_t x) {
+    ndarray_obj_t *ndarray_x = ndarray_from_mp_obj(x, 0);
+    // since ndarray_new_linear_array calls m_new0, the content of zero is a single zero
+    ndarray_obj_t *zero = ndarray_new_linear_array(1, NDARRAY_UINT8);
+
+    uint8_t ndim = 0;
+    size_t *shape = m_new(size_t, ULAB_MAX_DIMS);
+    int32_t *x_strides = m_new(int32_t, ULAB_MAX_DIMS);
+    int32_t *zero_strides = m_new(int32_t, ULAB_MAX_DIMS);
+    // we don't actually have to inspect the outcome of ndarray_can_broadcast,
+    // because the right hand side is a linear array with a single element
+    ndarray_can_broadcast(ndarray_x, zero, &ndim, shape, x_strides, zero_strides);
+
+    // equal_obj is a Boolean ndarray
+    mp_obj_t equal_obj = ndarray_binary_equality(ndarray_x, zero, ndim, shape, x_strides, zero_strides, MP_BINARY_OP_NOT_EQUAL);
+    ndarray_obj_t *ndarray = MP_OBJ_TO_PTR(equal_obj);
+
+    // these are no longer needed, get rid of them
+    m_del(size_t, shape, ULAB_MAX_DIMS);
+    m_del(int32_t, x_strides, ULAB_MAX_DIMS);
+    m_del(int32_t, zero_strides, ULAB_MAX_DIMS);
+
+    uint8_t *array = (uint8_t *)ndarray->array;
+    uint8_t *origin = (uint8_t *)ndarray->array;
+
+    // First, count the number of Trues:
+    uint16_t count = 0;
+    size_t indices[ULAB_MAX_DIMS];
+
+    #if ULAB_MAX_DIMS > 3
+    indices[3] = 0;
+    do {
+    #endif
+        #if ULAB_MAX_DIMS > 2
+        indices[2] = 0;
+        do {
+        #endif
+            #if ULAB_MAX_DIMS > 1
+            indices[1] = 0;
+            do {
+            #endif
+                indices[0] = 0;
+                do {
+                    if(*array != 0) {
+                        count++;
+                    }
+                    array += ndarray->strides[ULAB_MAX_DIMS - 1];
+                    indices[0]++;
+                } while(indices[0] < ndarray->shape[ULAB_MAX_DIMS - 1]);
+            #if ULAB_MAX_DIMS > 1
+                array -= ndarray->strides[ULAB_MAX_DIMS - 1] * ndarray->shape[ULAB_MAX_DIMS-1];
+                array += ndarray->strides[ULAB_MAX_DIMS - 2];
+                indices[1]++;
+            } while(indices[1] < ndarray->shape[ULAB_MAX_DIMS - 2]);
+            #endif
+        #if ULAB_MAX_DIMS > 2
+            array -= ndarray->strides[ULAB_MAX_DIMS - 2] * ndarray->shape[ULAB_MAX_DIMS-2];
+            array += ndarray->strides[ULAB_MAX_DIMS - 3];
+            indices[2]++;
+        } while(indices[2] < ndarray->shape[ULAB_MAX_DIMS - 3]);
+        #endif
+    #if ULAB_MAX_DIMS > 3
+        array -= ndarray->strides[ULAB_MAX_DIMS - 3] * ndarray->shape[ULAB_MAX_DIMS-3];
+        array += ndarray->strides[ULAB_MAX_DIMS - 4];
+        indices[3]++;
+    } while(indices[3] < ndarray->shape[ULAB_MAX_DIMS - 4]);
+    #endif
+
+    mp_obj_t *items = m_new(mp_obj_t, ndarray->ndim);
+    uint16_t *arrays[ULAB_MAX_DIMS];
+
+    for(uint8_t i = 0; i < ndarray->ndim; i++) {
+        ndarray_obj_t *item_array = ndarray_new_linear_array(count, NDARRAY_UINT16);
+        uint16_t *iarray = (uint16_t *)item_array->array;
+        arrays[ULAB_MAX_DIMS - 1 - i] = iarray;
+        items[ndarray->ndim - 1 - i] = MP_OBJ_FROM_PTR(item_array);
+    }
+    array = origin;
+    count = 0;
+
+    #if ULAB_MAX_DIMS > 3
+    indices[3] = 0;
+    do {
+    #endif
+        #if ULAB_MAX_DIMS > 2
+        indices[2] = 0;
+        do {
+        #endif
+            #if ULAB_MAX_DIMS > 1
+            indices[1] = 0;
+            do {
+            #endif
+                indices[0] = 0;
+                do {
+                    if(*array != 0) {
+                        for(uint8_t d = 0; d < ndarray->ndim; d++) {
+                            arrays[ULAB_MAX_DIMS - 1 - d][count] = indices[d];
+                        }
+                        count++;
+                    }
+                    array += ndarray->strides[ULAB_MAX_DIMS - 1];
+                    indices[0]++;
+                } while(indices[0] < ndarray->shape[ULAB_MAX_DIMS - 1]);
+            #if ULAB_MAX_DIMS > 1
+                array -= ndarray->strides[ULAB_MAX_DIMS - 1] * ndarray->shape[ULAB_MAX_DIMS-1];
+                array += ndarray->strides[ULAB_MAX_DIMS - 2];
+                indices[1]++;
+            } while(indices[1] < ndarray->shape[ULAB_MAX_DIMS - 2]);
+            #endif
+        #if ULAB_MAX_DIMS > 2
+            array -= ndarray->strides[ULAB_MAX_DIMS - 2] * ndarray->shape[ULAB_MAX_DIMS-2];
+            array += ndarray->strides[ULAB_MAX_DIMS - 3];
+            indices[2]++;
+        } while(indices[2] < ndarray->shape[ULAB_MAX_DIMS - 3]);
+        #endif
+    #if ULAB_MAX_DIMS > 3
+        array -= ndarray->strides[ULAB_MAX_DIMS - 3] * ndarray->shape[ULAB_MAX_DIMS-3];
+        array += ndarray->strides[ULAB_MAX_DIMS - 4];
+        indices[3]++;
+    } while(indices[3] < ndarray->shape[ULAB_MAX_DIMS - 4]);
+    #endif
+
+    return mp_obj_new_tuple(ndarray->ndim, items);
+}
+
+MP_DEFINE_CONST_FUN_OBJ_1(compare_nonzero_obj, compare_nonzero);
+#endif /* ULAB_NUMPY_HAS_NONZERO */
+
 #if ULAB_NUMPY_HAS_WHERE
 
+//| def where(
+//|     condition: _ScalarOrArrayLike,
+//|     x: _ScalarOrArrayLike,
+//|     y: _ScalarOrArrayLike,
+//|     ) -> ulab.numpy.ndarray:
+//|     """
+//|     Returns elements from ``x`` or ``y`` depending on ``condition``.
+//|
+//|     :param condition:
+//|         Input scalar or array. If an element (or scalar) is truthy,
+//|         the corresponding element from ``x`` is chosen, otherwise
+//|         ``y`` is used. ``condition``, ``x`` and ``y`` must also be
+//|         broadcastable to the same shape (which becomes the output
+//|         shape.)
+//|     :param x, y:
+//|         Input scalar or array.
+//|     :return:
+//|         An array with elements from ``x`` when ``condition`` is
+//|         truthy, and ``y`` elsewhere.
+//|     """
+//|     ...
 mp_obj_t compare_where(mp_obj_t _condition, mp_obj_t _x, mp_obj_t _y) {
     // this implementation will work with ndarrays, and scalars only
     ndarray_obj_t *c = ndarray_from_mp_obj(_condition, 0);
@@ -338,7 +683,7 @@ mp_obj_t compare_where(mp_obj_t _condition, mp_obj_t _x, mp_obj_t _y) {
     if(!ndarray_can_broadcast(c, x, &ndim, oshape, cstrides, ystrides) ||
         !ndarray_can_broadcast(c, y, &ndim, oshape, cstrides, ystrides) ||
         !ndarray_can_broadcast(x, y, &ndim, oshape, xstrides, ystrides)) {
-        mp_raise_ValueError(translate("operands could not be broadcast together"));
+        mp_raise_ValueError(MP_ERROR_TEXT("operands could not be broadcast together"));
     }
 
     ndim = MAX(MAX(c->ndim, x->ndim), y->ndim);

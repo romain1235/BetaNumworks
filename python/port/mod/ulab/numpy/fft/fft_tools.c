@@ -5,7 +5,7 @@
  *
  * The MIT License (MIT)
  *
- * Copyright (c) 2019-2021 Zoltán Vörös
+ * Copyright (c) 2019-2024 Zoltán Vörös
 */
 
 #include <math.h>
@@ -45,7 +45,7 @@
     imag[i] = data[2i+1]
 
 */
-void fft_kernel_complex(mp_float_t *data, size_t n, int isign) {
+void fft_kernel(mp_float_t *data, size_t n, int isign) {
     size_t j, m, mmax, istep;
     mp_float_t tempr, tempi;
     mp_float_t wtemp, wr, wpr, wpi, wi, theta;
@@ -94,22 +94,22 @@ void fft_kernel_complex(mp_float_t *data, size_t n, int isign) {
 /*
  * The following function is a helper interface to the python side.
  * It has been factored out from fft.c, so that the same argument parsing
- * routine can be called from scipy.signal.spectrogram.
+ * routine can be called from utils.spectrogram.
  */
-mp_obj_t fft_fft_ifft_spectrogram(mp_obj_t data_in, uint8_t type) {
+mp_obj_t fft_fft_ifft(mp_obj_t data_in, uint8_t type) {
     if(!mp_obj_is_type(data_in, &ulab_ndarray_type)) {
-        mp_raise_NotImplementedError(translate("FFT is defined for ndarrays only"));
+        mp_raise_NotImplementedError(MP_ERROR_TEXT("FFT is defined for ndarrays only"));
     }
     ndarray_obj_t *in = MP_OBJ_TO_PTR(data_in);
     #if ULAB_MAX_DIMS > 1
     if(in->ndim != 1) {
-        mp_raise_TypeError(translate("FFT is implemented for linear arrays only"));
+        mp_raise_TypeError(MP_ERROR_TEXT("FFT is implemented for linear arrays only"));
     }
     #endif
     size_t len = in->len;
     // Check if input is of length of power of 2
     if((len & (len-1)) != 0) {
-        mp_raise_ValueError(translate("input array length must be power of 2"));
+        mp_raise_ValueError(MP_ERROR_TEXT("input array length must be power of 2"));
     }
 
     ndarray_obj_t *out = ndarray_new_linear_array(len, NDARRAY_COMPLEX);
@@ -118,9 +118,9 @@ mp_obj_t fft_fft_ifft_spectrogram(mp_obj_t data_in, uint8_t type) {
 
     if(in->dtype == NDARRAY_COMPLEX) {
         uint8_t sz = 2 * sizeof(mp_float_t);
-        uint8_t *data_ = (uint8_t *)out->array;
         for(size_t i = 0; i < len; i++) {
-            memcpy(data_, array, sz);
+            memcpy(data, array, sz);
+            data += 2;
             array += in->strides[ULAB_MAX_DIMS - 1];
         }
     } else {
@@ -134,22 +134,12 @@ mp_obj_t fft_fft_ifft_spectrogram(mp_obj_t data_in, uint8_t type) {
     }
     data -= 2 * len;
 
-    if((type == FFT_FFT) || (type == FFT_SPECTROGRAM)) {
-        fft_kernel_complex(data, len, 1);
-        if(type == FFT_SPECTROGRAM) {
-            ndarray_obj_t *spectrum = ndarray_new_linear_array(len, NDARRAY_FLOAT);
-            mp_float_t *sarray = (mp_float_t *)spectrum->array;
-            for(size_t i = 0; i < len; i++) {
-                *sarray++ = MICROPY_FLOAT_C_FUN(sqrt)(data[0] * data[0] + data[1] * data[1]);
-                data += 2;
-            }
-            m_del(mp_float_t, data, 2 * len);
-            return MP_OBJ_FROM_PTR(spectrum);
-        }
+    if(type == FFT_FFT) {
+        fft_kernel(data, len, 1);
     } else { // inverse transform
-        fft_kernel_complex(data, len, -1);
+        fft_kernel(data, len, -1);
         // TODO: numpy accepts the norm keyword argument
-        for(size_t i = 0; i < len; i++) {
+        for(size_t i = 0; i < 2 * len; i++) {
             *data++ /= len;
         }
     }
@@ -202,26 +192,26 @@ void fft_kernel(mp_float_t *real, mp_float_t *imag, size_t n, int isign) {
     }
 }
 
-mp_obj_t fft_fft_ifft_spectrogram(size_t n_args, mp_obj_t arg_re, mp_obj_t arg_im, uint8_t type) {
+mp_obj_t fft_fft_ifft(size_t n_args, mp_obj_t arg_re, mp_obj_t arg_im, uint8_t type) {
     if(!mp_obj_is_type(arg_re, &ulab_ndarray_type)) {
-        mp_raise_NotImplementedError(translate("FFT is defined for ndarrays only"));
+        mp_raise_NotImplementedError(MP_ERROR_TEXT("FFT is defined for ndarrays only"));
     }
     if(n_args == 2) {
         if(!mp_obj_is_type(arg_im, &ulab_ndarray_type)) {
-            mp_raise_NotImplementedError(translate("FFT is defined for ndarrays only"));
+            mp_raise_NotImplementedError(MP_ERROR_TEXT("FFT is defined for ndarrays only"));
         }
     }
     ndarray_obj_t *re = MP_OBJ_TO_PTR(arg_re);
     #if ULAB_MAX_DIMS > 1
     if(re->ndim != 1) {
         COMPLEX_DTYPE_NOT_IMPLEMENTED(re->dtype)
-        mp_raise_TypeError(translate("FFT is implemented for linear arrays only"));
+        mp_raise_TypeError(MP_ERROR_TEXT("FFT is implemented for linear arrays only"));
     }
     #endif
     size_t len = re->len;
     // Check if input is of length of power of 2
     if((len & (len-1)) != 0) {
-        mp_raise_ValueError(translate("input array length must be power of 2"));
+        mp_raise_ValueError(MP_ERROR_TEXT("input array length must be power of 2"));
     }
 
     ndarray_obj_t *out_re = ndarray_new_linear_array(len, NDARRAY_FLOAT);
@@ -243,11 +233,11 @@ mp_obj_t fft_fft_ifft_spectrogram(size_t n_args, mp_obj_t arg_re, mp_obj_t arg_i
         #if ULAB_MAX_DIMS > 1
         if(im->ndim != 1) {
             COMPLEX_DTYPE_NOT_IMPLEMENTED(im->dtype)
-            mp_raise_TypeError(translate("FFT is implemented for linear arrays only"));
+            mp_raise_TypeError(MP_ERROR_TEXT("FFT is implemented for linear arrays only"));
         }
         #endif
         if (re->len != im->len) {
-            mp_raise_ValueError(translate("real and imaginary parts must be of equal length"));
+            mp_raise_ValueError(MP_ERROR_TEXT("real and imaginary parts must be of equal length"));
         }
         array = (uint8_t *)im->array;
         func = ndarray_get_float_function(im->dtype);
@@ -258,15 +248,8 @@ mp_obj_t fft_fft_ifft_spectrogram(size_t n_args, mp_obj_t arg_re, mp_obj_t arg_i
         data_im -= len;
     }
 
-    if((type == FFT_FFT) || (type == FFT_SPECTROGRAM)) {
+    if(type == FFT_FFT) {
         fft_kernel(data_re, data_im, len, 1);
-        if(type == FFT_SPECTROGRAM) {
-            for(size_t i=0; i < len; i++) {
-                *data_re = MICROPY_FLOAT_C_FUN(sqrt)(*data_re * *data_re + *data_im * *data_im);
-                data_re++;
-                data_im++;
-            }
-        }
     } else { // inverse transform
         fft_kernel(data_re, data_im, len, -1);
         // TODO: numpy accepts the norm keyword argument
@@ -275,13 +258,9 @@ mp_obj_t fft_fft_ifft_spectrogram(size_t n_args, mp_obj_t arg_re, mp_obj_t arg_i
             *data_im++ /= len;
         }
     }
-    if(type == FFT_SPECTROGRAM) {
-        return MP_OBJ_TO_PTR(out_re);
-    } else {
-        mp_obj_t tuple[2];
-        tuple[0] = out_re;
-        tuple[1] = out_im;
-        return mp_obj_new_tuple(2, tuple);
-    }
+    mp_obj_t tuple[2];
+    tuple[0] = MP_OBJ_FROM_PTR(out_re);
+    tuple[1] = MP_OBJ_FROM_PTR(out_im);
+    return mp_obj_new_tuple(2, tuple);
 }
 #endif  /* ULAB_SUPPORTS_COMPLEX & ULAB_FFT_IS_NUMPY_COMPATIBLE */

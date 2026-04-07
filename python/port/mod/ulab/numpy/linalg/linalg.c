@@ -67,7 +67,7 @@ static mp_obj_t linalg_cholesky(mp_obj_t oin) {
         for(size_t n=m+1; n < N; n++) { // columns
             // compare entry (m, n) to (n, m)
             if(LINALG_EPSILON < MICROPY_FLOAT_C_FUN(fabs)(Larray[m * N + n] - Larray[n * N + m])) {
-                mp_raise_ValueError(translate("input matrix is asymmetric"));
+                mp_raise_ValueError(MP_ERROR_TEXT("input matrix is asymmetric"));
             }
         }
     }
@@ -87,7 +87,7 @@ static mp_obj_t linalg_cholesky(mp_obj_t oin) {
             }
             if(i == j) {
                 if(sum <= MICROPY_FLOAT_CONST(0.0)) {
-                    mp_raise_ValueError(translate("matrix is not positive definite"));
+                    mp_raise_ValueError(MP_ERROR_TEXT("matrix is not positive definite"));
                 } else {
                     Larray[i * N + i] = MICROPY_FLOAT_C_FUN(sqrt)(sum);
                 }
@@ -204,7 +204,7 @@ static mp_obj_t linalg_eig(mp_obj_t oin) {
             // compare entry (m, n) to (n, m)
             // TODO: this must probably be scaled!
             if(LINALG_EPSILON < MICROPY_FLOAT_C_FUN(fabs)(array[m * S + n] - array[n * S + m])) {
-                mp_raise_ValueError(translate("input matrix is asymmetric"));
+                mp_raise_ValueError(MP_ERROR_TEXT("input matrix is asymmetric"));
             }
         }
     }
@@ -219,7 +219,7 @@ static mp_obj_t linalg_eig(mp_obj_t oin) {
     if(iterations == 0) {
         // the computation did not converge; numpy raises LinAlgError
         m_del(mp_float_t, array, in->len);
-        mp_raise_ValueError(translate("iterations did not converge"));
+        mp_raise_ValueError(MP_ERROR_TEXT("iterations did not converge"));
     }
     ndarray_obj_t *eigenvalues = ndarray_new_linear_array(S, NDARRAY_FLOAT);
     mp_float_t *eigvalues = (mp_float_t *)eigenvalues->array;
@@ -231,7 +231,7 @@ static mp_obj_t linalg_eig(mp_obj_t oin) {
     mp_obj_tuple_t *tuple = MP_OBJ_TO_PTR(mp_obj_new_tuple(2, NULL));
     tuple->items[0] = MP_OBJ_FROM_PTR(eigenvalues);
     tuple->items[1] = MP_OBJ_FROM_PTR(eigenvectors);
-    return tuple;
+    return MP_OBJ_FROM_PTR(tuple);
 }
 
 MP_DEFINE_CONST_FUN_OBJ_1(linalg_eig_obj, linalg_eig);
@@ -267,7 +267,7 @@ static mp_obj_t linalg_inv(mp_obj_t o_in) {
     iarray -= N*N;
 
     if(!linalg_invert_matrix(iarray, N)) {
-        mp_raise_ValueError(translate("input matrix is singular"));
+        mp_raise_ValueError(MP_ERROR_TEXT("input matrix is singular"));
     }
     return MP_OBJ_FROM_PTR(inverted);
 }
@@ -285,8 +285,8 @@ MP_DEFINE_CONST_FUN_OBJ_1(linalg_inv_obj, linalg_inv);
 
 static mp_obj_t linalg_norm(size_t n_args, const mp_obj_t *pos_args, mp_map_t *kw_args) {
     static const mp_arg_t allowed_args[] = {
-        { MP_QSTR_, MP_ARG_REQUIRED | MP_ARG_OBJ, { .u_rom_obj = mp_const_none} } ,
-        { MP_QSTR_axis, MP_ARG_OBJ, { .u_rom_obj = mp_const_none } },
+        { MP_QSTR_, MP_ARG_REQUIRED | MP_ARG_OBJ, { .u_rom_obj = MP_ROM_NONE} } ,
+        { MP_QSTR_axis, MP_ARG_OBJ, { .u_rom_obj = MP_ROM_NONE } },
     };
 
     mp_arg_val_t args[MP_ARRAY_SIZE(allowed_args)];
@@ -364,7 +364,7 @@ static mp_obj_t linalg_norm(size_t n_args, const mp_obj_t *pos_args, mp_map_t *k
         if(results->ndim == 0) {
             return mp_obj_new_float(*rarray);
         }
-        return results;
+        return MP_OBJ_FROM_PTR(results);
     }
     return mp_const_none; // we should never reach this point
 }
@@ -384,7 +384,7 @@ MP_DEFINE_CONST_FUN_OBJ_KW(linalg_norm_obj, 1, linalg_norm);
 
 static mp_obj_t linalg_qr(size_t n_args, const mp_obj_t *pos_args, mp_map_t *kw_args) {
     static const mp_arg_t allowed_args[] = {
-        { MP_QSTR_, MP_ARG_REQUIRED | MP_ARG_OBJ, { .u_rom_obj = mp_const_none } },
+        { MP_QSTR_, MP_ARG_REQUIRED | MP_ARG_OBJ, { .u_rom_obj = MP_ROM_NONE } },
         { MP_QSTR_mode, MP_ARG_OBJ, { .u_rom_obj = MP_ROM_QSTR(MP_QSTR_reduced) } },
     };
 
@@ -393,11 +393,11 @@ static mp_obj_t linalg_qr(size_t n_args, const mp_obj_t *pos_args, mp_map_t *kw_
 
 
     if(!mp_obj_is_type(args[0].u_obj, &ulab_ndarray_type)) {
-        mp_raise_TypeError(translate("operation is defined for ndarrays only"));
+        mp_raise_TypeError(MP_ERROR_TEXT("operation is defined for ndarrays only"));
     }
     ndarray_obj_t *source = MP_OBJ_TO_PTR(args[0].u_obj);
     if(source->ndim != 2) {
-        mp_raise_ValueError(translate("operation is defined for 2D arrays only"));
+        mp_raise_ValueError(MP_ERROR_TEXT("operation is defined for 2D arrays only"));
     }
 
     size_t m = source->shape[ULAB_MAX_DIMS - 2]; // rows
@@ -498,43 +498,45 @@ static mp_obj_t linalg_qr(size_t n_args, const mp_obj_t *pos_args, mp_map_t *kw_
         tuple->items[0] = MP_OBJ_FROM_PTR(q);
         tuple->items[1] = MP_OBJ_FROM_PTR(r);
     } else {
-        mp_raise_ValueError(translate("mode must be complete, or reduced"));
+        mp_raise_ValueError(MP_ERROR_TEXT("mode must be complete, or reduced"));
     }
-    return tuple;
+    return MP_OBJ_FROM_PTR(tuple);
 }
 
 MP_DEFINE_CONST_FUN_OBJ_KW(linalg_qr_obj, 1, linalg_qr);
 #endif
 
-STATIC const mp_rom_map_elem_t ulab_linalg_globals_table[] = {
-    { MP_OBJ_NEW_QSTR(MP_QSTR___name__), MP_OBJ_NEW_QSTR(MP_QSTR_linalg) },
+static const mp_rom_map_elem_t ulab_linalg_globals_table[] = {
+    { MP_ROM_QSTR(MP_QSTR___name__), MP_ROM_QSTR(MP_QSTR_linalg) },
     #if ULAB_MAX_DIMS > 1
         #if ULAB_LINALG_HAS_CHOLESKY
-        { MP_ROM_QSTR(MP_QSTR_cholesky), (mp_obj_t)&linalg_cholesky_obj },
+        { MP_ROM_QSTR(MP_QSTR_cholesky), MP_ROM_PTR(&linalg_cholesky_obj) },
         #endif
         #if ULAB_LINALG_HAS_DET
-        { MP_ROM_QSTR(MP_QSTR_det), (mp_obj_t)&linalg_det_obj },
+        { MP_ROM_QSTR(MP_QSTR_det), MP_ROM_PTR(&linalg_det_obj) },
         #endif
         #if ULAB_LINALG_HAS_EIG
-        { MP_ROM_QSTR(MP_QSTR_eig), (mp_obj_t)&linalg_eig_obj },
+        { MP_ROM_QSTR(MP_QSTR_eig), MP_ROM_PTR(&linalg_eig_obj) },
         #endif
         #if ULAB_LINALG_HAS_INV
-        { MP_ROM_QSTR(MP_QSTR_inv), (mp_obj_t)&linalg_inv_obj },
+        { MP_ROM_QSTR(MP_QSTR_inv), MP_ROM_PTR(&linalg_inv_obj) },
         #endif
         #if ULAB_LINALG_HAS_QR
-        { MP_ROM_QSTR(MP_QSTR_qr), (mp_obj_t)&linalg_qr_obj },
+        { MP_ROM_QSTR(MP_QSTR_qr), MP_ROM_PTR(&linalg_qr_obj) },
         #endif
     #endif
     #if ULAB_LINALG_HAS_NORM
-    { MP_ROM_QSTR(MP_QSTR_norm), (mp_obj_t)&linalg_norm_obj },
+    { MP_ROM_QSTR(MP_QSTR_norm), MP_ROM_PTR(&linalg_norm_obj) },
     #endif
 };
 
-STATIC MP_DEFINE_CONST_DICT(mp_module_ulab_linalg_globals, ulab_linalg_globals_table);
+static MP_DEFINE_CONST_DICT(mp_module_ulab_linalg_globals, ulab_linalg_globals_table);
 
-mp_obj_module_t ulab_linalg_module = {
+const mp_obj_module_t ulab_linalg_module = {
     .base = { &mp_type_module },
     .globals = (mp_obj_dict_t*)&mp_module_ulab_linalg_globals,
 };
-
+#if CIRCUITPY_ULAB
+MP_REGISTER_MODULE(MP_QSTR_ulab_dot_numpy_dot_linalg, ulab_linalg_module);
+#endif
 #endif

@@ -57,9 +57,19 @@ mp_obj_t create_logspace(size_t , const mp_obj_t *, mp_map_t *);
 MP_DECLARE_CONST_FUN_OBJ_KW(create_logspace_obj);
 #endif
 
+#if ULAB_NUMPY_HAS_MESHGRID
+mp_obj_t create_meshgrid(size_t , const mp_obj_t *, mp_map_t *);
+MP_DECLARE_CONST_FUN_OBJ_KW(create_meshgrid_obj);
+#endif
+
 #if ULAB_NUMPY_HAS_ONES
 mp_obj_t create_ones(size_t , const mp_obj_t *, mp_map_t *);
 MP_DECLARE_CONST_FUN_OBJ_KW(create_ones_obj);
+#endif
+
+#if ULAB_NUMPY_HAS_TAKE
+mp_obj_t create_take(size_t , const mp_obj_t *, mp_map_t *);
+MP_DECLARE_CONST_FUN_OBJ_KW(create_take_obj);
 #endif
 
 #if ULAB_NUMPY_HAS_ZEROS

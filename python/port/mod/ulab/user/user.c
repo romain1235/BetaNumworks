@@ -28,13 +28,13 @@ static mp_obj_t user_square(mp_obj_t arg) {
 
     // raise a TypeError exception, if the input is not an ndarray
     if(!mp_obj_is_type(arg, &ulab_ndarray_type)) {
-        mp_raise_TypeError(translate("input must be an ndarray"));
+        mp_raise_TypeError(MP_ERROR_TEXT("input must be an ndarray"));
     }
     ndarray_obj_t *ndarray = MP_OBJ_TO_PTR(arg);
 
     // make sure that the input is a dense array
     if(!ndarray_is_dense(ndarray)) {
-        mp_raise_TypeError(translate("input must be a dense ndarray"));
+        mp_raise_TypeError(MP_ERROR_TEXT("input must be a dense ndarray"));
     }
 
     // if the input is a dense array, create `results` with the same number of
@@ -87,9 +87,12 @@ static const mp_rom_map_elem_t ulab_user_globals_table[] = {
 
 static MP_DEFINE_CONST_DICT(mp_module_ulab_user_globals, ulab_user_globals_table);
 
-mp_obj_module_t ulab_user_module = {
+const mp_obj_module_t ulab_user_module = {
     .base = { &mp_type_module },
     .globals = (mp_obj_dict_t*)&mp_module_ulab_user_globals,
 };
-
+#if CIRCUITPY_ULAB
+MP_REGISTER_MODULE(MP_QSTR_ulab_dot_user, ulab_user_module);
 #endif
+#endif
+

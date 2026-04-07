@@ -171,6 +171,7 @@ port_src += $(addprefix python/port/,\
 
 ifeq ($(INCLUDE_ULAB), 1)
 port_src += $(addprefix python/port/,\
+  mod/ulab/scipy/integrate/integrate.c \
   mod/ulab/scipy/linalg/linalg.c \
   mod/ulab/scipy/optimize/optimize.c \
   mod/ulab/scipy/signal/signal.c \
@@ -180,8 +181,9 @@ port_src += $(addprefix python/port/,\
   mod/ulab/ndarray.c \
   mod/ulab/ndarray_properties.c \
   mod/ulab/numpy/approx.c \
+  mod/ulab/numpy/bitwise.c \
   mod/ulab/numpy/compare.c \
-  mod/ulab/ulab_create.c \
+  mod/ulab/numpy/create.c \
   mod/ulab/numpy/fft/fft.c \
   mod/ulab/numpy/fft/fft_tools.c \
   mod/ulab/numpy/filter.c \
@@ -190,6 +192,7 @@ port_src += $(addprefix python/port/,\
   mod/ulab/numpy/ndarray/ndarray_iter.c \
   mod/ulab/numpy/numerical.c \
   mod/ulab/numpy/poly.c \
+  mod/ulab/numpy/random/random.c \
   mod/ulab/numpy/stats.c \
   mod/ulab/numpy/transform.c \
   mod/ulab/numpy/vector.c \

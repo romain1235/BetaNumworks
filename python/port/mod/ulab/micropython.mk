@@ -2,6 +2,7 @@
 USERMODULES_DIR := $(USERMOD_DIR)
 
 # Add all C files to SRC_USERMOD.
+SRC_USERMOD += $(USERMODULES_DIR)/scipy/integrate/integrate.c
 SRC_USERMOD += $(USERMODULES_DIR)/scipy/linalg/linalg.c
 SRC_USERMOD += $(USERMODULES_DIR)/scipy/optimize/optimize.c
 SRC_USERMOD += $(USERMODULES_DIR)/scipy/signal/signal.c
@@ -12,6 +13,7 @@ SRC_USERMOD += $(USERMODULES_DIR)/ndarray.c
 SRC_USERMOD += $(USERMODULES_DIR)/numpy/ndarray/ndarray_iter.c
 SRC_USERMOD += $(USERMODULES_DIR)/ndarray_properties.c
 SRC_USERMOD += $(USERMODULES_DIR)/numpy/approx.c
+SRC_USERMOD += $(USERMODULES_DIR)/numpy/bitwise.c
 SRC_USERMOD += $(USERMODULES_DIR)/numpy/compare.c
 SRC_USERMOD += $(USERMODULES_DIR)/numpy/carray/carray.c
 SRC_USERMOD += $(USERMODULES_DIR)/numpy/carray/carray_tools.c
@@ -24,6 +26,7 @@ SRC_USERMOD += $(USERMODULES_DIR)/numpy/linalg/linalg.c
 SRC_USERMOD += $(USERMODULES_DIR)/numpy/linalg/linalg_tools.c
 SRC_USERMOD += $(USERMODULES_DIR)/numpy/numerical.c
 SRC_USERMOD += $(USERMODULES_DIR)/numpy/poly.c
+SRC_USERMOD += $(USERMODULES_DIR)/numpy/random/random.c
 SRC_USERMOD += $(USERMODULES_DIR)/numpy/stats.c
 SRC_USERMOD += $(USERMODULES_DIR)/numpy/transform.c
 SRC_USERMOD += $(USERMODULES_DIR)/numpy/vector.c

@@ -5,7 +5,7 @@
  *
  * The MIT License (MIT)
  *
- * Copyright (c) 2019-2021 Zoltán Vörös
+ * Copyright (c) 2019-2024 Zoltán Vörös
  *               2020 Scott Shawcroft for Adafruit Industries
  *               2020 Taku Fukada
 */
@@ -43,16 +43,16 @@
 //|
 #if ULAB_SUPPORTS_COMPLEX & ULAB_FFT_IS_NUMPY_COMPATIBLE
 static mp_obj_t fft_fft(mp_obj_t arg) {
-    return fft_fft_ifft_spectrogram(arg, FFT_FFT);
+    return fft_fft_ifft(arg, FFT_FFT);
 }
 
 MP_DEFINE_CONST_FUN_OBJ_1(fft_fft_obj, fft_fft);
 #else
 static mp_obj_t fft_fft(size_t n_args, const mp_obj_t *args) {
     if(n_args == 2) {
-        return fft_fft_ifft_spectrogram(n_args, args[0], args[1], FFT_FFT);
+        return fft_fft_ifft(n_args, args[0], args[1], FFT_FFT);
     } else {
-        return fft_fft_ifft_spectrogram(n_args, args[0], mp_const_none, FFT_FFT);
+        return fft_fft_ifft(n_args, args[0], mp_const_none, FFT_FFT);
     }
 }
 
@@ -71,7 +71,7 @@ MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(fft_fft_obj, 1, 2, fft_fft);
 
 #if ULAB_SUPPORTS_COMPLEX & ULAB_FFT_IS_NUMPY_COMPATIBLE
 static mp_obj_t fft_ifft(mp_obj_t arg) {
-    return fft_fft_ifft_spectrogram(arg, FFT_IFFT);
+    return fft_fft_ifft(arg, FFT_IFFT);
 }
 
 MP_DEFINE_CONST_FUN_OBJ_1(fft_ifft_obj, fft_ifft);
@@ -79,24 +79,27 @@ MP_DEFINE_CONST_FUN_OBJ_1(fft_ifft_obj, fft_ifft);
 static mp_obj_t fft_ifft(size_t n_args, const mp_obj_t *args) {
     NOT_IMPLEMENTED_FOR_COMPLEX()
     if(n_args == 2) {
-        return fft_fft_ifft_spectrogram(n_args, args[0], args[1], FFT_IFFT);
+        return fft_fft_ifft(n_args, args[0], args[1], FFT_IFFT);
     } else {
-        return fft_fft_ifft_spectrogram(n_args, args[0], mp_const_none, FFT_IFFT);
+        return fft_fft_ifft(n_args, args[0], mp_const_none, FFT_IFFT);
     }
 }
 
 MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(fft_ifft_obj, 1, 2, fft_ifft);
 #endif
 
-STATIC const mp_rom_map_elem_t ulab_fft_globals_table[] = {
-    { MP_OBJ_NEW_QSTR(MP_QSTR___name__), MP_OBJ_NEW_QSTR(MP_QSTR_fft) },
-    { MP_OBJ_NEW_QSTR(MP_QSTR_fft), (mp_obj_t)&fft_fft_obj },
-    { MP_OBJ_NEW_QSTR(MP_QSTR_ifft), (mp_obj_t)&fft_ifft_obj },
+static const mp_rom_map_elem_t ulab_fft_globals_table[] = {
+    { MP_ROM_QSTR(MP_QSTR___name__), MP_ROM_QSTR(MP_QSTR_fft) },
+    { MP_ROM_QSTR(MP_QSTR_fft), MP_ROM_PTR(&fft_fft_obj) },
+    { MP_ROM_QSTR(MP_QSTR_ifft), MP_ROM_PTR(&fft_ifft_obj) },
 };
 
-STATIC MP_DEFINE_CONST_DICT(mp_module_ulab_fft_globals, ulab_fft_globals_table);
+static MP_DEFINE_CONST_DICT(mp_module_ulab_fft_globals, ulab_fft_globals_table);
 
-mp_obj_module_t ulab_fft_module = {
+const mp_obj_module_t ulab_fft_module = {
     .base = { &mp_type_module },
     .globals = (mp_obj_dict_t*)&mp_module_ulab_fft_globals,
 };
+#if CIRCUITPY_ULAB
+MP_REGISTER_MODULE(MP_QSTR_ulab_dot_numpy_dot_fft, ulab_fft_module);
+#endif

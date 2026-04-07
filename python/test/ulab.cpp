@@ -47,6 +47,40 @@ QUIZ_CASE(python_ulab) {
   assert_command_execution_fails(env, "spy.special.gamma(1, 2)");
   assert_command_execution_succeeds(env, "spy.special.gammaln(1)");
   assert_command_execution_fails(env, "spy.special.gammaln(1, 2)");
+
+
+  // AI generated tests for more coverage: (edited by hand for correctness)
+  assert_command_execution_succeeds(env, "a = np.array([[1, 2], [3, 4]])");
+  assert_command_execution_succeeds(env, "a.ndim");
+  assert_command_execution_succeeds(env, "np.sum(a, keepdims=True)");
+  assert_command_execution_succeeds(env, "np.take(np.array([1,2,3]), [0,2])");
+  assert_command_execution_fails(env, "np.take(np.array([1,2,3]), [5])");
+  assert_command_execution_succeeds(env, "np.bincount(np.array([0,1,1,2], dtype=np.uint16), minlength=4)");
+  assert_command_execution_fails(env, "np.bincount(np.array([0,-1,1]))");
+  assert_command_execution_succeeds(env, "np.nonzero(np.array([0,1,0,2]))");
+  assert_command_execution_succeeds(env, "np.meshgrid(np.array([1,2]), np.array([3,4]))");
+  assert_command_execution_succeeds(env, "np.sinc(0)");
+  assert_command_execution_succeeds(env, "np.sinc(np.array([0,1,2]))");
+  assert_command_execution_succeeds(env, "np.bitwise_and(np.array([1,2], dtype=np.uint16), np.array([3,4], dtype=np.uint16))");
+  assert_command_execution_succeeds(env, "np.bitwise_or(np.array([1,2], dtype=np.uint16), np.array([3,4], dtype=np.uint16))");
+  assert_command_execution_succeeds(env, "np.bitwise_xor(np.array([1,2], dtype=np.uint16), np.array([3,4], dtype=np.uint16))");
+  assert_command_execution_succeeds(env, "np.left_shift(np.array([1,2], dtype=np.uint16), 1)");
+  assert_command_execution_succeeds(env, "np.right_shift(np.array([2,4], dtype=np.uint16), 1)");
+  assert_command_execution_succeeds(env, "np.random.Generator(None).random()");
+  assert_command_execution_succeeds(env, "np.random.Generator(None).normal()");
+  assert_command_execution_succeeds(env, "np.random.Generator(None).uniform(0, 1)");
+  assert_command_execution_succeeds(env, "spy.integrate.tanhsinh(lambda x: x, 0, 1)");
+  assert_command_execution_succeeds(env, "spy.integrate.romberg(lambda x: x, 0, 1)");
+  assert_command_execution_succeeds(env, "spy.integrate.simpson(lambda x: x**2 + 2*x + 1, 0, 5)");
+  assert_command_execution_succeeds(env, "spy.integrate.quad(lambda x: x, 0, 1)");
+  assert_command_execution_fails(env, "spy.integrate.quad(lambda x: x, 0)");
+  assert_command_execution_fails(env, "spy.integrate.simpson(1)");
+  assert_command_execution_succeeds(env, "np.sum(np.array([1,2,3]), axis=0)");
+  assert_command_execution_succeeds(env, "np.mean(np.array([[1,2],[3,4]]), axis=1)");
+  assert_command_execution_succeeds(env, "np.polyfit(np.array([1,2,3]), np.array([1,2,3]), 1)");
+  assert_command_execution_succeeds(env, "np.sum(np.array([1,2,3]), keepdims=5)");
+  assert_command_execution_fails(env, "np.mean(np.array([1,2,3]), axis=5)");
+
   deinit_environment();
 }
 
