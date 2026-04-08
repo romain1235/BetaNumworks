@@ -6,9 +6,7 @@
 
 namespace Ion {
 
-// Declaration for N0110 with bootloader is in ion/src/device/bootloader/drivers/storage.cpp
-// to fix LD build
-__attribute__((weak)) uint32_t staticStorageArea[sizeof(Storage)/sizeof(uint32_t)] = {0};
+uint32_t __attribute__((section(".static_storage"))) staticStorageArea[sizeof(Storage)/sizeof(uint32_t)] = {0};
 
 Storage * Storage::sharedStorage() {
   static Storage * storage = new (staticStorageArea) Storage();
