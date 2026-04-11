@@ -22,7 +22,7 @@ void Bootloader::Recovery::crash_handler(const char *error) {
   Ion::Backlight::init();
   Ion::Backlight::setBrightness(180);
 
-  Ion::Display::pushRectUniform(KDRect(0,0,320,240), KDColorWhite);
+  Ion::Display::pushRectUniform(KDRect(0,0,320,240), KDColorBlack);
   CrashMenu menu(error);
   menu.open(true);
 }
@@ -75,7 +75,7 @@ Bootloader::Recovery::CrashedSlot Bootloader::Recovery::getSlotConcerned() {
 
 void Bootloader::Recovery::recoverData() {
   Ion::Device::Board::initPeripherals(false);
-  Ion::Display::pushRectUniform(KDRect(0,0,320,240), KDColorWhite);
+  Ion::Display::pushRectUniform(KDRect(0,0,320,240), KDColorBlack);
   Ion::Backlight::init();
 
   CrashedSlot slot = getSlotConcerned();

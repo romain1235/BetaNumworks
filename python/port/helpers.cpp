@@ -69,3 +69,25 @@ bool micropython_port_interrupt_if_needed() {
 int micropython_port_random() {
   return Ion::random();
 }
+
+// Keep saved LED state for the duration of a Micropython script execution.
+static bool s_micropython_led_saved = false;
+static KDColor s_micropython_led_saved_color = KDColor::RGB888(0,0,0);
+
+void micropython_port_save_led_state() {
+  if (!s_micropython_led_saved) {
+    s_micropython_led_saved_color = Ion::LED::getColor();
+    s_micropython_led_saved = true;
+  }
+}
+
+void micropython_port_restore_led_state() {
+  if (s_micropython_led_saved) {
+    Ion::LED::setColor(s_micropython_led_saved_color);
+    s_micropython_led_saved = false;
+  } else {
+    // No saved state: default to off
+    Ion::LED::setColor(KDColor::RGB888(0,0,0));
+  }
+}
+

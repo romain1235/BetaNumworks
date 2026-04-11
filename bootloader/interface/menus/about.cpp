@@ -1,7 +1,7 @@
 #include "about.h"
 #include <bootloader/interface/static/messages.h>
 
-Bootloader::AboutMenu::AboutMenu() : Menu(KDColorBlack, KDColorWhite, Messages::aboutMenuTitle, Messages::bootloaderVersion) {
+Bootloader::AboutMenu::AboutMenu() : Menu(KDColorWhite, KDColorBlack, Messages::aboutMenuTitle, Messages::bootloaderVersion) {
   setup();
 }
 

@@ -340,6 +340,41 @@ void AppsContainer::run() {
   }
   refreshPreferences();
 
+  // Process any pending renames created by apps/files while avoiding modal/UI races.
+  // Pending rename records have extension "rnm" and store: oldFullName\0newFullName\0
+  {
+    const char * pendExt = "rnm";
+    int pendingCount = Ion::Storage::sharedStorage()->numberOfRecordsWithExtension(pendExt);
+    while (pendingCount > 0) {
+      Ion::Storage::Record pending = Ion::Storage::sharedStorage()->recordWithExtensionAtIndex(pendExt, 0);
+      if (pending.isNull()) break;
+      Ion::Storage::Record::Data data = pending.value();
+      const char * buf = (const char *)data.buffer;
+      size_t size = data.size;
+      // parse two NUL-terminated strings
+      const char * oldName = buf;
+      const char * newName = nullptr;
+      for (size_t i = 0; i + 1 < size; i++) {
+        if (buf[i] == '\0' && i + 1 < size) {
+          newName = buf + i + 1;
+          break;
+        }
+      }
+      if (newName != nullptr) {
+        Ion::Storage::Record target = Ion::Storage::sharedStorage()->recordNamed(oldName);
+        if (!target.isNull()) {
+          Ion::Storage::Record::ErrorStatus err = target.setName(newName);
+          if (err != Ion::Storage::Record::ErrorStatus::None) {
+            // ignore errors for now
+          }
+        }
+      }
+      // remove pending record
+      pending.destroy();
+      pendingCount = Ion::Storage::sharedStorage()->numberOfRecordsWithExtension(pendExt);
+    }
+  }
+
   /* ExceptionCheckpoint stores the value of the stack pointer when setjump is
    * called. During a longjump, the stack pointer is set to this stored stack
    * pointer value, so the method where we call setjump must remain in the call

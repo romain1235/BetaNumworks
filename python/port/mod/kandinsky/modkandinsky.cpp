@@ -5,6 +5,7 @@ extern "C" {
 #include <escher/palette.h>
 #include <kandinsky.h>
 #include <ion.h>
+#include <apps/apps_container.h>
 #include "port.h"
 #include <py/obj.h>
 
@@ -16,6 +17,11 @@ static mp_obj_t TupleForKDColor(KDColor c) {
   t->items[2] = MP_OBJ_NEW_SMALL_INT(c.blue());
   return MP_OBJ_FROM_PTR(t);
 }
+
+// Fullscreen flag: when true, kandinsky drawing primitives use the full
+// display area (0,0,Width,Height) as clipping/origin.
+static bool s_kandinsky_fullscreen = false;
+
 
 /* KDIonContext::sharedContext needs to be set to the wanted Rect before
  * calling kandinsky_get_pixel, kandinsky_set_pixel and kandinsky_draw_string.
@@ -45,15 +51,71 @@ mp_obj_t modkandinsky_color(size_t n_args, const mp_obj_t *args) {
 mp_obj_t modkandinsky_get_pixel(mp_obj_t x, mp_obj_t y) {
   KDPoint point(mp_obj_get_int(x), mp_obj_get_int(y));
   KDColor c;
-  KDIonContext::sharedContext()->getPixel(point, &c);
+  KDContext * ctx = KDIonContext::sharedContext();
+  KDPoint oldOrigin = ctx->origin();
+  KDRect oldClipping = ctx->clippingRect();
+  if (s_kandinsky_fullscreen) {
+    ctx->setOrigin(KDPoint(0, 0));
+    ctx->setClippingRect(KDRect(0, 0, Ion::Display::Width, Ion::Display::Height));
+  }
+  ctx->getPixel(point, &c);
+  ctx->setOrigin(oldOrigin);
+  ctx->setClippingRect(oldClipping);
   return TupleForKDColor(c);
+}
+
+mp_obj_t modkandinsky_get_pixels(size_t n_args, const mp_obj_t *args) {
+  if (n_args != 4) {
+    mp_raise_TypeError("get_pixels expects 4 arguments: x,y,w,h");
+  }
+  int x = mp_obj_get_int(args[0]);
+  int y = mp_obj_get_int(args[1]);
+  int w = mp_obj_get_int(args[2]);
+  int h = mp_obj_get_int(args[3]);
+  if (w <= 0 || h <= 0) {
+    mp_raise_ValueError("width and height must be > 0");
+  }
+  KDRect rect(x, y, w, h);
+  KDColor * buf = static_cast<KDColor *>(m_malloc((size_t)w * (size_t)h * sizeof(KDColor)));
+  if (!buf) mp_raise_msg(&mp_type_MemoryError, "not enough memory for pixels");
+  KDContext * ctx = KDIonContext::sharedContext();
+  KDPoint oldOrigin = ctx->origin();
+  KDRect oldClipping = ctx->clippingRect();
+  if (s_kandinsky_fullscreen) {
+    ctx->setOrigin(KDPoint(0, 0));
+    ctx->setClippingRect(KDRect(0, 0, Ion::Display::Width, Ion::Display::Height));
+  }
+  ctx->getPixels(rect, buf);
+  ctx->setOrigin(oldOrigin);
+  ctx->setClippingRect(oldClipping);
+
+  mp_obj_t outer = mp_obj_new_list(0, NULL);
+  for (int j = 0; j < h; j++) {
+    mp_obj_t row = mp_obj_new_list(0, NULL);
+    for (int i = 0; i < w; i++) {
+      mp_obj_t t = TupleForKDColor(buf[j * w + i]);
+      mp_obj_list_append(row, t);
+    }
+    mp_obj_list_append(outer, row);
+  }
+  m_free(buf);
+  return outer;
 }
 
 mp_obj_t modkandinsky_set_pixel(mp_obj_t x, mp_obj_t y, mp_obj_t input) {
   KDPoint point(mp_obj_get_int(x), mp_obj_get_int(y));
   KDColor kdColor = MicroPython::Color::Parse(input);
   MicroPython::ExecutionEnvironment::currentExecutionEnvironment()->displaySandbox();
-  KDIonContext::sharedContext()->setPixel(point, kdColor);
+  KDContext * ctx = KDIonContext::sharedContext();
+  KDPoint oldOrigin = ctx->origin();
+  KDRect oldClipping = ctx->clippingRect();
+  if (s_kandinsky_fullscreen) {
+    ctx->setOrigin(KDPoint(0, 0));
+    ctx->setClippingRect(KDRect(0, 0, Ion::Display::Width, Ion::Display::Height));
+  }
+  ctx->setPixel(point, kdColor);
+  ctx->setOrigin(oldOrigin);
+  ctx->setClippingRect(oldClipping);
   return mp_const_none;
 }
 
@@ -75,7 +137,16 @@ mp_obj_t modkandinsky_draw_string(size_t n_args, const mp_obj_t * args) {
     font = KDFont::ItalicSmallFont;
   }
   MicroPython::ExecutionEnvironment::currentExecutionEnvironment()->displaySandbox();
-  KDIonContext::sharedContext()->drawString(text, point, font, textColor, backgroundColor);
+  KDContext * ctx = KDIonContext::sharedContext();
+  KDPoint oldOrigin = ctx->origin();
+  KDRect oldClipping = ctx->clippingRect();
+  if (s_kandinsky_fullscreen) {
+    ctx->setOrigin(KDPoint(0, 0));
+    ctx->setClippingRect(KDRect(0, 0, Ion::Display::Width, Ion::Display::Height));
+  }
+  ctx->drawString(text, point, font, textColor, backgroundColor);
+  ctx->setOrigin(oldOrigin);
+  ctx->setClippingRect(oldClipping);
   return mp_const_none;
 }
 
@@ -88,7 +159,16 @@ mp_obj_t modkandinsky_draw_line(size_t n_args, const mp_obj_t * args) {
   KDPoint p2 = KDPoint(x2, y2);
   KDColor color = MicroPython::Color::Parse(args[4]);
   MicroPython::ExecutionEnvironment::currentExecutionEnvironment()->displaySandbox();
-  KDIonContext::sharedContext()->drawLine(p1, p2, color);
+  KDContext * ctx = KDIonContext::sharedContext();
+  KDPoint oldOrigin = ctx->origin();
+  KDRect oldClipping = ctx->clippingRect();
+  if (s_kandinsky_fullscreen) {
+    ctx->setOrigin(KDPoint(0, 0));
+    ctx->setClippingRect(KDRect(0, 0, Ion::Display::Width, Ion::Display::Height));
+  }
+  ctx->drawLine(p1, p2, color);
+  ctx->setOrigin(oldOrigin);
+  ctx->setClippingRect(oldClipping);
   return mp_const_none;
 }
 
@@ -103,7 +183,16 @@ mp_obj_t modkandinsky_draw_circle(size_t n_args, const mp_obj_t * args) {
   KDPoint center = KDPoint(cx, cy);
   KDColor color = MicroPython::Color::Parse(args[3]);
   MicroPython::ExecutionEnvironment::currentExecutionEnvironment()->displaySandbox();
-  KDIonContext::sharedContext()->drawCircle(center, r, color);
+  KDContext * ctx = KDIonContext::sharedContext();
+  KDPoint oldOrigin = ctx->origin();
+  KDRect oldClipping = ctx->clippingRect();
+  if (s_kandinsky_fullscreen) {
+    ctx->setOrigin(KDPoint(0, 0));
+    ctx->setClippingRect(KDRect(0, 0, Ion::Display::Width, Ion::Display::Height));
+  }
+  ctx->drawCircle(center, r, color);
+  ctx->setOrigin(oldOrigin);
+  ctx->setClippingRect(oldClipping);
   return mp_const_none;
 }
 
@@ -123,7 +212,16 @@ mp_obj_t modkandinsky_fill_rect(size_t n_args, const mp_obj_t * args) {
   KDRect rect(x, y, width, height);
   KDColor color = MicroPython::Color::Parse(args[4]);
   MicroPython::ExecutionEnvironment::currentExecutionEnvironment()->displaySandbox();
-  KDIonContext::sharedContext()->fillRect(rect, color);
+  KDContext * ctx = KDIonContext::sharedContext();
+  KDPoint oldOrigin = ctx->origin();
+  KDRect oldClipping = ctx->clippingRect();
+  if (s_kandinsky_fullscreen) {
+    ctx->setOrigin(KDPoint(0, 0));
+    ctx->setClippingRect(KDRect(0, 0, Ion::Display::Width, Ion::Display::Height));
+  }
+  ctx->fillRect(rect, color);
+  ctx->setOrigin(oldOrigin);
+  ctx->setClippingRect(oldClipping);
   return mp_const_none;
 }
 
@@ -138,7 +236,16 @@ mp_obj_t modkandinsky_fill_circle(size_t n_args, const mp_obj_t * args) {
   KDPoint center = KDPoint(cx, cy);
   KDColor color = MicroPython::Color::Parse(args[3]);
   MicroPython::ExecutionEnvironment::currentExecutionEnvironment()->displaySandbox();
-  KDIonContext::sharedContext()->fillCircle(center, r, color);
+  KDContext * ctx = KDIonContext::sharedContext();
+  KDPoint oldOrigin = ctx->origin();
+  KDRect oldClipping = ctx->clippingRect();
+  if (s_kandinsky_fullscreen) {
+    ctx->setOrigin(KDPoint(0, 0));
+    ctx->setClippingRect(KDRect(0, 0, Ion::Display::Width, Ion::Display::Height));
+  }
+  ctx->fillCircle(center, r, color);
+  ctx->setOrigin(oldOrigin);
+  ctx->setClippingRect(oldClipping);
   return mp_const_none;
 }
 
@@ -165,7 +272,16 @@ mp_obj_t modkandinsky_fill_polygon(size_t n_args, const mp_obj_t * args) {
 
   KDColor color = MicroPython::Color::Parse(args[1]);
   MicroPython::ExecutionEnvironment::currentExecutionEnvironment()->displaySandbox();
-  KDIonContext::sharedContext()->fillPolygon(pointsX, pointsY, itemLength, color);
+  KDContext * ctx = KDIonContext::sharedContext();
+  KDPoint oldOrigin = ctx->origin();
+  KDRect oldClipping = ctx->clippingRect();
+  if (s_kandinsky_fullscreen) {
+    ctx->setOrigin(KDPoint(0, 0));
+    ctx->setClippingRect(KDRect(0, 0, Ion::Display::Width, Ion::Display::Height));
+  }
+  ctx->fillPolygon(pointsX, pointsY, itemLength, color);
+  ctx->setOrigin(oldOrigin);
+  ctx->setClippingRect(oldClipping);
   return mp_const_none;
 } 
 
@@ -173,6 +289,35 @@ mp_obj_t modkandinsky_wait_vblank() {
   micropython_port_interrupt_if_needed();
   Ion::Display::waitForVBlank();
   return mp_const_none;
+}
+
+mp_obj_t modkandinsky_set_fullscreen(mp_obj_t enable_obj) {
+  bool enable = mp_obj_is_true(enable_obj);
+  s_kandinsky_fullscreen = enable;
+  if (!enable) {
+    AppsContainer::sharedAppsContainer()->redrawWindow(true);
+  }
+  return mp_const_none;
+}
+
+mp_obj_t modkandinsky_get_fullscreen() {
+  return s_kandinsky_fullscreen ? mp_const_true : mp_const_false;
+}
+
+extern "C" bool modkandinsky_is_fullscreen(void) {
+  return s_kandinsky_fullscreen;
+}
+
+void modkandinsky_reset_fullscreen(void) {
+  if (s_kandinsky_fullscreen) {
+    s_kandinsky_fullscreen = false;
+    AppsContainer::sharedAppsContainer()->redrawWindow(true);
+  }
+}
+
+void modkandinsky_view_did_disappear(void) {
+  // When the Kandinsky display is closed, ensure fullscreen is cleared
+  modkandinsky_reset_fullscreen();
 }
 
 mp_obj_t modkandinsky_get_palette() {
@@ -185,3 +330,4 @@ mp_obj_t modkandinsky_get_palette() {
 
   return modkandinsky_palette_table;
 }
+

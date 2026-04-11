@@ -7,30 +7,34 @@
   <a href="https://discord.gg/sbGvhWETAd"><img alt="Discord" src="https://img.shields.io/discord/663420259851567114?color=blue&labelColor=292929&label=chat%20-%20discord&logo=discord&style=for-the-badge" /></a>
 </p>
 
-> Don't understand French ? Speak English ? here's the [english README](./README.md) !
+> Ne comprenez pas le français ? See the English version: [README.md](./README.md)
 
 ## À propos
 
-Upsilon est un fork d'Omega, un fork d'Epsilon, l'OS de NumWorks tournant sur les calculatrices du même nom, qui apporte beaucoup de fonctionnalités en plus, mais qui fut archivé et fermé pour des raisons légales après un changement de politique de NumWorks. Upsilon est fait pour ceux qui aimeraient voir un futur pour les OS créés par les utilisateurs pour NumWorks, même après l'arrêt du projet initial.
+Beta est un fork d'Upsilon (lui-même dérivé d'Omega et d'Epsilon). Beta ajoute de nombreuses fonctionnalités expérimentales et encore peu testées.
 
-### Quelques fonctionnalités supplémentaires
-
-- Un module Python Kandinsky amélioré
-- Un support pour fonds d'écrans personnalisés
-- Des applications externes
-- Un thème Upsilon
-- La surcharge des opérateurs en Python
-- Un tableau périodique légèrement amélioré
-- L'utilisation possible du signe "=" dans les calculs
-- *Ainsi que tout ce qui a été ajouté sur Omega, et bien plus...* [Changelogs complets d'Omega](https://github.com/Omega-Numworks/Omega/wiki/Changelog) | [Fonctionnalités principales d'Omega & captures d'écran](https://github.com/Omega-Numworks/Omega/wiki/Main-features).
+### Principales fonctionnalités supplémentaires
+- Python :
+  - Kandinsky :
+    - Framebuffer configurable (formats rgb222, rgb332, rgb565 et palettes à n bits)
+    - Fonctions d'affichage de Kandinsky
+    - `set_fullscreen(bool)`, `get_pixels(x,y,w,h)`, `wait_vblank()`
+  - Ion :
+    - LED (désactiver en mode examen)
+  - Nouveau module `console` : `print_color(text, (r,g,b))`, `print_color_list([(text,(r,g,b)), ...])`
+  - Correction d'un bug de `matplotlib` qui affichait un fond blanc quel que soit le thème
+- Améliorations de l'application `atomic`
+- Améliorations du parseur pour suivre le comportement d'Epsilon
+- Nouvelle application `files`
+- Bootloader en thème sombre
+- Affichage du pourcentage de batterie dans la barre d'outils et réorganisation de celle-ci
+- Nouveau thème `beta_dark`
 
 ## Installation
 
 ### Site web
 
-Rendez-vous sur le [site d'Upsilon](https://getupsilon.web.app/) à la section "Installer".
-Si votre calculatrice est reconnue, qu'elle contient une version d'Epsilon inférieure à 16 et que votre navigateur accepte WebUSB, la page vous proposera d'installer Upsilon.
-Ne débranchez votre calculatrice qu'une fois l'installation terminée.
+Beta n'a pas encore de site web.
 
 ### Manuelle
 

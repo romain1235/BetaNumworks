@@ -58,7 +58,7 @@ private:
   static_assert(I18n::NumberOfCountries > 0, "I18n::NumberOfCountries is not superior to 0"); // There should already have been an error when processing an empty EPSILON_COUNTRIES flag
   GlobalPreferences() :
     m_language((I18n::Language)0),
-    m_country((I18n::Country)0),
+    m_country(I18n::Country::FR),
     m_examMode(ExamMode::Unknown),
     m_tempExamMode(ExamMode::Standard),
     m_showPopUp(true),
@@ -72,7 +72,7 @@ private:
     m_brightnessShortcut(4),
     m_externalAppWritePermission(false),
     m_externalAppShown(true),
-    m_font(KDFont::LargeFont) {}
+    m_font(KDFont::SmallFont) {}
   I18n::Language m_language;
   I18n::Country m_country;
   static_assert((int8_t)GlobalPreferences::ExamMode::Off == 0, "GlobalPreferences::isInExamMode() is not right");

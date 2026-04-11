@@ -1,6 +1,6 @@
 #include "crash.h"
 
-Bootloader::CrashMenu::CrashMenu(const char * err) : Menu(KDColorBlack, KDColorWhite, Bootloader::Messages::bootloaderCrashTitle, Bootloader::Messages::mainTitle), m_error(err) {
+Bootloader::CrashMenu::CrashMenu(const char * err) : Menu(KDColorWhite, KDColorBlack, Bootloader::Messages::bootloaderCrashTitle, Bootloader::Messages::mainTitle), m_error(err) {
   setup();
 }
 

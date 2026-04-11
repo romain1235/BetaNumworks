@@ -2,6 +2,7 @@
 
 STATIC MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(modkandinsky_color_obj, 1, 3, modkandinsky_color);
 STATIC MP_DEFINE_CONST_FUN_OBJ_2(modkandinsky_get_pixel_obj, modkandinsky_get_pixel);
+STATIC MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(modkandinsky_get_pixels_obj, 4, 4, modkandinsky_get_pixels);
 STATIC MP_DEFINE_CONST_FUN_OBJ_3(modkandinsky_set_pixel_obj, modkandinsky_set_pixel);
 STATIC MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(modkandinsky_draw_string_obj, 3, 7, modkandinsky_draw_string);
 STATIC MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(modkandinsky_draw_line_obj, 5, 5, modkandinsky_draw_line);
@@ -11,11 +12,14 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(modkandinsky_fill_circle_obj, 4, 4, m
 STATIC MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(modkandinsky_fill_polygon_obj, 2, 2, modkandinsky_fill_polygon);
 STATIC MP_DEFINE_CONST_FUN_OBJ_0(modkandinsky_wait_vblank_obj, modkandinsky_wait_vblank);
 STATIC MP_DEFINE_CONST_FUN_OBJ_0(modkandinsky_get_palette_obj, modkandinsky_get_palette);
+STATIC MP_DEFINE_CONST_FUN_OBJ_1(modkandinsky_set_fullscreen_obj, modkandinsky_set_fullscreen);
+STATIC MP_DEFINE_CONST_FUN_OBJ_0(modkandinsky_get_fullscreen_obj, modkandinsky_get_fullscreen);
 
 STATIC const mp_rom_map_elem_t modkandinsky_module_globals_table[] = {
   { MP_ROM_QSTR(MP_QSTR___name__), MP_ROM_QSTR(MP_QSTR_kandinsky) },
   { MP_ROM_QSTR(MP_QSTR_color), (mp_obj_t)&modkandinsky_color_obj },
   { MP_ROM_QSTR(MP_QSTR_get_pixel), (mp_obj_t)&modkandinsky_get_pixel_obj },
+  { MP_ROM_QSTR(MP_QSTR_get_pixels), (mp_obj_t)&modkandinsky_get_pixels_obj },
   { MP_ROM_QSTR(MP_QSTR_set_pixel), (mp_obj_t)&modkandinsky_set_pixel_obj },
   { MP_ROM_QSTR(MP_QSTR_draw_string), (mp_obj_t)&modkandinsky_draw_string_obj },
   { MP_ROM_QSTR(MP_QSTR_draw_line), (mp_obj_t)&modkandinsky_draw_line_obj },
@@ -27,6 +31,9 @@ STATIC const mp_rom_map_elem_t modkandinsky_module_globals_table[] = {
   { MP_ROM_QSTR(MP_QSTR_small_font), mp_const_true },
   { MP_ROM_QSTR(MP_QSTR_wait_vblank), (mp_obj_t)&modkandinsky_wait_vblank_obj },
   { MP_ROM_QSTR(MP_QSTR_get_palette), (mp_obj_t)&modkandinsky_get_palette_obj },
+  { MP_ROM_QSTR(MP_QSTR_set_fullscreen), (mp_obj_t)&modkandinsky_set_fullscreen_obj },
+  { MP_ROM_QSTR(MP_QSTR_get_fullscreen), (mp_obj_t)&modkandinsky_get_fullscreen_obj },
+  { MP_ROM_QSTR(MP_QSTR_framebuffer), (mp_obj_t)&kandinsky_framebuffer_type },
 };
 
 STATIC MP_DEFINE_CONST_DICT(modkandinsky_module_globals, modkandinsky_module_globals_table);

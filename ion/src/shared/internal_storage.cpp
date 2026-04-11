@@ -552,6 +552,9 @@ bool InternalStorage::FullNameCompliant(const char * fullName) {
 }
 
 bool InternalStorage::FullNameHasExtension(const char * fullName, const char * extension, size_t extensionLength) {
+  if (extensionLength == 0) {
+    return true;
+  }
   if (fullName == nullptr) {
     return false;
   }

@@ -214,3 +214,8 @@ void SelectableTableView::unhighlightSelectedCell() {
     }
   }
 }
+
+KDRect SelectableTableView::cellFrame(int row, int col) {
+  return TableView::m_contentView.cellFrame(row, col);
+}
+

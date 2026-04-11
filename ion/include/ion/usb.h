@@ -11,6 +11,7 @@ void clearEnumerationInterrupt();
 void DFU(bool exitWithKeyboard = true, void * data = nullptr);
 void enable();
 void disable();
+void EnterMSC(bool exitWithKeyboard = true, void * data = nullptr);
 
 }
 }

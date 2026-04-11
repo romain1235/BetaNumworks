@@ -377,6 +377,20 @@ bool extapp_inExamMode() {
   return GlobalPreferences::sharedGlobalPreferences()->isInExamMode();
 }
 
+const uint16_t * extapp_get_pallette(int * count) {
+  static const uint16_t palette[] = {
+    (uint16_t)Palette::PrimaryText,
+    (uint16_t)Palette::SecondaryText,
+    (uint16_t)Palette::AccentText,
+    (uint16_t)Palette::Toolbar,
+    (uint16_t)Palette::HomeBackground
+  };
+  if (count) {
+    *count = sizeof(palette)/sizeof(palette[0]);
+  }
+  return palette;
+}
+
 extern "C" void (* const apiPointers[])(void) = {
   (void (*)(void)) extapp_millis,
   (void (*)(void)) extapp_msleep,
@@ -402,5 +416,6 @@ extern "C" void (* const apiPointers[])(void) = {
   (void (*)(void)) extapp_eraseSector,
   (void (*)(void)) extapp_writeMemory,
   (void (*)(void)) extapp_inExamMode,
+  (void (*)(void)) extapp_get_pallette,
   (void (*)(void)) nullptr,
 };

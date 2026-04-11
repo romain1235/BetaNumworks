@@ -1,0 +1,34 @@
+%b%Tutoriel 4 — Créer des menus et sous-menus avec Escher%\b%
+
+%g%Objectif:%\g% Expliquer en détail la création de menus, navigation entre menus, et sous-menus dynamiques.
+
+%pp%1) Pattern Menu de base%\pp%
+
+- Utilisez `SelectableTableViewController`/`SimpleTableViewController` ou une liste `MessageTableCell` pour créer un menu vertical.
+- Chaque cellule représente une entrée de menu.
+
+%c%// Schéma simple:
+class MainMenuController : public ViewController, public TableViewDataSource, public TableViewDelegate {
+  // implémentation de numberOfRows, reusableCell, willDisplayCellForIndex, handleEvent
+};%\c%
+
+%pp%2) Pousser un sous-menu%\pp%
+
+- Dans `handleEvent`, détectez `OK`/`EXE` et faites `static_cast<StackViewController*>(parentResponder())->push(&m_subMenuController);`
+- Configurez le sous-menu comme un `ViewController` autonome.
+
+%pp%3) Sous-menus dynamiques et callbacks%\pp%
+
+- Vous pouvez construire les lignes à la volée depuis une structure `std::vector`.
+- Pour actions, utilisez des callbacks (lambda) stockées dans un tableau parallèlement aux labels.
+
+%c%// Exemple simplifié d'une entrée de menu avec callback:
+struct MenuEntry { const char * title; std::function<void()> action; };
+
+std::vector<MenuEntry> entries;
+entries.push_back({"Option 1", [&](){ /* faire quelque chose */ }});
+%\c%
+
+%gl%Conseil UI%\gl% : Respectez les guidelines d'UX d'Upsilon : taille de police, marges (Metric::StoreRowHeight), et utilisation de `HighlightCell`.
+
+%br%Exemple pas-à-pas%\br% : Créez `MainMenuController`, ajoutez 3 entrées, testez la navigation et les callbacks. Le tutoriel final montrera un exemple complet.

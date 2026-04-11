@@ -14,7 +14,7 @@ Bootloader::InstallerMenu * Bootloader::HomeMenu::installerMenu() {
   return installerMenu;
 }
 
-Bootloader::HomeMenu::HomeMenu() : Menu(KDColorBlack, KDColorWhite, Messages::homeTitle, Messages::mainTitle) {
+Bootloader::HomeMenu::HomeMenu() : Menu(KDColorWhite, KDColorBlack, Messages::homeTitle, Messages::mainTitle) {
   setup();
 }
 

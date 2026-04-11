@@ -8,6 +8,10 @@ extern "C" {
 #include "apps/global_preferences.h"
 #include "port.h"
 
+#include <ion/led.h>
+#include <kandinsky/color.h>
+#include <ion/exam_mode.h>
+
 mp_obj_t modion_keyboard_keydown(mp_obj_t key_o) {
   Ion::Keyboard::Key key = static_cast<Ion::Keyboard::Key>(mp_obj_get_int(key_o));
   Ion::Keyboard::State state = Ion::Keyboard::scan();
@@ -123,4 +127,41 @@ mp_obj_t modion_get_brightness(){
   uint8_t brightness = GlobalPreferences::sharedGlobalPreferences()->brightnessLevel();
   micropython_port_interrupt_if_needed();
   return mp_obj_new_int((int)brightness);
+}
+
+// --- LED CONTROL ---
+// led_on: set LED to white
+mp_obj_t modion_led_on() {
+  if (Ion::ExamMode::FetchExamMode() != 0) {
+    return mp_const_none;
+  }
+  Ion::LED::setColor(KDColor::RGB888(255,255,255));
+  return mp_const_none;
+}
+
+// led_off: set LED to black (off)
+mp_obj_t modion_led_off() {
+  if (Ion::ExamMode::FetchExamMode() != 0) {
+    return mp_const_none;
+  }
+  Ion::LED::setColor(KDColor::RGB888(0,0,0));
+  return mp_const_none;
+}
+
+// led_color(r,g,b): set LED to custom color
+mp_obj_t modion_led_color(size_t n_args, const mp_obj_t *args) {
+  if (n_args != 3) {
+    mp_raise_TypeError("led_color expects 3 arguments (r,g,b)");
+  }
+  int r = mp_obj_get_int(args[0]);
+  int g = mp_obj_get_int(args[1]);
+  int b = mp_obj_get_int(args[2]);
+  if (r < 0 || r > 255 || g < 0 || g > 255 || b < 0 || b > 255) {
+    mp_raise_ValueError("RGB values must be between 0 and 255");
+  }
+  if (Ion::ExamMode::FetchExamMode() != 0) {
+    return mp_const_none;
+  }
+  Ion::LED::setColor(KDColor::RGB888(r,g,b));
+  return mp_const_none;
 }

@@ -11,27 +11,33 @@
 
 ## About
 
-Upsilon is a fork of Omega, an user-made OS that runs on the NumWorks calculator, which brings many features to it, but was discontinued because of a policy change from NumWorks. Upsilon is for the people who want to see a future for user-made OSes for NumWorks, even after the closure and archiving of Omega.
+Beta is a fork of Upsilon (itself derived from Omega and Epsilon). Beta adds many experimental features and is still lightly tested.
 
-### Some new features
+### Key additional features
 
-- Enhancements for the Kandinsky python module
-- Support for wallpapers
-- External apps
-- A custom theme
-- Operator overload for python
-- Improvements for the Periodic table application
-- *And everything that has been added to Omega before its termination!* [See Omega's changelog here](https://github.com/Omega-Numworks/Omega/wiki/Changelog) | [Main Omega features + screenshots](https://github.com/Omega-Numworks/Omega/wiki/Main-features).
+- Python:
+  - Kandinsky:
+    - Configurable framebuffer (rgb222, rgb332, rgb565 and customizable n-bit palettes)
+    - Kandinsky display/drawing functions
+    - `set_fullscreen(bool)`, `get_pixels(x,y,w,h)`, `wait_vblank()`
+  - Ion:
+    - LED (disabled in exam mode)
+  - New `console` module: `print_color("text", (r,g,b))`, `print_color_list([("text", (r,g,b)), ...])`
+  - Fixed a matplotlib issue that forced a white background regardless of theme
+- Improvements to the `atomic` app
+- Parser improvements to match Epsilon behavior
+- New `files` app
+- Bootloader with a dark theme
+- Battery percentage shown in the toolbar and toolbar reorganization
+- New theme `beta_dark`
 
 <br>
 
 ## Installation
 
-### Installer
+### Website
 
-Go to the [Upsilon website](https://getupsilon.web.app/) to the "Install" section.
-If your calculator is recognized, contains a version of Epsilon lower than 16 and your browser accepts WebUSB, the page will suggest you to install Upsilon.
-Do not disconnect your calculator until the installation is complete.
+Beta does not yet have an official website.
 
 ### Manual
 

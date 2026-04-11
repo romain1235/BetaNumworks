@@ -21,8 +21,14 @@ protected:
       m_backgroundColor(backgroundColor)
     {
     }
-    void clearRect(KDContext * ctx, KDRect rect) const override;
-    void drawLine(KDContext * ctx, int line, const char * text, size_t length, int fromColumn, int toColumn) const override;
+    void clearRect(KDContext * ctx, KDRect rect) const override {
+      ctx->fillRect(rect, m_backgroundColor);
+    }
+    void drawLine(KDContext * ctx, int line, const char * text, size_t length, int fromColumn, int toColumn, const char * selectionStart, const char * selectionEnd) const override {
+      KDCoordinate glyphHeight = font()->glyphSize().height();
+      KDPoint origin = KDPoint(0, line * glyphHeight);
+      ctx->drawString(text, origin, font(), m_textColor, m_backgroundColor, length);
+    }
   private:
     KDColor m_textColor;
     KDColor m_backgroundColor;

@@ -1,16 +1,17 @@
 #include "plot_view.h"
 #include <algorithm>
+#include <escher/palette.h>
 
 namespace Matplotlib {
 
 void PlotView::drawRect(KDContext * ctx, KDRect rect) const {
-  ctx->fillRect(rect, KDColorWhite);
+  ctx->fillRect(rect, Palette::BackgroundApps);
 
   if (m_store->gridRequested()) {
     drawGrid(ctx, rect);
   }
 
-  // Draw labels below all figures because they're drawn on a white rectangle.
+  // Draw labels below all figures because they're drawn on a background rectangle.
   // TODO: we could blend them in the background by adding a parameter to drawLabelsAndGraduations.
   if (m_store->axesRequested()) {
     drawAxes(ctx, rect);

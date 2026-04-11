@@ -16,6 +16,9 @@ void Ion::USB::clearEnumerationInterrupt() {
 void Ion::USB::DFU(bool, void *) {
 }
 
+void Ion::USB::EnterMSC(bool, void *) {
+}
+
 void Ion::USB::enable() {
 }
 

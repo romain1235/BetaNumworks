@@ -1,0 +1,8 @@
+FilesApp = "Fájlok"
+FilesAppCapital = "FÁJLOK"
+FilesEmpty = "Nincsenek fájlok"
+Options = "Opciók"
+Delete = "Törlés"
+Rename = "Átnevezés"
+Display = "Megjelenítés"
+ConfirmDelete = "Fájl törlése?"

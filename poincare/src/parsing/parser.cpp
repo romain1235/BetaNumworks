@@ -469,15 +469,112 @@ void Parser::parseCustomIdentifier(Expression & leftHandSide, const char * name,
     return;
   }
   bool poppedParenthesisIsSystem = false;
-
   /* If m_symbolPlusParenthesesAreFunctions is false, check the context: if the
    * identifier does not already exist as a function, interpret it as a symbol,
-   * even if there are parentheses afterwards. */
+   * even if there are parentheses afterwards. We also handle the special case
+   * where the identifier is a concatenation of a symbol prefix and a reserved
+   * function name (e.g. "xcos"). In that case, when followed by parentheses,
+   * parse it as implicit multiplication: "x * cos(...)". */
 
   Context::SymbolAbstractType idType = Context::SymbolAbstractType::None;
   if (m_context != nullptr && !m_symbolPlusParenthesesAreFunctions) {
     idType = m_context->expressionTypeForIdentifier(name, length);
     if (idType != Context::SymbolAbstractType::Function) {
+      // Try to split name into [prefix][functionSuffix] where functionSuffix
+      // is the longest suffix that is a reserved function or a function defined
+      // in the Context. This follows the algorithm described in the post: we
+      // prefer the longest matching function name at the end of the identifier
+      // when parentheses follow (e.g. "xcos(x)" -> "x * cos(x)",
+      // "acos(x)" -> "acos(x)").
+      size_t bestSuffixLen = 0;
+      const Expression::FunctionHelper * const * bestReservedFunction = nullptr;
+      bool bestIsContextFunction = false;
+      // Scan all possible suffixes and pick the longest matching one
+      for (size_t i = 0; i < length; ++i) {
+        const char * suffix = name + i;
+        size_t suffixLen = length - i;
+        // Check reserved functions
+        const Expression::FunctionHelper * const * reserved = GetReservedFunction(suffix, suffixLen);
+        if (reserved != nullptr && suffixLen > bestSuffixLen) {
+          bestSuffixLen = suffixLen;
+          bestReservedFunction = reserved;
+          bestIsContextFunction = false;
+        }
+        // Check context-defined functions
+        if (m_context != nullptr) {
+          if (m_context->expressionTypeForIdentifier(suffix, suffixLen) == Context::SymbolAbstractType::Function && suffixLen > bestSuffixLen) {
+            bestSuffixLen = suffixLen;
+            bestReservedFunction = nullptr;
+            bestIsContextFunction = true;
+          }
+        }
+      }
+      if (bestSuffixLen > 0 && (m_nextToken.is(Token::LeftParenthesis) || m_nextToken.is(Token::LeftSystemParenthesis))) {
+        size_t prefixLen = length - bestSuffixLen;
+        // Parse the prefix into a product of symbols, preferring longest
+        // context-defined identifiers, else falling back to single-character
+        // symbols. This implements the "repeat with remaining characters"
+        // behaviour from the post.
+        Expression prefix = Expression();
+        size_t remLen = prefixLen;
+        while (remLen > 0) {
+          // Find longest suffix of name[0..remLen-1] that is a context symbol
+          size_t foundLen = 0;
+          if (m_context != nullptr) {
+            for (size_t j = 0; j < remLen; ++j) {
+              size_t candidateLen = remLen - j;
+              if (m_context->expressionTypeForIdentifier(name + j, candidateLen) == Context::SymbolAbstractType::Symbol) {
+                foundLen = candidateLen;
+                break; // j increases, so first hit is longest suffix
+              }
+            }
+          }
+          Expression tokenSymbol;
+          if (foundLen == 0) {
+            // fallback to single character symbol (last char)
+            tokenSymbol = Symbol::Builder(name + remLen - 1, 1);
+            remLen -= 1;
+          } else {
+            tokenSymbol = Symbol::Builder(name + remLen - foundLen, foundLen);
+            remLen -= foundLen;
+          }
+          if (prefix.isUninitialized()) {
+            prefix = tokenSymbol;
+          } else {
+            prefix = Multiplication::Builder(prefix, tokenSymbol);
+          }
+        }
+        // Consume the left parenthesis
+        if (!popTokenIfType(Token::LeftParenthesis)) {
+          if (!popTokenIfType(Token::LeftSystemParenthesis)) {
+            leftHandSide = Symbol::Builder(name, length);
+            return;
+          }
+          poppedParenthesisIsSystem = true;
+        }
+        // Parse parameters list
+        Expression parameters = parseCommaSeparatedList();
+        if (m_status != Status::Progress) {
+          return;
+        }
+        Token::Type correspondingRightParenthesis = poppedParenthesisIsSystem ? Token::Type::RightSystemParenthesis : Token::Type::RightParenthesis;
+        if (!popTokenIfType(correspondingRightParenthesis)) {
+          m_status = Status::Error; // Right parenthesis missing or wrong type
+          return;
+        }
+        Expression func;
+        if (bestIsContextFunction) {
+          func = Function::Builder(name + prefixLen, bestSuffixLen, parameters);
+        } else {
+          func = (**bestReservedFunction).build(parameters);
+        }
+        if (func.isUninitialized()) {
+          m_status = Status::Error;
+          return;
+        }
+        leftHandSide = Multiplication::Builder(prefix, func);
+        return;
+      }
       leftHandSide = Symbol::Builder(name, length);
       return;
     }

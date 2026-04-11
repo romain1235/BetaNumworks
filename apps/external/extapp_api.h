@@ -257,5 +257,6 @@ EXTERNC bool extapp_isKeydown(int key);
 EXTERNC int extapp_restoreBackup(int mode); // Keep for compatibility with KhiCAS on Khi
 EXTERNC bool extapp_eraseSector(void * ptr);
 EXTERNC bool extapp_writeMemory(unsigned char * dest,const unsigned char * data,size_t length);
+EXTERNC const uint16_t * extapp_get_pallette(int *count);
 
 #endif

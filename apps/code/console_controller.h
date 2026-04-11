@@ -87,7 +87,9 @@ private:
   static constexpr int EditCellType = 1;
   static constexpr int k_numberOfLineCells = (Ion::Display::Height - Metric::TitleBarHeight) / 14 + 2; // 14 = KDFont::SmallFont->glyphSize().height()
   // k_numberOfLineCells = (240 - 18)/14 ~ 15.9. The 0.1 cell can be above and below the 15 other cells so we add +2 cells.
-  static constexpr int k_outputAccumulationBufferSize = 100;
+  // Increase accumulation buffer to reduce automatic wrapping that breaks
+  // colored escape sequences. 512 is a reasonable trade-off for device RAM.
+  static constexpr int k_outputAccumulationBufferSize = 512;
   bool isDisplayingViewController();
   void reloadData(bool isEditing);
   void flushOutputAccumulationBufferToStore();

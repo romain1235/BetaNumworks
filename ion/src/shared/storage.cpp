@@ -41,7 +41,7 @@ void Storage::getAvailableSpaceFromEndOfRecord(Record r, size_t recordAvailableS
 
 int Storage::numberOfRecordsWithExtension(const char * extension) {
   int trashRecord = 0;
-  if (FullNameHasExtension(m_trashRecord.fullName(), extension, strlen(extension))) {
+  if (!m_trashRecord.isNull() && FullNameHasExtension(m_trashRecord.fullName(), extension, strlen(extension))) {
     trashRecord = 1;
   }
   return InternalStorage::numberOfRecordsWithExtension(extension) - trashRecord;

@@ -152,6 +152,19 @@ constexpr KDColor Palette::AtomBackground;
 constexpr KDColor Palette::AtomHighlight;
 constexpr KDColor Palette::AtomColor[];
 
+constexpr KDColor Palette::AtomUnknownHighlighted;
+constexpr KDColor Palette::AtomAlkaliMetalHighlighted;
+constexpr KDColor Palette::AtomAlkaliEarthMetalHighlighted;
+constexpr KDColor Palette::AtomLanthanideHighlighted;
+constexpr KDColor Palette::AtomActinideHighlighted;
+constexpr KDColor Palette::AtomTransitionMetalHighlighted;
+constexpr KDColor Palette::AtomPostTransitionMetalHighlighted;
+constexpr KDColor Palette::AtomMetalloidHighlighted;
+constexpr KDColor Palette::AtomHalogenHighlighted;
+constexpr KDColor Palette::AtomReactiveNonmetalHighlighted;
+constexpr KDColor Palette::AtomNobleGasHighlighted;
+constexpr KDColor Palette::AtomColorHighlighted[];
+
 KDColor Palette::nextDataColor(int * colorIndex) {
   size_t nbOfColors = numberOfDataColors();
   assert(*colorIndex < nbOfColors);

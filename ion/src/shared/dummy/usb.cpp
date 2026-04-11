@@ -18,6 +18,9 @@ void clearEnumerationInterrupt() {
 void DFU(bool, void*) {
 }
 
+void EnterMSC(bool, void*) {
+}
+
 void enable() {
 }
 

@@ -365,21 +365,48 @@ const ToolboxMessageTree RandomModuleChildren[] = {
   ToolboxMessageTree::Leaf(I18n::Message::PythonCommandUniform, I18n::Message::PythonUniform)
 };
 
+const ToolboxMessageTree FrameBufferModuleChildren[] = {
+  ToolboxMessageTree::Leaf(I18n::Message::PythonCommandFrameBufferCreate, I18n::Message::PythonFrameBufferCreate),
+  ToolboxMessageTree::Leaf(I18n::Message::PythonCommandFrameBufferDraw, I18n::Message::PythonFrameBufferDraw),
+  ToolboxMessageTree::Leaf(I18n::Message::PythonCommandFrameBufferDrawLine, I18n::Message::PythonFrameBufferDrawLine),
+  ToolboxMessageTree::Leaf(I18n::Message::PythonCommandFrameBufferDrawString, I18n::Message::PythonFrameBufferDrawString),
+  ToolboxMessageTree::Leaf(I18n::Message::PythonCommandFrameBufferDrawCircle, I18n::Message::PythonFrameBufferDrawCircle),
+  ToolboxMessageTree::Leaf(I18n::Message::PythonCommandFrameBufferFillCircle, I18n::Message::PythonFrameBufferFillCircle),
+  ToolboxMessageTree::Leaf(I18n::Message::PythonCommandFrameBufferFillRect, I18n::Message::PythonFrameBufferFillRect),
+  ToolboxMessageTree::Leaf(I18n::Message::PythonCommandFrameBufferFillPolygon, I18n::Message::PythonFrameBufferFillPolygon),
+  ToolboxMessageTree::Leaf(I18n::Message::PythonCommandFrameBufferGetPixel, I18n::Message::PythonFrameBufferGetPixel),
+  ToolboxMessageTree::Leaf(I18n::Message::PythonCommandFrameBufferGetPixels, I18n::Message::PythonFrameBufferGetPixels),
+  
+  ToolboxMessageTree::Leaf(I18n::Message::PythonCommandFrameBufferSetPixel, I18n::Message::PythonFrameBufferSetPixel),
+  ToolboxMessageTree::Leaf(I18n::Message::PythonCommandFrameBufferFill, I18n::Message::PythonFrameBufferFill),
+  ToolboxMessageTree::Leaf(I18n::Message::PythonCommandFrameBufferChangeColor, I18n::Message::PythonFrameBufferChangeColor),
+  ToolboxMessageTree::Leaf(I18n::Message::PythonCommandFrameBufferGetPaletteEntry, I18n::Message::PythonFrameBufferGetPaletteEntry),
+  ToolboxMessageTree::Leaf(I18n::Message::PythonCommandFrameBufferGetRawIndex, I18n::Message::PythonFrameBufferGetRawIndex),
+  ToolboxMessageTree::Leaf(I18n::Message::PythonCommandFrameBufferClose, I18n::Message::PythonFrameBufferClose),
+};
+
 const ToolboxMessageTree KandinskyModuleChildren[] = {
   ToolboxMessageTree::Leaf(I18n::Message::PythonCommandImportKandinsky, I18n::Message::PythonImportKandinsky, false),
   ToolboxMessageTree::Leaf(I18n::Message::PythonCommandImportFromKandinsky, I18n::Message::PythonImportKandinsky, false),
   ToolboxMessageTree::Leaf(I18n::Message::PythonCommandKandinskyFunction, I18n::Message::PythonKandinskyFunction, false, I18n::Message::PythonCommandKandinskyFunctionWithoutArg),
-  ToolboxMessageTree::Leaf(I18n::Message::PythonCommandGetPixel, I18n::Message::PythonGetPixel),
-  ToolboxMessageTree::Leaf(I18n::Message::PythonCommandSetPixel, I18n::Message::PythonSetPixel),
-  ToolboxMessageTree::Leaf(I18n::Message::PythonCommandColor, I18n::Message::PythonColor),
-  ToolboxMessageTree::Leaf(I18n::Message::PythonCommandDrawString, I18n::Message::PythonDrawString),
   ToolboxMessageTree::Leaf(I18n::Message::PythonCommandDrawLine, I18n::Message::PythonDrawLine),
   ToolboxMessageTree::Leaf(I18n::Message::PythonCommandDrawCircle, I18n::Message::PythonDrawCircle),
-  ToolboxMessageTree::Leaf(I18n::Message::PythonCommandFillRect, I18n::Message::PythonFillRect),
+  ToolboxMessageTree::Leaf(I18n::Message::PythonCommandDrawString, I18n::Message::PythonDrawString),
   ToolboxMessageTree::Leaf(I18n::Message::PythonCommandFillCircle, I18n::Message::PythonFillCircle),
+  ToolboxMessageTree::Leaf(I18n::Message::PythonCommandFillRect, I18n::Message::PythonFillRect),
   ToolboxMessageTree::Leaf(I18n::Message::PythonCommandFillPolygon, I18n::Message::PythonFillPolygon),
+  ToolboxMessageTree::Leaf(I18n::Message::PythonCommandGetPixel, I18n::Message::PythonGetPixel),
+  ToolboxMessageTree::Leaf(I18n::Message::PythonCommandGetPixels, I18n::Message::PythonGetPixels),
+  ToolboxMessageTree::Leaf(I18n::Message::PythonCommandSetPixel, I18n::Message::PythonSetPixel),
+  ToolboxMessageTree::Leaf(I18n::Message::PythonCommandWaitVBlank, I18n::Message::PythonWaitVBlank),
+  ToolboxMessageTree::Leaf(I18n::Message::PythonCommandColor, I18n::Message::PythonColor),
+  ToolboxMessageTree::Node(I18n::Message::PythonFrameBufferMenu, FrameBufferModuleChildren),
+  // framebuffer functions are available in the framebuffer submenu
   ToolboxMessageTree::Leaf(I18n::Message::PythonCommandGetPalette, I18n::Message::PythonGetPalette)
+  ,ToolboxMessageTree::Leaf(I18n::Message::PythonCommandSetFullscreen, I18n::Message::PythonSetFullscreen)
+  ,ToolboxMessageTree::Leaf(I18n::Message::PythonCommandGetFullscreen, I18n::Message::PythonGetFullscreen)
 };
+
 
 const ToolboxMessageTree IonKeyModuleChildren[] = {
   ToolboxMessageTree::Leaf(I18n::Message::PythonCommandKeyLeft, I18n::Message::PythonKeyLeft, false),
@@ -441,6 +468,9 @@ const ToolboxMessageTree IonModuleChildren[] = {
   ToolboxMessageTree::Leaf(I18n::Message::PythonCommandBatteryIscharging, I18n::Message::PythonBatteryIscharging),
   ToolboxMessageTree::Leaf(I18n::Message::PythonCommandSetBrightness, I18n::Message::PythonSetBrightness),
   ToolboxMessageTree::Leaf(I18n::Message::PythonCommandGetBrightness, I18n::Message::PythonGetBrightness),
+  ToolboxMessageTree::Leaf(I18n::Message::PythonCommandLedOn, I18n::Message::PythonCommandLedOn),
+  ToolboxMessageTree::Leaf(I18n::Message::PythonCommandLedOff, I18n::Message::PythonCommandLedOff),
+  ToolboxMessageTree::Leaf(I18n::Message::PythonCommandLedColor, I18n::Message::PythonCommandLedColor),
   // This is a special case, because it is handled separately, so the sub-tree is unused.
   ToolboxMessageTree::Node(I18n::Message::IonSelector, IonKeyModuleChildren),
   ToolboxMessageTree::Node(I18n::Message::IonKeyList, IonKeyModuleChildren)
@@ -458,6 +488,13 @@ const ToolboxMessageTree TimeModuleChildren[] = {
   ToolboxMessageTree::Leaf(I18n::Message::PythonCommandSetLocaltime, I18n::Message::PythonSetLocaltime),
   ToolboxMessageTree::Leaf(I18n::Message::PythonCommandRTCmode, I18n::Message::PythonRTCmode),
   ToolboxMessageTree::Leaf(I18n::Message::PythonCommandSetRTCmode, I18n::Message::PythonSetRTCmode),
+};
+
+const ToolboxMessageTree ConsoleModuleChildren[] = {
+  ToolboxMessageTree::Leaf(I18n::Message::PythonCommandImportConsole, I18n::Message::PythonImportConsole, false),
+  ToolboxMessageTree::Leaf(I18n::Message::PythonCommandImportFromConsole, I18n::Message::PythonImportConsole, false),
+  ToolboxMessageTree::Leaf(I18n::Message::PythonCommandPrintColor, I18n::Message::PythonPrintColor),
+  ToolboxMessageTree::Leaf(I18n::Message::PythonCommandPrintColorList, I18n::Message::PythonPrintColorList)
 };
 
 const ToolboxMessageTree OsModuleChildren[] = {
@@ -500,6 +537,7 @@ const ToolboxMessageTree modulesChildren[] = {
   ToolboxMessageTree::Node(I18n::Message::SysModule, SysModuleChildren),
 #endif
   ToolboxMessageTree::Node(I18n::Message::TimeModule, TimeModuleChildren)
+  ,ToolboxMessageTree::Node(I18n::Message::ConsoleModule, ConsoleModuleChildren)
 };
 
 const ToolboxMessageTree catalogChildren[] = {
@@ -578,7 +616,7 @@ const ToolboxMessageTree catalogChildren[] = {
   ToolboxMessageTree::Leaf(I18n::Message::PythonCommandImportFromTime, I18n::Message::PythonImportTime, false),
   ToolboxMessageTree::Leaf(I18n::Message::PythonCommandGamma, I18n::Message::PythonGamma),
   ToolboxMessageTree::Leaf(I18n::Message::PythonCommandGetPixel, I18n::Message::PythonGetPixel),
-  ToolboxMessageTree::Leaf(I18n::Message::PythonCommandGetrandbits, I18n::Message::PythonGetrandbits),
+  ToolboxMessageTree::Leaf(I18n::Message::PythonGetrandbits, I18n::Message::PythonGetrandbits),
   ToolboxMessageTree::Leaf(I18n::Message::PythonTurtleCommandGoto, I18n::Message::PythonTurtleGoto),
   ToolboxMessageTree::Leaf(I18n::Message::PythonCommandColorGray, I18n::Message::PythonColorGray, false),
   ToolboxMessageTree::Leaf(I18n::Message::PythonCommandColorGreen, I18n::Message::PythonColorGreen, false),

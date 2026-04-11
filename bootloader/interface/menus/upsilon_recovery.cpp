@@ -7,7 +7,7 @@
 
 extern "C" void jump_to_firmware(const uint32_t* stackPtr, const void(*startPtr)(void));
 
-Bootloader::UpsilonRecoveryMenu::UpsilonRecoveryMenu() : Menu(KDColorBlack, KDColorWhite, Messages::upsilonRecoveryTitle, Messages::mainTitle) {
+Bootloader::UpsilonRecoveryMenu::UpsilonRecoveryMenu() : Menu(KDColorWhite, KDColorBlack, Messages::upsilonRecoveryTitle, Messages::mainTitle) {
     setup();
 }
 

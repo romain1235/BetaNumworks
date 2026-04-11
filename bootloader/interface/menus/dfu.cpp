@@ -2,7 +2,7 @@
 #include <bootloader/boot.h>
 #include <ion.h>
 
-Bootloader::DfuMenu::DfuMenu(const char * text, const USBData * data) : Menu(KDColorBlack, KDColorWhite, Messages::dfuTitle, Messages::mainTitle), m_submenuText(text), m_data(data) {
+Bootloader::DfuMenu::DfuMenu(const char * text, const USBData * data) : Menu(KDColorWhite, KDColorBlack, Messages::dfuTitle, Messages::mainTitle), m_submenuText(text), m_data(data) {
   setup();
 }
 

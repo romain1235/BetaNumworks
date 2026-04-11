@@ -125,7 +125,7 @@ def write_palette_h(data, file_p):
     }
 
     # First apply a fallback theme to ensure backwards compatibility
-    defaults.update(theme_to_dict(get_data("upsilon_light",os.path.dirname(os.path.realpath(__file__)) + os.path.sep + "themes" + os.path.sep + "local")))
+    defaults.update(theme_to_dict(get_data("beta_dark",os.path.dirname(os.path.realpath(__file__)) + os.path.sep + "themes" + os.path.sep + "local")))
     defaults.update(theme_to_dict(data))
     for key in defaults.keys():
         file_p.write("  constexpr static KDColor " + key + " = KDColor::RGB24(0x" + defaults[key] + ");\n")
@@ -136,6 +136,11 @@ def write_palette_h(data, file_p):
     file_p.write("  constexpr static KDColor AtomColor[] = {\n")
     file_p.write("    AtomUnknown, AtomAlkaliMetal, AtomAlkaliEarthMetal, AtomLanthanide, AtomActinide, AtomTransitionMetal,\n")
     file_p.write("    AtomPostTransitionMetal, AtomMetalloid, AtomHalogen, AtomReactiveNonmetal, AtomNobleGas\n")
+    file_p.write("  };\n\n")
+
+    file_p.write("  constexpr static KDColor AtomColorHighlighted[] = {\n")
+    file_p.write("    AtomUnknownHighlighted, AtomAlkaliMetalHighlighted, AtomAlkaliEarthMetalHighlighted, AtomLanthanideHighlighted, AtomActinideHighlighted, AtomTransitionMetalHighlighted,\n")
+    file_p.write("    AtomPostTransitionMetalHighlighted, AtomMetalloidHighlighted, AtomHalogenHighlighted, AtomReactiveNonmetalHighlighted, AtomNobleGasHighlighted\n")
     file_p.write("  };\n\n")
 
     file_p.write("  constexpr static size_t numberOfDataColors() { return sizeof(DataColor)/sizeof(KDColor); }\n")
@@ -175,11 +180,42 @@ def handle_theme(args, path):
         # Check if the file exists
         if os.path.isfile(icon_path):
             # If yes, copy from theme
-            shutil.copyfile(icon_path, args.output)
+            # Special-case: keep original `bootloader/computer.png` unmodified
+            # in the build output to avoid unexpected visual changes.
+            try:
+                key = args.output.replace(args.build_dir, "")
+                # icons maps output-relative paths to theme filenames
+                theme_icon_name = icons.get(key, "")
+            except Exception:
+                theme_icon_name = ""
+            if theme_icon_name == "bootloader/computer.png":
+                # Use the default source instead of theme override
+                shutil.copyfile(args.output.replace(args.build_dir, ""), args.output)
+            else:
+                shutil.copyfile(icon_path, args.output)
         else:
-            # If no, copy from src
-            print(" (!!)   Icon " + icons[args.output.replace(args.build_dir, "")] + " not found in icon theme " + data["icons"] + ". Using default!")
-            shutil.copyfile(args.output.replace(args.build_dir, ""), args.output)
+            # If no, try to copy from the local fallback theme (beta_dark),
+            # then fall back to the source file if present.
+            try:
+                key = args.output.replace(args.build_dir, "")
+                theme_icon_name = icons.get(key, "")
+            except Exception:
+                theme_icon_name = ""
+
+            print(" (!!)   Icon " + theme_icon_name + " not found in icon theme " + data["icons"] + ". Using default!")
+
+            # First try the bundled fallback theme (beta_dark)
+            fallback_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), "themes", "local", "beta_dark", theme_icon_name)
+            if theme_icon_name and os.path.isfile(fallback_path):
+                shutil.copyfile(fallback_path, args.output)
+            else:
+                # Then try the original source path (might not exist for SVG-derived icons)
+                src = args.output.replace(args.build_dir, "")
+                if os.path.isfile(src):
+                    shutil.copyfile(src, args.output)
+                else:
+                    print("ERROR: Default icon not found: " + fallback_path + " nor " + src, file=sys.stderr)
+                    sys.exit(4)
     else:
         if (args.stdout):
             write_palette_h(data, sys.stdout)

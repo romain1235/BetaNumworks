@@ -1,5 +1,6 @@
 #include <escher/app.h>
 #include <escher/window.h>
+#include <apps/i18n.h>
 #include <poincare/tree_pool.h>
 extern "C" {
 #include <assert.h>
@@ -16,6 +17,7 @@ void App::Snapshot::pack(App * app) {
 }
 
 bool App::processEvent(Ion::Events::Event event) {
+  
   Responder * responder = m_firstResponder;
   bool didHandleEvent = false;
   while (responder) {

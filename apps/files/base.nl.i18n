@@ -1,0 +1,8 @@
+FilesApp = "Bestanden"
+FilesAppCapital = "BESTANDEN"
+FilesEmpty = "Geen bestanden"
+Options = "Opties"
+Delete = "Verwijderen"
+Rename = "Hernoemen"
+Display = "Weergeven"
+ConfirmDelete = "Bestand verwijderen?"

@@ -5,6 +5,9 @@ extern "C" {
 }
 #include <ion/rtc.h>
 
+// Forward kandinsky fullscreen accessor (C linkage)
+extern "C" bool modkandinsky_is_fullscreen(void);
+
 AppsWindow::AppsWindow() :
   Window(),
   m_titleBarView(),
@@ -53,10 +56,17 @@ void AppsWindow::hideTitleBarView(bool hide) {
 }
 
 int AppsWindow::numberOfSubviews() const {
+  if (modkandinsky_is_fullscreen()) {
+    return (m_contentView == nullptr ? 0 : 1);
+  }
   return (m_contentView == nullptr ? 1 : 2);
 }
 
 View * AppsWindow::subviewAtIndex(int index) {
+  if (modkandinsky_is_fullscreen()) {
+    assert(m_contentView != nullptr && index == 0);
+    return m_contentView;
+  }
   if (index == 0) {
     return &m_titleBarView;
   }
@@ -65,7 +75,7 @@ View * AppsWindow::subviewAtIndex(int index) {
 }
 
 void AppsWindow::layoutSubviews(bool force) {
-  KDCoordinate titleHeight = m_hideTitleBarView ? 0 : Metric::TitleBarHeight;
+  KDCoordinate titleHeight = (m_hideTitleBarView || modkandinsky_is_fullscreen()) ? 0 : Metric::TitleBarHeight;
   m_titleBarView.setFrame(KDRect(0, 0, bounds().width(), titleHeight), force);
   if (m_contentView != nullptr) {
     m_contentView->setFrame(KDRect(0, titleHeight, bounds().width(), bounds().height()-titleHeight), force);

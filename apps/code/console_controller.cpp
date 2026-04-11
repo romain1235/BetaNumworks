@@ -10,6 +10,8 @@
 #include <apps/global_preferences.h>
 #include <apps/apps_container.h>
 #include <python/port/helpers.h>
+#include <ion/led.h>
+#include <kandinsky/color.h>
 
 extern "C" {
 #include <stdlib.h>
@@ -380,9 +382,8 @@ VariableBoxController * ConsoleController::variableBoxForInputEventHandler(Input
 }
 
 void ConsoleController::resetSandbox() {
-  if (stackViewController()->topViewController() != sandbox()) {
-    return;
-  }
+  // Restore LED state saved before script execution (or turn off if none)
+  micropython_port_restore_led_state();
   m_sandboxController.reset();
 }
 

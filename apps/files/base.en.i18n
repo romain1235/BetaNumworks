@@ -1,0 +1,8 @@
+FilesApp = "Files"
+FilesAppCapital = "FILES"
+FilesEmpty = "No files"
+Options = "Options"
+Delete = "Delete"
+Rename = "Rename"
+Display = "Display"
+ConfirmDelete = "Delete file?"

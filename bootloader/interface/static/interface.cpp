@@ -46,21 +46,21 @@ KDCoordinate Interface::computerHeight() {
 void Interface::drawFlasher() {
   KDContext * ctx = KDIonContext::sharedContext();
 
-  ctx->fillRect(KDRect(0, 0, 320, 240), KDColorWhite);
+  ctx->fillRect(KDRect(0, 0, 320, 240), KDColorBlack);
   drawComputer(ctx, 25);
 
   KDSize fontSize = KDFont::LargeFont->glyphSize();
   int initPos = (320 - fontSize.width() * strlen(Messages::mainTitle)) / 2;
-  ctx->drawString(Messages::mainTitle, KDPoint(initPos, ImageStore::Computer->height() + 25 + 10), KDFont::LargeFont, KDColorBlack, KDColorWhite);
+  ctx->drawString(Messages::mainTitle, KDPoint(initPos, ImageStore::Computer->height() + 25 + 10), KDFont::LargeFont, KDColorWhite, KDColorBlack);
 
   int y = ImageStore::Computer->height() + 25 + 10 + (KDFont::SmallFont->glyphSize().height() + 10);
   initPos = (320 - KDFont::SmallFont->glyphSize().width() * strlen(Messages::dfuSlotsUpdate)) / 2;
-  ctx->drawString(Messages::dfuSlotsUpdate, KDPoint(initPos, y), KDFont::SmallFont, KDColorBlack, KDColorWhite);
+  ctx->drawString(Messages::dfuSlotsUpdate, KDPoint(initPos, y), KDFont::SmallFont, KDColorWhite, KDColorBlack);
 }
 
 void Interface::drawLoading() {
   KDContext * ctx = KDIonContext::sharedContext();
-  ctx->fillRect(KDRect(0, 0, 320, 240), KDColorWhite);
+  ctx->fillRect(KDRect(0, 0, 320, 240), KDColorBlack);
   drawComputer(ctx, 25);
   Ion::Timing::msleep(250);
   KDSize fontSize = KDFont::LargeFont->glyphSize();
@@ -68,7 +68,7 @@ void Interface::drawLoading() {
 
   for (uint8_t i = 0; i < strlen(Messages::mainTitle); i++) {
     char tmp[2] = {Messages::mainTitle[i], '\0'};
-    ctx->drawString(tmp, KDPoint(initPos + i * (fontSize.width()), ImageStore::Computer->height() + 25 + 10), KDFont::LargeFont, KDColorBlack, KDColorWhite);
+    ctx->drawString(tmp, KDPoint(initPos + i * (fontSize.width()), ImageStore::Computer->height() + 25 + 10), KDFont::LargeFont, KDColorWhite, KDColorBlack);
 
     int t = 50;
     Ion::Events::Event e = Ion::Events::getEvent(&t);

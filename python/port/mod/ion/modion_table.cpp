@@ -1,5 +1,26 @@
+
 extern "C" {
 #include "modion.h"
+#include <py/obj.h>
+#include <py/runtime.h>
+}
+
+extern "C" {
+const mp_obj_fun_builtin_fixed_t modion_led_on_obj = {
+  {&mp_type_fun_builtin_0},
+  {(mp_fun_0_t)modion_led_on}
+};
+
+const mp_obj_fun_builtin_fixed_t modion_led_off_obj = {
+  {&mp_type_fun_builtin_0},
+  {(mp_fun_0_t)modion_led_off}
+};
+
+const mp_obj_fun_builtin_var_t modion_led_color_obj = {
+  {&mp_type_fun_builtin_var},
+  MP_OBJ_FUN_MAKE_SIG(3, 3, false),
+  { .var = modion_led_color }
+};
 }
 
 #include <ion.h>
@@ -55,6 +76,9 @@ extern "C" const mp_rom_map_elem_t modion_module_globals_table[] = {
   { MP_ROM_QSTR(MP_QSTR_get_keys), MP_ROM_PTR(&modion_get_keys_obj) },
   { MP_ROM_QSTR(MP_QSTR_set_brightness), MP_ROM_PTR(&modion_set_brightness_obj) },
   { MP_ROM_QSTR(MP_QSTR_get_brightness), MP_ROM_PTR(&modion_get_brightness_obj) },
+  { MP_ROM_QSTR(MP_QSTR_led_on), MP_ROM_PTR(&modion_led_on_obj) },
+  { MP_ROM_QSTR(MP_QSTR_led_off), MP_ROM_PTR(&modion_led_off_obj) },
+  { MP_ROM_QSTR(MP_QSTR_led_color), MP_ROM_PTR(&modion_led_color_obj) },
   { MP_ROM_QSTR(MP_QSTR_KEY_LEFT), MP_OBJ_NEW_SMALL_INT(Ion::Keyboard::Key::Left) },
   { MP_ROM_QSTR(MP_QSTR_KEY_UP), MP_OBJ_NEW_SMALL_INT(Ion::Keyboard::Key::Up) },
   { MP_ROM_QSTR(MP_QSTR_KEY_DOWN), MP_OBJ_NEW_SMALL_INT(Ion::Keyboard::Key::Down) },

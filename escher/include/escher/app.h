@@ -39,6 +39,7 @@ public:
   };
   class Snapshot {
   public:
+    virtual ~Snapshot() = default;
     virtual App * unpack(Container * container) = 0;
     virtual void pack(App * app);
     /* reset all instances to their initial values */

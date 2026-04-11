@@ -30,11 +30,19 @@ private:
   BatteryView m_batteryView;
   ShiftAlphaLockView m_shiftAlphaLockView;
   BufferTextView m_preferenceView;
+  BufferTextView m_batteryPercentView;
   ImageView m_examModeIconView;
   BufferTextView m_clockView;
   int m_hours;
   int m_mins;
   bool m_clockEnabled;
+  // Battery percent smoothing
+  constexpr static int k_batterySamples = 5;
+  float m_batteryVoltageSamples[k_batterySamples];
+  int m_batterySampleIndex;
+  int m_batterySampleCount;
+  int m_lastBatteryPercent;
+  void updateBatteryPercent(bool force = false);
 };
 
 #endif

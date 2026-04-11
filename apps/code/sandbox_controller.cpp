@@ -3,6 +3,7 @@
 
 extern "C" {
 #include <python/port/mod/turtle/modturtle.h>
+#include <python/port/mod/kandinsky/modkandinsky.h>
 }
 
 namespace Code {
@@ -28,6 +29,7 @@ void SandboxController::viewWillAppear() {
 
 void SandboxController::viewDidDisappear() {
   modturtle_view_did_disappear();
+  modkandinsky_view_did_disappear();
 }
 
 bool SandboxController::handleEvent(Ion::Events::Event event) {

@@ -141,6 +141,8 @@ MicroPython::ExecutionEnvironment * MicroPython::ExecutionEnvironment::currentEx
 bool MicroPython::ExecutionEnvironment::runCode(const char * str) {
   assert(sCurrentExecutionEnvironment == nullptr);
   sCurrentExecutionEnvironment = this;
+  // Save the current LED state so we can restore it after script execution
+  micropython_port_save_led_state();
 
   /* Set the user interruption now, as it is needed for the normal execution and
    * for the exception handling (because of print). */
@@ -210,6 +212,10 @@ bool MicroPython::ExecutionEnvironment::runCode(const char * str) {
 
   // Disable the user interruption
   mp_hal_set_interrupt_char(-1);
+
+  // Ensure any displayed sandbox is reset when the script finishes so that
+  // resources like the LED are cleared (scripts may leave the sandbox open).
+  this->resetSandbox();
 
   assert(sCurrentExecutionEnvironment == this);
   sCurrentExecutionEnvironment = nullptr;

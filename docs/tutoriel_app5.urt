@@ -1,0 +1,41 @@
+%b%Tutoriel 5 — Interaction avec les fichiers et le stockage%\b%
+
+%g%Objectif:%\g% Montrer comment lire/écrire des fichiers embarqués et utiliser `Ion::Storage` et `External::Archive::File`.
+
+%pp%1) Liste des fichiers utilisables (archive interne)%\pp%
+
+- Upsilon regroupe des fichiers embarqués (dans `External::Archive`) accessibles via `Archive::File`.
+- Le lecteur (Reader app) montre comment lister et ouvrir `.txt` et `.urt`.
+
+%pp%2) Lire un fichier (`Archive::File`)%\pp%
+
+%c%// Exemple: parcourir les fichiers
+External::Archive::File files[k_maxFiles];
+int n = filesInArchive(files, k_maxFiles); // utilitaire du dépôt
+for (int i=0; i<n; i++) {
+  const External::Archive::File & f = files[i];
+  // f.name, f.data, f.dataLength
+}
+%\c%
+
+%pp%3) Sauvegarder l'état (ex: position de lecture)%\pp%
+
+- Utilisez `Ion::Storage::sharedStorage()->createRecordWithFullName(name, &data, size)` pour créer
+- Pour mettre à jour: `recordNamed(name).setValue(data)`
+
+%c%// Exemple sauvegarde
+BookSave save = view.getBookSave();
+Ion::Storage::Record::ErrorStatus status = Ion::Storage::sharedStorage()->createRecordWithFullName("monlivre", &save, sizeof(save));
+if (status == Ion::Storage::Record::ErrorStatus::NameTaken) {
+  Ion::Storage::Record::Data d{&save, sizeof(save)};
+  Ion::Storage::sharedStorage()->recordNamed("monlivre").setValue(d);
+}
+%\c%
+
+%g%4) Erreurs fréquentes%\g%
+- Ne pas vérifier `dataLength` avant lecture
+- Oublier le formatage (pour `.urt`, respecter les séquences %r% etc.)
+
+%br%5) Interop avec l'ordinateur%\br%
+- Le dossier `output/` du dépôt contient des outils pour ajouter des fichiers à l'archive.
+- Utilisez les outils de packaging pour inclure des ressources dans l'archive d'application.

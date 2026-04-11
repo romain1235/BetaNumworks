@@ -1,0 +1,8 @@
+FilesApp = "Ficheiros"
+FilesAppCapital = "FICHEIROS"
+FilesEmpty = "Sem ficheiros"
+Options = "Opções"
+Delete = "Eliminar"
+Rename = "Renomear"
+Display = "Mostrar"
+ConfirmDelete = "Eliminar ficheiro?"

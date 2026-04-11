@@ -15,6 +15,7 @@
  * concern selection. */
 
 class SelectableTableView : public TableView, public Responder {
+  // (aucune méthode publicFrame, restauration à l'état initial)
 public:
   SelectableTableView(Responder * parentResponder, TableViewDataSource * dataSource,
       SelectableTableViewDataSource * selectionDataSource = nullptr, SelectableTableViewDelegate * delegate = nullptr);
@@ -32,6 +33,7 @@ public:
   bool selectCellAtLocation(int i, int j, bool setFirstResponder = true, bool withinTemporarySelection = false);
   bool selectCellAtClippedLocation(int i, int j, bool setFirstResponder = true, bool withinTemporarySelection = false);
   HighlightCell * selectedCell();
+  KDRect cellFrame(int row, int col);
 protected:
   void unhighlightSelectedCell();
   SelectableTableViewDataSource * m_selectionDataSource;

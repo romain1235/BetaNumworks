@@ -1,10 +1,10 @@
 # You gotta PIMP MY CALC
 
 ifndef NO_PIMP
-PLS_IGNORE := $(shell >&2 printf "\e[91m\e[36m         __  __      ______ ____   ____   _____\n")
-PLS_IGNORE := $(shell >&2 printf "\e[91m\e[36m        / / / /_____/ ,____/_/ /  / __ \/'_   /\n")
-PLS_IGNORE := $(shell >&2 printf "\e[91m\e[36m       / / / / __ '/ /____/ / /  / / / / / / / \n")
-PLS_IGNORE := $(shell >&2 printf "\e[91m\e[36m      / /_/ / /_/ /___,  / / /__/ /_/ / / / /  \n")
+PLS_IGNORE := $(shell >&2 printf "\e[91m\e[36m         __  __      ______ ____   ____  ______\n")
+PLS_IGNORE := $(shell >&2 printf "\e[91m\e[36m        / / / /_____/ _____/_/ /  / __ \/ _   /\n")
+PLS_IGNORE := $(shell >&2 printf "\e[91m\e[36m       / / / / __  / /____/ / /  / / / / / / / \n")
+PLS_IGNORE := $(shell >&2 printf "\e[91m\e[36m      / /_/ / /_/ /____  / / /__/ /_/ / / / /  \n")
 PLS_IGNORE := $(shell >&2 printf "\e[91m\e[36m      \____/ ____/______/_/____/\____/_/ /_/   \n")
 PLS_IGNORE := $(shell >&2 printf "\e[91m\e[36m          / /                                  \n")
 PLS_IGNORE := $(shell >&2 printf "\e[91m\e[36m         /_/                                   \n")

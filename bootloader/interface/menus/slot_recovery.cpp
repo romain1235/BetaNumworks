@@ -1,7 +1,7 @@
 #include "slot_recovery.h"
 #include <ion.h>
 
-Bootloader::SlotRecoveryMenu::SlotRecoveryMenu(USBData * usb) : Menu(KDColorBlack, KDColorWhite, Messages::recoveryTitle, Messages::mainTitle), m_data(usb) {
+Bootloader::SlotRecoveryMenu::SlotRecoveryMenu(USBData * usb) : Menu(KDColorWhite, KDColorBlack, Messages::recoveryTitle, Messages::mainTitle), m_data(usb) {
     setup();
 }
 

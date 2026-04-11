@@ -1,0 +1,47 @@
+%b%Tutoriel 3 — Intégrer Escher à l'application (controllers, snapshots, descriptor)%\b%
+
+%g%Objectif:%\g% Montrer comment attacher vos controllers et vues à l'`App`, instancier via `Snapshot`, et exposer le `Descriptor`.
+
+%pp%1) Le `Descriptor` : metadata de l'app%\pp%
+
+%o%Rôle%\o% : fournir le nom affiché, l'icône, et les messages i18n.
+
+%c%class Descriptor : public ::App::Descriptor {
+  I18n::Message name() override { return I18n::Message::CustomApp; }
+  I18n::Message upperName() override { return I18n::Message::CustomAppCapital; }
+  const Image * icon() override { return ImageStore::CustomAppIcon; }
+};%\c%
+
+%pp%2) `Snapshot` et `unpack`%\pp%
+
+%c%App * Snapshot::unpack(Container * container) {
+  return new (container->currentAppBuffer()) App(this);
+}
+%\c%
+
+%gl%Important%\gl% : `currentAppBuffer()` vient du `Container` (AppsContainer). L'allocation placement-new évite les allocations dynamiques.
+
+%pp%3) Lier controllers dans `App`%\pp%
+
+%c%App::App(Snapshot * snapshot) : ::App(snapshot, &m_rootController),
+  m_rootController(&m_modalController, /* autres controllers */) {
+  // Instanciez ici vos controllers et configurez-les
+}
+%\c%
+
+%g%4) ModalViewController et AlternateEmptyViewController%\g% :
+
+- `ModalViewController` : pour pop-ups/modalités
+- `AlternateEmptyViewController` : pattern pour liste + empty state dans beaucoup d'apps (ex: Reader)
+
+%br%5) Ressources et images%\br%
+
+- Ajoutez vos icônes dans `resources/` et déclarez-les pour l'ImageStore (cf. autres apps).
+- Les ressources sont généralement empaquetées et accessibles via `ImageStore::MonIcon`.
+
+%r%Checklist%\r% :
+- `Descriptor` ok
+- `Snapshot::unpack` ok
+- `App` construit ses controllers
+- Ressources ajoutées
+

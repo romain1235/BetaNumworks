@@ -16,7 +16,7 @@ Bootloader::DfuMenu * Bootloader::InstallerMenu::BootloaderDFU() {
   return bootloaderDfu;
 }
 
-Bootloader::InstallerMenu::InstallerMenu() : Menu(KDColorBlack, KDColorWhite, Messages::installerTitle, Messages::mainTitle) {
+Bootloader::InstallerMenu::InstallerMenu() : Menu(KDColorWhite, KDColorBlack, Messages::installerTitle, Messages::mainTitle) {
   setup();
 }
 
