@@ -384,7 +384,7 @@ VariableBoxController * ConsoleController::variableBoxForInputEventHandler(Input
 void ConsoleController::resetSandbox() {
   // Restore LED state saved before script execution (or turn off if none)
   micropython_port_restore_led_state();
-  m_sandboxController.reset();
+  //m_sandboxController.reset();
 }
 
 void ConsoleController::displayViewController(ViewController * controller) {
