@@ -28,9 +28,11 @@ int ContributorsController::reusableCellCount(int type) {
   return k_totalNumberOfCell;
 }
 
-constexpr static int s_numberOfDevelopers = 18;
+constexpr static int s_numberOfDevelopers = 19;
 constexpr static int s_numberOfUpsilonDevelopers = 5;
+constexpr static int s_numberOfBetaDevelopers = 1;
 constexpr static I18n::Message s_developersUsernames[s_numberOfDevelopers] = {
+  I18n::Message::PRomainNardi,
   I18n::Message::PLaurianFournier,
   I18n::Message::PYannCouturier,
   I18n::Message::PDavidLuca,
@@ -54,7 +56,9 @@ constexpr static I18n::Message s_developersUsernames[s_numberOfDevelopers] = {
 void ContributorsController::willDisplayCellForIndex(HighlightCell * cell, int index) {
   MessageTableCellWithBuffer * myTextCell = (MessageTableCellWithBuffer *)cell;
   myTextCell->setAccessoryText(I18n::translate(s_developersUsernames[index]));
-  if (index < s_numberOfUpsilonDevelopers) {
+  if (index < s_numberOfBetaDevelopers) {
+    myTextCell->setTextColor(KDColor::RGB24(0xffd400));
+  }else if (index < s_numberOfUpsilonDevelopers + s_numberOfBetaDevelopers) {
     myTextCell->setTextColor(KDColor::RGB24(0x5e81ac));
   } else {
     myTextCell->setTextColor(KDColor::RGB24(0xc53431));
