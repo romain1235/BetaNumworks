@@ -14,7 +14,7 @@
 class ExpressionView : public View {
 public:
   ExpressionView(float horizontalAlignment = 0.0f, float verticalAlignment = 0.5f,
-    KDColor textColor = Palette::PrimaryText, KDColor backgroundColor = Palette::ListCellBackground, Poincare::Layout * selectionStart = nullptr, Poincare::Layout * selectionEnd = nullptr);
+    KDColor textColor = Palette::PrimaryText, KDColor backgroundColor = Palette::ListCellBackground, Poincare::Layout * selectionStart = nullptr, Poincare::Layout * selectionEnd = nullptr, bool * isEditing = nullptr);
   Poincare::Layout layout() const { return m_layout; }
   bool setLayout(Poincare::Layout layout);
   void drawRect(KDContext * ctx, KDRect rect) const override;
@@ -38,6 +38,8 @@ protected:
   KDColor m_backgroundColor;
   Poincare::Layout * m_selectionStart;
   Poincare::Layout * m_selectionEnd;
+  bool * m_isEditing;
+  // m_lastThousandsGroupingSpacing removed: spacing is handled globally by LayoutField
 private:
   float m_horizontalAlignment;
   float m_verticalAlignment;

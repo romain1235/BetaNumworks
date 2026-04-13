@@ -78,6 +78,12 @@ private:
   CodePointLayoutNode * node() { return static_cast<CodePointLayoutNode *>(Layout::node()); }
 };
 
+// Thousands grouping spacing (in pixels). When non-zero, certain digit
+// code point layouts will grow their width to create a visual spacing
+// between thousands groups. Use the setter to enable/disable globally.
+void SetThousandsGroupingSpacing(KDCoordinate spacing);
+KDCoordinate ThousandsGroupingSpacing();
+
 }
 
 #endif

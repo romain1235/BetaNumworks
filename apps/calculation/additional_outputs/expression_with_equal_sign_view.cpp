@@ -1,4 +1,5 @@
 #include "expression_with_equal_sign_view.h"
+#include <poincare/code_point_layout.h>
 
 namespace Calculation {
 
@@ -15,7 +16,19 @@ void ExpressionWithEqualSignView::drawRect(KDContext * ctx, KDRect rect) const {
   // Do not color the whole background to avoid coloring behind the equal symbol
   KDSize expressionSize = ExpressionView::minimalSizeForOptimalDisplay();
   ctx->fillRect(KDRect(0, 0, expressionSize), m_backgroundColor);
+  // Temporarily enforce spacing matching editing state during draw.
+  KDCoordinate previousSpacing = Poincare::ThousandsGroupingSpacing();
+  KDCoordinate desiredSpacing = previousSpacing;
+  if (m_isEditing != nullptr) {
+    desiredSpacing = (*m_isEditing) ? 0 : 3;
+  }
+  if (previousSpacing != desiredSpacing) {
+    Poincare::SetThousandsGroupingSpacing(desiredSpacing);
+  }
   m_layout.draw(ctx, drawingOrigin(), m_textColor, m_backgroundColor, m_selectionStart, m_selectionEnd, Palette::Select);
+  if (previousSpacing != desiredSpacing) {
+    Poincare::SetThousandsGroupingSpacing(previousSpacing);
+  }
 }
 
 View * ExpressionWithEqualSignView::subviewAtIndex(int index) {

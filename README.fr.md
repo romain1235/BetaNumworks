@@ -28,6 +28,7 @@ Beta est un fork d'Upsilon (lui-même dérivé d'Omega et d'Epsilon). Beta ajout
 - Nouvelle application `files`
 - Bootloader en thème sombre
 - Affichage du pourcentage de batterie dans la barre d'outils et réorganisation de celle-ci
+- espaces entre les milliers de 3px(1000->1 000)
 - Nouveau thème `beta_dark`
 
 ## Installation

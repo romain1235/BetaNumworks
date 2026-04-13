@@ -1,11 +1,13 @@
 #include <escher/layout_field.h>
 #include <escher/clipboard.h>
 #include <escher/text_field.h>
+#include <poincare/code_point_layout.h>
 #include <poincare/expression.h>
 #include <poincare/empty_layout.h>
 #include <poincare/horizontal_layout.h>
 #include <assert.h>
 #include <string.h>
+#include <stdio.h>
 #include <algorithm>
 
 using namespace Poincare;
@@ -13,7 +15,7 @@ using namespace Poincare;
 LayoutField::ContentView::ContentView() :
   m_cursor(),
   m_insertionCursor(),
-  m_expressionView(0.0f, 0.5f, Palette::PrimaryText, Palette::BackgroundHard, &m_selectionStart, &m_selectionEnd),
+  m_expressionView(0.0f, 0.5f, Palette::PrimaryText, Palette::BackgroundHard, &m_selectionStart, &m_selectionEnd, &m_isEditing),
   m_cursorView(),
   m_selectionStart(),
   m_selectionEnd(),
@@ -307,11 +309,33 @@ KDRect LayoutField::ContentView::selectionRect() const {
 }
 
 void LayoutField::setEditing(bool isEditing) {
-  KDSize previousLayoutSize = m_contentView.minimalSizeForOptimalDisplay();
-  if (m_contentView.setEditing(isEditing)) {
-    reload(previousLayoutSize);
+  // Toggle global thousands grouping to avoid adding spaces while editing.
+  KDCoordinate previousSpacing = Poincare::ThousandsGroupingSpacing();
+  KDCoordinate desiredSpacing = isEditing ? 0 : 3;
+  int layoutId = -1;
+  if (!m_contentView.expressionView()->layout().isUninitialized()) {
+    layoutId = m_contentView.expressionView()->layout().identifier();
   }
+  printf("[LF] setEditing(%d): prev=%d desired=%d layoutId=%d\n", (int)isEditing, (int)previousSpacing, (int)desiredSpacing, layoutId);
+  // Toggle editing state on the content view first so ExpressionView instances
+  // see the updated `m_isEditing` value when they receive a new layout.
+  KDSize previousLayoutSize = m_contentView.minimalSizeForOptimalDisplay();
+  bool didRequestReload = m_contentView.setEditing(isEditing);
+  if (previousSpacing != desiredSpacing) {
+    Poincare::SetThousandsGroupingSpacing(desiredSpacing);
+    // Invalidate sizes so layout sizes will be recomputed with new spacing
+    if (!m_contentView.expressionView()->layout().isUninitialized()) {
+      m_contentView.expressionView()->layout().invalidAllSizesPositionsAndBaselines();
+    }
+  }
+  if (didRequestReload) {
+    reload(previousLayoutSize);
+  } else if (previousSpacing != desiredSpacing) {
+    // Force a reload when spacing changed but setEditing didn't request it
+    reload(previousLayoutSize);
 }
+}
+
 
 void LayoutField::clearLayout() {
   m_contentView.clearLayout(); // Replace the layout with an empty horizontal layout
@@ -321,6 +345,21 @@ void LayoutField::clearLayout() {
 void LayoutField::setLayout(Poincare::Layout newLayout) {
   m_contentView.clearLayout();
   KDSize previousSize = minimalSizeForOptimalDisplay();
+  // Ensure thousands grouping spacing matches current editing state when
+  // assigning a new layout (fix missing spaces on entering an app).
+  KDCoordinate previousSpacing = Poincare::ThousandsGroupingSpacing();
+  KDCoordinate desiredSpacing = m_contentView.isEditing() ? 0 : 3;
+  int newLayoutId = -1;
+  if (!newLayout.isUninitialized()) {
+    newLayoutId = newLayout.identifier();
+  }
+  printf("[LF] setLayout: contentIsEditing=%d prev=%d desired=%d newLayoutId=%d\n", (int)m_contentView.isEditing(), (int)previousSpacing, (int)desiredSpacing, newLayoutId);
+  if (previousSpacing != desiredSpacing) {
+    Poincare::SetThousandsGroupingSpacing(desiredSpacing);
+    if (!m_contentView.expressionView()->layout().isUninitialized()) {
+      m_contentView.expressionView()->layout().invalidAllSizesPositionsAndBaselines();
+    }
+  }
   const_cast<ExpressionView *>(m_contentView.expressionView())->setLayout(newLayout);
   putCursorRightOfLayout();
   reload(previousSize);

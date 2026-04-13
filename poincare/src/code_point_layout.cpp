@@ -96,7 +96,136 @@ bool CodePointLayoutNode::canBeOmittedMultiplicationRightFactor() const {
 
 // Sizing and positioning
 KDSize CodePointLayoutNode::computeSize() {
-  return m_font->glyphSize();
+  KDSize base = m_font->glyphSize();
+  // If grouping is disabled, return base size
+  KDCoordinate groupingSpacing = ThousandsGroupingSpacing();
+  if (groupingSpacing == 0) {
+    return base;
+  }
+
+  // Only consider grouping for ASCII digits
+  if (m_codePoint < '0' || m_codePoint > '9') {
+    return base;
+  }
+
+  // Use raw parent node access (safer during layout computations)
+  LayoutNode * parentNode = parent();
+  if (parentNode == nullptr || parentNode->type() != LayoutNode::Type::HorizontalLayout) {
+    return base;
+  }
+
+  int idx = parentNode->indexOfChild(this);
+  // find contiguous run of CodePointLayout children (work with raw nodes)
+  int left = idx;
+  while (left > 0 && parentNode->childAtIndex(left-1)->type() == LayoutNode::Type::CodePointLayout) {
+    left--;
+  }
+  int right = idx;
+  int nChildren = parentNode->numberOfChildren();
+  while (right + 1 < nChildren && parentNode->childAtIndex(right+1)->type() == LayoutNode::Type::CodePointLayout) {
+    right++;
+  }
+
+  // Find contiguous digit-only sub-run that contains idx
+  int leftDigits = idx;
+  while (leftDigits > left) {
+    LayoutNode * prev = parentNode->childAtIndex(leftDigits-1);
+    if (prev->type() != LayoutNode::Type::CodePointLayout) break;
+    CodePoint c = static_cast<CodePointLayoutNode *>(prev)->codePoint();
+    if (c < '0' || c > '9') break;
+    leftDigits--;
+  }
+  int rightDigits = idx;
+  while (rightDigits + 1 <= right) {
+    LayoutNode * next = parentNode->childAtIndex(rightDigits+1);
+    if (next->type() != LayoutNode::Type::CodePointLayout) break;
+    CodePoint c = static_cast<CodePointLayoutNode *>(next)->codePoint();
+    if (c < '0' || c > '9') break;
+    rightDigits++;
+  }
+
+  // If there are no other digits besides current, nothing to group
+  if (leftDigits == rightDigits) {
+    return base;
+  }
+  // If the digit run is immediately preceded by a decimal point, it's a
+  // fractional part (e.g. ".1234") — do not apply thousands grouping.
+  if (leftDigits > 0) {
+    LayoutNode * before = parentNode->childAtIndex(leftDigits - 1);
+    if (before->type() == LayoutNode::Type::CodePointLayout) {
+      CodePoint bc = static_cast<CodePointLayoutNode *>(before)->codePoint();
+      if (bc == '.') {
+        return base;
+      }
+    }
+  }
+
+  // Detect hex literal like 0xF4240: scan leftwards for a contiguous run of
+  // hex digits (0-9, a-f, A-F) that contains the current digit. If that run
+  // is preceded by "0x" or "0X", do not apply thousands grouping.
+  int leftHex = idx;
+  while (leftHex > left) {
+    LayoutNode * prev = parentNode->childAtIndex(leftHex - 1);
+    if (prev->type() != LayoutNode::Type::CodePointLayout) break;
+    CodePoint c = static_cast<CodePointLayoutNode *>(prev)->codePoint();
+    bool isHexDigit = (c >= '0' && c <= '9') || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F');
+    if (!isHexDigit) break;
+    leftHex--;
+  }
+  if (leftHex >= 2) {
+    LayoutNode * p1 = parentNode->childAtIndex(leftHex - 1);
+    LayoutNode * p2 = parentNode->childAtIndex(leftHex - 2);
+    if (p1->type() == LayoutNode::Type::CodePointLayout && p2->type() == LayoutNode::Type::CodePointLayout) {
+      CodePoint c1 = static_cast<CodePointLayoutNode *>(p1)->codePoint();
+      CodePoint c2 = static_cast<CodePointLayoutNode *>(p2)->codePoint();
+      if (c2 == '0' && (c1 == 'x' || c1 == 'X')) {
+        return base;
+      }
+    }
+  }
+
+  // Detect binary literal like 0b1010: scan leftwards for a contiguous run of
+  // binary digits (0-1) that contains the current digit. If that run is
+  // preceded by "0b" or "0B", do not apply thousands grouping.
+  int leftBin = idx;
+  while (leftBin > left) {
+    LayoutNode * prev = parentNode->childAtIndex(leftBin - 1);
+    if (prev->type() != LayoutNode::Type::CodePointLayout) break;
+    CodePoint c = static_cast<CodePointLayoutNode *>(prev)->codePoint();
+    bool isBinDigit = (c == '0' || c == '1');
+    if (!isBinDigit) break;
+    leftBin--;
+  }
+  if (leftBin >= 2) {
+    LayoutNode * p1 = parentNode->childAtIndex(leftBin - 1);
+    LayoutNode * p2 = parentNode->childAtIndex(leftBin - 2);
+    if (p1->type() == LayoutNode::Type::CodePointLayout && p2->type() == LayoutNode::Type::CodePointLayout) {
+      CodePoint c1 = static_cast<CodePointLayoutNode *>(p1)->codePoint();
+      CodePoint c2 = static_cast<CodePointLayoutNode *>(p2)->codePoint();
+      if (c2 == '0' && (c1 == 'b' || c1 == 'B')) {
+        return base;
+      }
+    }
+  }
+
+  // integer part is the digit-only run before any decimal point or exponent
+  int integerPartRight = rightDigits;
+  // Check for a decimal point immediately after the digit run
+  if (integerPartRight + 1 <= right) {
+    LayoutNode * after = parentNode->childAtIndex(integerPartRight + 1);
+    if (after->type() == LayoutNode::Type::CodePointLayout) {
+      CodePoint ac = static_cast<CodePointLayoutNode *>(after)->codePoint();
+      if (ac == '.' ) {
+        // there's a decimal point, keep integerPartRight as is
+      }
+    }
+  }
+
+  int posFromRight = integerPartRight - idx;
+  if (posFromRight > 0 && posFromRight % 3 == 0) {
+    return KDSize(base.width() + groupingSpacing, base.height());
+  }
+  return base;
 }
 
 KDCoordinate CodePointLayoutNode::computeBaseline() {
@@ -127,6 +256,17 @@ CodePointLayout CodePointLayout::Builder(CodePoint c, const KDFont * font) {
   CodePointLayoutNode * node = new (bufferNode) CodePointLayoutNode(c, font);
   TreeHandle h = TreeHandle::BuildWithGhostChildren(node);
   return static_cast<CodePointLayout &>(h);
+}
+
+// Thousands grouping spacing implementation (default enabled: 3px)
+static KDCoordinate s_thousandsGroupingSpacing = 3;
+
+void SetThousandsGroupingSpacing(KDCoordinate spacing) {
+  s_thousandsGroupingSpacing = spacing;
+}
+
+KDCoordinate ThousandsGroupingSpacing() {
+  return s_thousandsGroupingSpacing;
 }
 
 }
