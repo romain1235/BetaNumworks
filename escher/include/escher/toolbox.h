@@ -12,6 +12,7 @@ public:
 
   // StackViewController
   void viewWillAppear() override;
+  void viewDidDisappear() override;
 
   //ListViewDataSource
   int numberOfRows() const override;
@@ -34,6 +35,10 @@ protected:
   /* m_messageTreeModel points at the messageTree of the tree (describing the
    * whole model) where we are located. It enables to know which rows are leaves
    * and which are subtrees. */
+  Stack m_savedStack;
+  int m_savedSelectedRow;
+  KDCoordinate m_savedVerticalScroll;
+  bool m_hasSavedState;
 };
 
 #endif

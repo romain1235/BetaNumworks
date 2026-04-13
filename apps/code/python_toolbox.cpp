@@ -831,7 +831,6 @@ bool PythonToolbox::selectLeaf(int selectedRow, bool quitToolbox) {
   }
   sender()->handleEventWithText(editedText, true);
   if (quitToolbox) {
-    m_selectableTableView.deselectTable();
     Container::activeApp()->dismissModalViewController();
   }
   return true;

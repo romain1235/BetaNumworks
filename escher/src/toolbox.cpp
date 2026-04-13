@@ -5,12 +5,52 @@
 
 Toolbox::Toolbox(Responder * parentResponder, I18n::Message title) :
   NestedMenuController(parentResponder, title),
-  m_messageTreeModel(nullptr)
+  m_messageTreeModel(nullptr),
+  m_savedStack(),
+  m_savedSelectedRow(0),
+  m_savedVerticalScroll(0),
+  m_hasSavedState(false)
 {}
 
 void Toolbox::viewWillAppear() {
   m_messageTreeModel = (ToolboxMessageTree *)rootModel();
   NestedMenuController::viewWillAppear();
+
+  if (!m_hasSavedState) {
+    return;
+  }
+
+  m_stack = m_savedStack;
+  m_messageTreeModel = static_cast<const ToolboxMessageTree *>(rootModel());
+  for (int i = 0; i < m_stack.depth(); i++) {
+    NestedMenuController::Stack::State * state = m_stack.stateAtIndex(i);
+    m_messageTreeModel = static_cast<const ToolboxMessageTree *>(m_messageTreeModel->childAtIndex(state->selectedRow()));
+    if (m_messageTreeModel->isFork()) {
+      m_messageTreeModel = static_cast<const ToolboxMessageTree *>(m_messageTreeModel->childAtIndex(indexAfterFork()));
+    }
+  }
+
+  m_selectableTableView.reloadData();
+  int firstSelectedRow = m_savedSelectedRow;
+  if (firstSelectedRow < 0) {
+    firstSelectedRow = 0;
+  }
+  int lastRow = numberOfRows() - 1;
+  if (lastRow >= 0 && firstSelectedRow > lastRow) {
+    firstSelectedRow = lastRow;
+  }
+  m_listController.setFirstSelectedRow(firstSelectedRow);
+
+  KDPoint offset = m_selectableTableView.contentOffset();
+  m_selectableTableView.setContentOffset(KDPoint(offset.x(), m_savedVerticalScroll));
+}
+
+void Toolbox::viewDidDisappear() {
+  m_savedStack = m_stack;
+  m_savedSelectedRow = selectedRow() < 0 ? 0 : selectedRow();
+  m_savedVerticalScroll = m_selectableTableView.contentOffset().y();
+  m_hasSavedState = true;
+  NestedMenuController::viewDidDisappear();
 }
 
 int Toolbox::numberOfRows() const {

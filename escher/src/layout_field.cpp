@@ -7,7 +7,6 @@
 #include <poincare/horizontal_layout.h>
 #include <assert.h>
 #include <string.h>
-#include <stdio.h>
 #include <algorithm>
 
 using namespace Poincare;
@@ -312,11 +311,6 @@ void LayoutField::setEditing(bool isEditing) {
   // Toggle global thousands grouping to avoid adding spaces while editing.
   KDCoordinate previousSpacing = Poincare::ThousandsGroupingSpacing();
   KDCoordinate desiredSpacing = isEditing ? 0 : 3;
-  int layoutId = -1;
-  if (!m_contentView.expressionView()->layout().isUninitialized()) {
-    layoutId = m_contentView.expressionView()->layout().identifier();
-  }
-  printf("[LF] setEditing(%d): prev=%d desired=%d layoutId=%d\n", (int)isEditing, (int)previousSpacing, (int)desiredSpacing, layoutId);
   // Toggle editing state on the content view first so ExpressionView instances
   // see the updated `m_isEditing` value when they receive a new layout.
   KDSize previousLayoutSize = m_contentView.minimalSizeForOptimalDisplay();
@@ -353,7 +347,6 @@ void LayoutField::setLayout(Poincare::Layout newLayout) {
   if (!newLayout.isUninitialized()) {
     newLayoutId = newLayout.identifier();
   }
-  printf("[LF] setLayout: contentIsEditing=%d prev=%d desired=%d newLayoutId=%d\n", (int)m_contentView.isEditing(), (int)previousSpacing, (int)desiredSpacing, newLayoutId);
   if (previousSpacing != desiredSpacing) {
     Poincare::SetThousandsGroupingSpacing(desiredSpacing);
     if (!m_contentView.expressionView()->layout().isUninitialized()) {

@@ -923,7 +923,6 @@ MathToolbox::MathToolbox() :
 
 bool MathToolbox::selectLeaf(int selectedRow, bool quitToolbox) {
   ToolboxMessageTree * messageTree = (ToolboxMessageTree *)m_messageTreeModel->childAtIndex(selectedRow);
-  m_selectableTableView.deselectTable();
 
   // Translate the message
   const char * text = I18n::translate(messageTree->insertedText());

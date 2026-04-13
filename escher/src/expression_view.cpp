@@ -1,7 +1,6 @@
 #include <escher/expression_view.h>
 #include <escher/palette.h>
 #include <poincare/code_point_layout.h>
-#include <stdio.h>
 #include <algorithm>
 
 using namespace Poincare;
@@ -28,7 +27,6 @@ bool ExpressionView::setLayout(Layout layoutR) {
   }
   int layoutId = layoutR.isUninitialized() ? -1 : layoutR.identifier();
   int isEditingVal = (m_isEditing != nullptr) ? (*m_isEditing ? 1 : 0) : -1;
-  printf("[EV] setLayout id=%d isEditingPtr=%p isEditingVal=%d spacingBefore=%d\n", layoutId, (void *)m_isEditing, isEditingVal, (int)Poincare::ThousandsGroupingSpacing());
   // Ensure grouping spacing matches the editing state when assigning a layout
   KDCoordinate desiredSpacing = 3;
   if (m_isEditing != nullptr) {
@@ -41,7 +39,6 @@ bool ExpressionView::setLayout(Layout layoutR) {
       layoutR.invalidAllSizesPositionsAndBaselines();
     }
   }
-  printf("[EV] setLayout id=%d spacingAfter=%d\n", layoutId, (int)Poincare::ThousandsGroupingSpacing());
   m_layout = layoutR;
   markRectAsDirty(bounds());
   return true;
