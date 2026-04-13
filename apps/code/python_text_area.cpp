@@ -23,6 +23,131 @@ constexpr KDColor StringColor = Palette::CodeString;
 constexpr KDColor BackgroundColor = Palette::CodeBackground;
 constexpr KDColor HighlightColor = Palette::CodeBackgroundSelected;
 constexpr KDColor AutocompleteColor = KDColor::RGB24(0xC6C6C6); // TODO Palette change
+constexpr KDColor ParenthesisColors[] = {Palette::parenthese_1, Palette::parenthese_2, Palette::parenthese_3};
+constexpr KDColor InvalidParenthesisColor = Palette::invalid_parenthese;
+
+static inline KDColor ParenthesisColorForDepth(int depth) {
+  constexpr int kParenthesisColorsCount = sizeof(ParenthesisColors) / sizeof(KDColor);
+  int normalizedDepth = depth % kParenthesisColorsCount;
+  if (normalizedDepth < 0) {
+    normalizedDepth += kParenthesisColorsCount;
+  }
+  return ParenthesisColors[normalizedDepth];
+}
+
+static inline bool IsOpeningDelimiter(mp_token_kind_t tokenKind) {
+  return tokenKind == MP_TOKEN_DEL_PAREN_OPEN
+      || tokenKind == MP_TOKEN_DEL_BRACKET_OPEN
+      || tokenKind == MP_TOKEN_DEL_BRACE_OPEN;
+}
+
+static inline bool IsClosingDelimiter(mp_token_kind_t tokenKind) {
+  return tokenKind == MP_TOKEN_DEL_PAREN_CLOSE
+      || tokenKind == MP_TOKEN_DEL_BRACKET_CLOSE
+      || tokenKind == MP_TOKEN_DEL_BRACE_CLOSE;
+}
+
+static inline bool TextContainsDelimiter(const char * text) {
+  for (const char * c = text; *c != 0; c++) {
+    if (*c == '(' || *c == ')' || *c == '[' || *c == ']' || *c == '{' || *c == '}') {
+      return true;
+    }
+  }
+  return false;
+}
+
+static inline char OpeningDelimiterFor(mp_token_kind_t tokenKind) {
+  if (tokenKind == MP_TOKEN_DEL_PAREN_OPEN || tokenKind == MP_TOKEN_DEL_PAREN_CLOSE) {
+    return '(';
+  }
+  if (tokenKind == MP_TOKEN_DEL_BRACKET_OPEN || tokenKind == MP_TOKEN_DEL_BRACKET_CLOSE) {
+    return '[';
+  }
+  return '{';
+}
+
+static inline int DelimiterTypeIndex(mp_token_kind_t tokenKind) {
+  if (tokenKind == MP_TOKEN_DEL_PAREN_OPEN || tokenKind == MP_TOKEN_DEL_PAREN_CLOSE) {
+    return 0;
+  }
+  if (tokenKind == MP_TOKEN_DEL_BRACKET_OPEN || tokenKind == MP_TOKEN_DEL_BRACKET_CLOSE) {
+    return 1;
+  }
+  if (tokenKind == MP_TOKEN_DEL_BRACE_OPEN || tokenKind == MP_TOKEN_DEL_BRACE_CLOSE) {
+    return 2;
+  }
+  return -1;
+}
+
+static inline const char * TokenPositionInText(const char * text, int tokenLine, int tokenColumn) {
+  const char * lineStart = text;
+  for (int line = 1; line < tokenLine && !UTF8Helper::CodePointIs(lineStart, UCodePointNull); line++) {
+    const char * nextLine = UTF8Helper::CodePointSearch(lineStart, '\n');
+    if (UTF8Helper::CodePointIs(nextLine, UCodePointNull)) {
+      return lineStart;
+    }
+    lineStart = nextLine + 1;
+  }
+  return lineStart + tokenColumn - 1;
+}
+
+static inline bool PointerInList(const char * p, const char * const * list, int listLength) {
+  for (int i = 0; i < listLength; i++) {
+    if (list[i] == p) {
+      return true;
+    }
+  }
+  return false;
+}
+
+static inline void ComputeInvalidDelimiters(
+    const char * fullText,
+    const char ** invalidOpenings,
+    int invalidOpeningsCapacity,
+    int * invalidOpeningsCount,
+    const char ** invalidClosings,
+    int invalidClosingsCapacity,
+    int * invalidClosingsCount)
+{
+  constexpr int kDelimiterTypeCount = 3;
+  constexpr int kPerTypeStackSize = 256;
+  const char * openingStacks[kDelimiterTypeCount][kPerTypeStackSize];
+  int openingDepth[kDelimiterTypeCount] = {0, 0, 0};
+
+  *invalidOpeningsCount = 0;
+  *invalidClosingsCount = 0;
+
+  mp_lexer_t * lex = mp_lexer_new_from_str_len(0, fullText, strlen(fullText), 0);
+  while (lex->tok_kind != MP_TOKEN_END && lex->tok_kind != MP_TOKEN_FSTRING_RAW) {
+    int delimiterType = DelimiterTypeIndex(lex->tok_kind);
+    if (delimiterType >= 0) {
+      const char * tokenPosition = TokenPositionInText(fullText, lex->tok_line, lex->tok_column);
+      if (IsOpeningDelimiter(lex->tok_kind)) {
+        if (openingDepth[delimiterType] < kPerTypeStackSize) {
+          openingStacks[delimiterType][openingDepth[delimiterType]] = tokenPosition;
+        }
+        openingDepth[delimiterType]++;
+      } else if (IsClosingDelimiter(lex->tok_kind)) {
+        if (openingDepth[delimiterType] > 0) {
+          openingDepth[delimiterType]--;
+        } else if (*invalidClosingsCount < invalidClosingsCapacity) {
+          invalidClosings[*invalidClosingsCount] = tokenPosition;
+          (*invalidClosingsCount)++;
+        }
+      }
+    }
+    mp_lexer_to_next(lex);
+  }
+  mp_lexer_free(lex);
+
+  for (int delimiterType = 0; delimiterType < kDelimiterTypeCount; delimiterType++) {
+    int remainingOpenings = std::min(openingDepth[delimiterType], kPerTypeStackSize);
+    for (int i = 0; i < remainingOpenings && *invalidOpeningsCount < invalidOpeningsCapacity; i++) {
+      invalidOpenings[*invalidOpeningsCount] = openingStacks[delimiterType][i];
+      (*invalidOpeningsCount)++;
+    }
+  }
+}
 
 bool isItalic(mp_token_kind_t tokenKind) {
   if (!GlobalPreferences::sharedGlobalPreferences()->syntaxhighlighting()) {
@@ -276,6 +401,42 @@ void PythonTextArea::ContentView::drawLine(KDContext * ctx, int line, const char
 
   nlr_buf_t nlr;
   if (nlr_push(&nlr) == 0) {
+    int delimiterDepth = 0;
+    constexpr int kInvalidDelimitersCapacity = 256;
+    const char * invalidOpenings[kInvalidDelimitersCapacity];
+    int invalidOpeningsCount = 0;
+    const char * invalidClosings[kInvalidDelimitersCapacity];
+    int invalidClosingsCount = 0;
+
+    // Reconstruct delimiter state from the beginning of the script so coloring
+    // stays consistent across lines.
+    const char * fullText = editedText();
+    ComputeInvalidDelimiters(
+        fullText,
+        invalidOpenings,
+        kInvalidDelimitersCapacity,
+        &invalidOpeningsCount,
+        invalidClosings,
+        kInvalidDelimitersCapacity,
+        &invalidClosingsCount);
+    if (text > fullText) {
+      mp_lexer_t * prefixLex = mp_lexer_new_from_str_len(0, fullText, text - fullText, 0);
+      while (prefixLex->tok_kind != MP_TOKEN_END && prefixLex->tok_kind != MP_TOKEN_FSTRING_RAW) {
+        const char * tokenPosition = TokenPositionInText(fullText, prefixLex->tok_line, prefixLex->tok_column);
+        if (IsOpeningDelimiter(prefixLex->tok_kind)) {
+          if (!PointerInList(tokenPosition, invalidOpenings, invalidOpeningsCount)) {
+            delimiterDepth++;
+          }
+        } else if (IsClosingDelimiter(prefixLex->tok_kind)) {
+          if (!PointerInList(tokenPosition, invalidClosings, invalidClosingsCount) && delimiterDepth > 0) {
+            delimiterDepth--;
+          }
+        }
+        mp_lexer_to_next(prefixLex);
+      }
+      mp_lexer_free(prefixLex);
+    }
+
     mp_lexer_t * lex = mp_lexer_new_from_str_len(0, firstNonSpace, byteLength - (firstNonSpace - text), 0);
     LOG_DRAW("Pop token %d\n", lex->tok_kind);
 
@@ -305,6 +466,24 @@ void PythonTextArea::ContentView::drawLine(KDContext * ctx, int line, const char
       // If the token is being autocompleted, use DefaultColor/Font
       KDColor color = (tokenFrom <= autocompleteStart && autocompleteStart < tokenEnd) ? Palette::CodeText : TokenColor(lex->tok_kind);
       bool italic = (tokenFrom <= autocompleteStart && autocompleteStart < tokenEnd) ? false : isItalic(lex->tok_kind);
+
+      if (IsOpeningDelimiter(lex->tok_kind)) {
+        bool invalidOpening = PointerInList(tokenFrom, invalidOpenings, invalidOpeningsCount);
+        if (invalidOpening) {
+          color = InvalidParenthesisColor;
+        } else {
+          color = ParenthesisColorForDepth(delimiterDepth);
+          delimiterDepth++;
+        }
+      } else if (IsClosingDelimiter(lex->tok_kind)) {
+        bool invalidClosing = PointerInList(tokenFrom, invalidClosings, invalidClosingsCount);
+        if (!invalidClosing && delimiterDepth > 0) {
+          delimiterDepth--;
+          color = ParenthesisColorForDepth(delimiterDepth);
+        } else {
+          color = InvalidParenthesisColor;
+        }
+      }
 
       LOG_DRAW("Draw \"%.*s\" for token %d\n", tokenLength, tokenFrom, lex->tok_kind);
       drawStringAt(ctx, line,
@@ -373,15 +552,23 @@ KDRect PythonTextArea::ContentView::dirtyRectFromPosition(const char * position,
    * highlighting, you may want to redraw the surroundings as well. For example,
    * if editing "def foo" into "df foo", you'll want to redraw "df". */
   KDRect baseDirtyRect = TextArea::ContentView::dirtyRectFromPosition(position, includeFollowingLines);
+  /* Delimiter colors depend on all previous delimiters, potentially across
+   * multiple lines. Redraw from the edited line to the bottom to keep colors in
+   * sync after insertions/deletions. */
+  KDCoordinate dirtyHeight = bounds().height() - baseDirtyRect.y();
+  if (dirtyHeight < 0) {
+    dirtyHeight = 0;
+  }
   return KDRect(
     bounds().x(),
     baseDirtyRect.y(),
     bounds().width(),
-    baseDirtyRect.height()
+    dirtyHeight
   );
 }
 
 bool PythonTextArea::handleEvent(Ion::Events::Event event) {
+  bool shouldRefreshVisibleArea = false;
   if (m_contentView.isAutocompleting()) {
     // Handle event with autocompletion
     if (event == Ion::Events::Right
@@ -422,6 +609,10 @@ bool PythonTextArea::handleEvent(Ion::Events::Event event) {
      * the event is backspace, as autocompletion has already been added if the
      * event added text, in handleEventWithText. */
     addAutocompletion();
+    shouldRefreshVisibleArea = true;
+  }
+  if (shouldRefreshVisibleArea) {
+    m_contentView.reloadRectFromPosition(m_contentView.editedText(), true);
   }
   return result;
 }
@@ -430,10 +621,14 @@ bool PythonTextArea::handleEventWithText(const char * text, bool indentation, bo
   if (*text == 0) {
     return false;
   }
+  bool shouldRefreshVisibleArea = TextContainsDelimiter(text);
   if (m_contentView.isAutocompleting()) {
     removeAutocompletion();
   }
   bool result = TextArea::handleEventWithText(text, indentation, forceCursorRightOfText, shouldRemoveLastCharacter);
+  if (shouldRefreshVisibleArea) {
+    m_contentView.reloadRectFromPosition(m_contentView.editedText(), true);
+  }
   addAutocompletion();
   return result;
 }

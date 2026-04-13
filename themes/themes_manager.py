@@ -72,12 +72,17 @@ def get_data(theme, path):
 
 def theme_to_dict(data):
     r = {}
+    code_special_keys = {"parenthese_1", "parenthese_2", "parenthese_3", "invalid_parenthese"}
     for key in data["colors"].keys():
         if type(data["colors"][key]) is str:
             r[key]=data["colors"][key]
         else:
             for sub_key in data["colors"][key].keys():
-                r[key+sub_key] = data["colors"][key][sub_key]
+                # Keep these keys unprefixed so they can be referenced as Palette::parenthese_*.
+                if key == "Code" and sub_key in code_special_keys:
+                    r[sub_key] = data["colors"][key][sub_key]
+                else:
+                    r[key+sub_key] = data["colors"][key][sub_key]
     return r
         
 def write_palette_h(data, file_p):
@@ -122,6 +127,10 @@ def write_palette_h(data, file_p):
         "Purple": "6e2d79",
         "BlueishGrey": "919ea4",
         "Cyan": "00ffff",
+        "parenthese_1": "ffd400",
+        "parenthese_2": "50c102",
+        "parenthese_3": "5075f2",
+        "invalid_parenthese": "ff000c",
     }
 
     # First apply a fallback theme to ensure backwards compatibility
