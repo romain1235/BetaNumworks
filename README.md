@@ -30,6 +30,7 @@ Beta is a fork of Upsilon (itself derived from Omega and Epsilon). Beta adds man
 - Bootloader with a dark theme
 - Battery percentage shown in the toolbar and toolbar reorganization
 - spacing between thousands of 3px(1000->1 000)
+- python editor improvements
 - New theme `beta_dark`
 
 <br>

@@ -25,6 +25,7 @@ constexpr KDColor HighlightColor = Palette::CodeBackgroundSelected;
 constexpr KDColor AutocompleteColor = KDColor::RGB24(0xC6C6C6); // TODO Palette change
 constexpr KDColor ParenthesisColors[] = {Palette::parenthese_1, Palette::parenthese_2, Palette::parenthese_3};
 constexpr KDColor InvalidParenthesisColor = Palette::invalid_parenthese;
+constexpr KDColor IndentGuideColor = Palette::CodeComment;
 
 static inline KDColor ParenthesisColorForDepth(int depth) {
   constexpr int kParenthesisColorsCount = sizeof(ParenthesisColors) / sizeof(KDColor);
@@ -567,6 +568,32 @@ void PythonTextArea::ContentView::drawLine(KDContext * ctx, int line, const char
         nullptr,
         HighlightColor,
         false);
+  }
+
+  /* Lightweight per-line indent guides: draw a vertical bar at each tab
+   * stop within the leading whitespace of this line. This is cheap and uses
+   * no persistent memory. */
+  {
+    int leadingGlyphs = UTF8Helper::GlyphOffsetAtCodePoint(text, firstNonSpace);
+    if (leadingGlyphs > 0) {
+      const int kTabWidth = 2;
+      int guideCount = 0;
+      if (leadingGlyphs > 0) {
+        guideCount = (leadingGlyphs - 1) / kTabWidth;
+      }
+      if (guideCount > 0) {
+        KDSize glyphSize = m_font->glyphSize();
+        KDCoordinate y = line * glyphSize.height();
+        KDCoordinate barWidth = 1;
+        for (int g = 1; g <= guideCount; g++) {
+          int column = g * kTabWidth;
+          KDCoordinate x = column * glyphSize.width();
+          KDCoordinate barX = x + glyphSize.width() / 2 - barWidth / 2 - 3;
+          if (barX < 0) barX = 0;
+          ctx->fillRect(KDRect(barX, y, barWidth, glyphSize.height()), IndentGuideColor);
+        }
+      }
+    }
   }
 }
 

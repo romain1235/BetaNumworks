@@ -82,6 +82,7 @@ protected:
     mutable DelimiterOffset m_invalidClosings[kInvalidDelimitersCapacity];
     mutable int m_lineDepthCount;
     mutable DelimiterDepth m_lineStartDelimiterDepths[kLineDepthCapacity];
+    
   };
 private:
   void removeAutocompletion();
