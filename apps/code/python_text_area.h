@@ -2,6 +2,7 @@
 #define CODE_PYTHON_TEXT_AREA_H
 
 #include <escher/text_area.h>
+#include <stdint.h>
 
 namespace Code {
 
@@ -40,7 +41,11 @@ protected:
       TextArea::ContentView(font),
       m_pythonDelegate(pythonDelegate),
       m_autocomplete(false),
-      m_autocompletionEnd(nullptr)
+      m_autocompletionEnd(nullptr),
+      m_delimiterColoringCacheIsValid(false),
+      m_invalidOpeningsCount(0),
+      m_invalidClosingsCount(0),
+      m_lineDepthCount(0)
     {
     }
     App * pythonDelegate() { return m_pythonDelegate; }
@@ -51,13 +56,32 @@ protected:
     const char * textToAutocomplete() const;
     void loadSyntaxHighlighter();
     void unloadSyntaxHighlighter();
+    void invalidateDelimiterColoringCache();
     void clearRect(KDContext * ctx, KDRect rect) const override;
     void drawLine(KDContext * ctx, int line, const char * text, size_t length, int fromColumn, int toColumn, const char * selectionStart, const char * selectionEnd) const override;
     KDRect dirtyRectFromPosition(const char * position, bool includeFollowingLines) const override;
   private:
+    using DelimiterOffset = uint16_t;
+    using DelimiterDepth = uint8_t;
+
+    void updateDelimiterColoringCache() const;
+    int delimiterDepthAtLine(int line) const;
+    bool isInvalidOpeningDelimiter(const char * position) const;
+    bool isInvalidClosingDelimiter(const char * position) const;
+
+    constexpr static int kInvalidDelimitersCapacity = 256;
+    constexpr static int kLineDepthCapacity = 512;
+
     App * m_pythonDelegate;
     bool m_autocomplete;
     const char * m_autocompletionEnd;
+    mutable bool m_delimiterColoringCacheIsValid;
+    mutable int m_invalidOpeningsCount;
+    mutable DelimiterOffset m_invalidOpenings[kInvalidDelimitersCapacity];
+    mutable int m_invalidClosingsCount;
+    mutable DelimiterOffset m_invalidClosings[kInvalidDelimitersCapacity];
+    mutable int m_lineDepthCount;
+    mutable DelimiterDepth m_lineStartDelimiterDepths[kLineDepthCapacity];
   };
 private:
   void removeAutocompletion();
