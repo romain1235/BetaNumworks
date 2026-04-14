@@ -493,21 +493,25 @@ void PythonTextArea::ContentView::drawLine(KDContext * ctx, int line, const char
       KDColor color = (tokenFrom <= autocompleteStart && autocompleteStart < tokenEnd) ? Palette::CodeText : TokenColor(lex->tok_kind);
       bool italic = (tokenFrom <= autocompleteStart && autocompleteStart < tokenEnd) ? false : isItalic(lex->tok_kind);
 
-      if (IsOpeningDelimiter(lex->tok_kind)) {
-        bool invalidOpening = isInvalidOpeningDelimiter(tokenFrom);
-        if (invalidOpening) {
-          color = InvalidParenthesisColor;
-        } else {
-          color = ParenthesisColorForDepth(delimiterDepth);
-          delimiterDepth = NextDelimiterDepth(delimiterDepth);
-        }
-      } else if (IsClosingDelimiter(lex->tok_kind)) {
-        bool invalidClosing = isInvalidClosingDelimiter(tokenFrom);
-        if (!invalidClosing) {
-          delimiterDepth = PreviousDelimiterDepth(delimiterDepth);
-          color = ParenthesisColorForDepth(delimiterDepth);
-        } else {
-          color = InvalidParenthesisColor;
+      // Only apply rainbow/invalid coloring to delimiters when syntax
+      // highlighting is enabled. Otherwise delimiters stay as normal text.
+      if (GlobalPreferences::sharedGlobalPreferences()->syntaxhighlighting()) {
+        if (IsOpeningDelimiter(lex->tok_kind)) {
+          bool invalidOpening = isInvalidOpeningDelimiter(tokenFrom);
+          if (invalidOpening) {
+            color = InvalidParenthesisColor;
+          } else {
+            color = ParenthesisColorForDepth(delimiterDepth);
+            delimiterDepth = NextDelimiterDepth(delimiterDepth);
+          }
+        } else if (IsClosingDelimiter(lex->tok_kind)) {
+          bool invalidClosing = isInvalidClosingDelimiter(tokenFrom);
+          if (!invalidClosing) {
+            delimiterDepth = PreviousDelimiterDepth(delimiterDepth);
+            color = ParenthesisColorForDepth(delimiterDepth);
+          } else {
+            color = InvalidParenthesisColor;
+          }
         }
       }
 
@@ -587,8 +591,9 @@ void PythonTextArea::ContentView::drawLine(KDContext * ctx, int line, const char
         KDCoordinate barWidth = 1;
         for (int g = 1; g <= guideCount; g++) {
           int column = g * kTabWidth;
-          KDCoordinate x = column * glyphSize.width();
-          KDCoordinate barX = x + glyphSize.width() / 2 - barWidth / 2 - 3;
+          const char * cursorPos = UTF8Helper::CodePointAtGlyphOffset(text, column);
+          KDCoordinate x = m_font->stringSizeUntil(text, cursorPos).width();
+          KDCoordinate barX = x - barWidth / 2;
           if (barX < 0) barX = 0;
           ctx->fillRect(KDRect(barX, y, barWidth, glyphSize.height()), IndentGuideColor);
         }
