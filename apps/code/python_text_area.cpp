@@ -65,6 +65,27 @@ static inline bool TextContainsDelimiter(const char * text) {
   return false;
 }
 
+static inline bool IsOpeningDelimiterChar(char c) {
+  return c == '(' || c == '[' || c == '{';
+}
+
+static inline bool IsClosingDelimiterChar(char c) {
+  return c == ')' || c == ']' || c == '}';
+}
+
+static inline char MatchingClosingDelimiterChar(char openingDelimiter) {
+  if (openingDelimiter == '(') {
+    return ')';
+  }
+  if (openingDelimiter == '[') {
+    return ']';
+  }
+  if (openingDelimiter == '{') {
+    return '}';
+  }
+  return 0;
+}
+
 static inline char OpeningDelimiterFor(mp_token_kind_t tokenKind) {
   if (tokenKind == MP_TOKEN_DEL_PAREN_OPEN || tokenKind == MP_TOKEN_DEL_PAREN_CLOSE) {
     return '(';
@@ -659,6 +680,26 @@ bool PythonTextArea::handleEvent(Ion::Events::Event event) {
       }
     }
   }
+
+  if (event == Ion::Events::Backspace && !m_contentView.isAutocompleting() && selectionIsEmpty()) {
+    const char * text = m_contentView.editedText();
+    const char * cursor = cursorLocation();
+    if (cursor > text) {
+      const char openingDelimiter = *(cursor - 1);
+      const char matchingClosingDelimiter = MatchingClosingDelimiterChar(openingDelimiter);
+      if (matchingClosingDelimiter != 0 && *cursor == matchingClosingDelimiter) {
+        const char * openingPosition = cursor - 1;
+        m_contentView.removeText(openingPosition, cursor + 1);
+        setCursorLocation(openingPosition);
+        m_contentView.invalidateDelimiterColoringCache();
+        addAutocompletion();
+        m_contentView.reloadRectFromPosition(m_contentView.editedText(), true);
+        scrollToCursor();
+        return true;
+      }
+    }
+  }
+
   bool result = TextArea::handleEvent(event);
   if (event == Ion::Events::Backspace && !m_contentView.isAutocompleting() && selectionIsEmpty()) {
     m_contentView.invalidateDelimiterColoringCache();
@@ -679,6 +720,41 @@ bool PythonTextArea::handleEventWithText(const char * text, bool indentation, bo
   if (*text == 0) {
     return false;
   }
+
+  bool singleDelimiterInput = text[1] == 0 && (IsOpeningDelimiterChar(*text) || IsClosingDelimiterChar(*text));
+
+  if (singleDelimiterInput && selectionIsEmpty()) {
+    if (m_contentView.isAutocompleting()) {
+      removeAutocompletion();
+    }
+
+    const char currentDelimiter = *text;
+    if (IsClosingDelimiterChar(currentDelimiter) && *cursorLocation() == currentDelimiter) {
+      setCursorLocation(cursorLocation() + 1);
+      scrollToCursor();
+      return true;
+    }
+
+    if (IsOpeningDelimiterChar(currentDelimiter)) {
+      bool insertedOpening = TextArea::handleEventWithText(text, indentation, forceCursorRightOfText, shouldRemoveLastCharacter);
+      if (!insertedOpening) {
+        return false;
+      }
+
+      char closingDelimiterText[2] = {MatchingClosingDelimiterChar(currentDelimiter), 0};
+      const char * middlePosition = cursorLocation();
+      if (closingDelimiterText[0] != 0 && m_contentView.isAbleToInsertTextAt(1, middlePosition, false)) {
+        m_contentView.insertTextAtLocation(closingDelimiterText, const_cast<char *>(middlePosition), 1);
+        setCursorLocation(middlePosition);
+      }
+
+      m_contentView.invalidateDelimiterColoringCache();
+      m_contentView.reloadRectFromPosition(m_contentView.editedText(), true);
+      addAutocompletion();
+      return true;
+    }
+  }
+
   bool shouldRefreshVisibleArea = TextContainsDelimiter(text);
   if (m_contentView.isAutocompleting()) {
     removeAutocompletion();
