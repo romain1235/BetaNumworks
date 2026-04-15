@@ -473,6 +473,60 @@ void PythonTextArea::ContentView::updateDelimiterColoringCache() const {
     }
   }
 
+  /* Recompute per-line delimiter depth with the same validity rules as
+   * drawLine: invalid openings/closings do not change depth. This keeps
+   * multiline rainbow colors consistent when unmatched delimiters exist on
+   * previous lines. */
+  delimiterDepth = 0;
+  m_lineDepthCount = 1;
+  m_lineStartDelimiterDepths[0] = 0;
+  lineStart = fullText;
+  currentLine = 1;
+
+  lex = mp_lexer_new_from_str_len(0, fullText, strlen(fullText), 0);
+  while (lex->tok_kind != MP_TOKEN_END && lex->tok_kind != MP_TOKEN_FSTRING_RAW) {
+    while (currentLine < lex->tok_line && !UTF8Helper::CodePointIs(lineStart, UCodePointNull)) {
+      const char * nextLine = UTF8Helper::CodePointSearch(lineStart, '\n');
+      if (UTF8Helper::CodePointIs(nextLine, UCodePointNull)) {
+        break;
+      }
+      lineStart = nextLine + 1;
+      currentLine++;
+      if (m_lineDepthCount < kLineDepthCapacity) {
+        m_lineStartDelimiterDepths[m_lineDepthCount++] = delimiterDepth;
+      }
+    }
+
+    int delimiterType = DelimiterTypeIndex(lex->tok_kind);
+    if (delimiterType >= 0) {
+      const char * tokenPosition = lineStart + lex->tok_column - 1;
+      DelimiterOffset tokenOffset = OffsetForPosition(fullText, tokenPosition);
+      bool isInvalidOpening = tokenOffset != UINT16_MAX
+        && OffsetInList(tokenOffset, m_invalidOpenings, m_invalidOpeningsCount);
+      bool isInvalidClosing = tokenOffset != UINT16_MAX
+        && OffsetInList(tokenOffset, m_invalidClosings, m_invalidClosingsCount);
+
+      if (IsOpeningDelimiter(lex->tok_kind) && !isInvalidOpening) {
+        delimiterDepth = NextDelimiterDepth(delimiterDepth);
+      } else if (IsClosingDelimiter(lex->tok_kind) && !isInvalidClosing) {
+        delimiterDepth = PreviousDelimiterDepth(delimiterDepth);
+      }
+    }
+    mp_lexer_to_next(lex);
+  }
+  mp_lexer_free(lex);
+
+  while (!UTF8Helper::CodePointIs(lineStart, UCodePointNull)) {
+    const char * nextLine = UTF8Helper::CodePointSearch(lineStart, '\n');
+    if (UTF8Helper::CodePointIs(nextLine, UCodePointNull)) {
+      break;
+    }
+    lineStart = nextLine + 1;
+    if (m_lineDepthCount < kLineDepthCapacity) {
+      m_lineStartDelimiterDepths[m_lineDepthCount++] = delimiterDepth;
+    }
+  }
+
   m_delimiterColoringCacheIsValid = true;
 }
 
