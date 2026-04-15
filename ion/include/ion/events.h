@@ -269,6 +269,7 @@ constexpr Event UpperW = Event::ShiftAlphaKey(Keyboard::Key::One);
 constexpr Event UpperX = Event::ShiftAlphaKey(Keyboard::Key::Two);
 constexpr Event UpperY = Event::ShiftAlphaKey(Keyboard::Key::Three);
 constexpr Event UpperZ = Event::ShiftAlphaKey(Keyboard::Key::Plus);
+constexpr Event ShiftSpace = Event::ShiftAlphaKey(Keyboard::Key::Minus);
 
 constexpr Event shiftalphaans = Event::ShiftAlphaKey(Keyboard::Key::Ans);
 // Special

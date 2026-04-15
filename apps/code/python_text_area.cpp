@@ -1,6 +1,7 @@
 #include "python_text_area.h"
 #include "app.h"
 #include <escher/palette.h>
+#include <ion/keyboard.h>
 #include <ion/unicode/utf8_helper.h>
 #include <python/port/port.h>
 #include "../global_preferences.h"
@@ -84,6 +85,45 @@ static inline char MatchingClosingDelimiterChar(char openingDelimiter) {
     return '}';
   }
   return 0;
+}
+
+static inline int OffsetAfterInsertion(int offset, int insertionOffset, int insertionLength) {
+  return offset >= insertionOffset ? offset + insertionLength : offset;
+}
+
+static inline int OffsetAfterDeletion(int offset, int deletionOffset, int deletionLength) {
+  if (offset <= deletionOffset) {
+    return offset;
+  }
+  if (offset < deletionOffset + deletionLength) {
+    return deletionOffset;
+  }
+  return offset - deletionLength;
+}
+
+static int SelectedLineStartOffsets(const char * text, int selectionStartOffset, int selectionEndOffset, int * lineStartOffsets, int maxLineCount) {
+  if (selectionStartOffset < 0 || selectionEndOffset <= selectionStartOffset || maxLineCount <= 0) {
+    return 0;
+  }
+
+  int blockStartOffset = selectionStartOffset;
+  while (blockStartOffset > 0 && text[blockStartOffset - 1] != '\n') {
+    blockStartOffset--;
+  }
+
+  int lineCount = 0;
+  const char * lineStart = text + blockStartOffset;
+  const char * selectionEnd = text + selectionEndOffset;
+  while (lineStart < selectionEnd && lineCount < maxLineCount) {
+    lineStartOffsets[lineCount++] = lineStart - text;
+    const char * nextLine = UTF8Helper::CodePointSearch(lineStart, '\n');
+    if (UTF8Helper::CodePointIs(nextLine, UCodePointNull)) {
+      break;
+    }
+    lineStart = nextLine + 1;
+  }
+
+  return lineCount;
 }
 
 static inline char OpeningDelimiterFor(mp_token_kind_t tokenKind) {
@@ -679,6 +719,80 @@ bool PythonTextArea::handleEvent(Ion::Events::Event event) {
         return true;
       }
     }
+  }
+
+  if (!selectionIsEmpty() && (event == Ion::Events::Space || event == Ion::Events::ShiftSpace)) {
+    constexpr int kIndentWidth = 2;
+    constexpr int kMaxSelectedLines = 1024;
+    Ion::Events::ShiftAlphaStatus shiftAlphaStatus = Ion::Events::shiftAlphaStatus();
+    const bool shiftPressed = Ion::Keyboard::scan().keyDown(Ion::Keyboard::Key::Shift)
+      || event == Ion::Events::ShiftSpace
+      || Ion::Events::isShiftActive()
+      || shiftAlphaStatus == Ion::Events::ShiftAlphaStatus::ShiftAlpha
+      || shiftAlphaStatus == Ion::Events::ShiftAlphaStatus::ShiftAlphaLock;
+
+    if (m_contentView.isAutocompleting()) {
+      removeAutocompletion();
+      m_contentView.reloadRectFromPosition(m_contentView.cursorLocation(), false);
+    }
+
+    const char * text = m_contentView.editedText();
+    int selectionStartOffset = m_contentView.selectionStart() - text;
+    int selectionEndOffset = m_contentView.selectionEnd() - text;
+    int cursorOffset = cursorLocation() - text;
+
+    int lineStartOffsets[kMaxSelectedLines];
+    int lineCount = SelectedLineStartOffsets(text, selectionStartOffset, selectionEndOffset, lineStartOffsets, kMaxSelectedLines);
+    if (lineCount == 0) {
+      return true;
+    }
+
+    if (!shiftPressed) {
+      size_t textLength = m_contentView.getText()->textLength();
+      size_t bufferSize = m_contentView.getText()->bufferSize();
+      if (textLength + lineCount * kIndentWidth >= bufferSize) {
+        return true;
+      }
+
+      int addedSoFar = 0;
+      for (int i = 0; i < lineCount; i++) {
+        const int insertionOffset = lineStartOffsets[i] + addedSoFar;
+        const char spaces[] = "  ";
+        m_contentView.insertTextAtLocation(spaces, const_cast<char *>(text + insertionOffset), kIndentWidth);
+        selectionStartOffset = OffsetAfterInsertion(selectionStartOffset, insertionOffset, kIndentWidth);
+        selectionEndOffset = OffsetAfterInsertion(selectionEndOffset, insertionOffset, kIndentWidth);
+        cursorOffset = OffsetAfterInsertion(cursorOffset, insertionOffset, kIndentWidth);
+        addedSoFar += kIndentWidth;
+      }
+    } else {
+      int removedSoFar = 0;
+      for (int i = 0; i < lineCount; i++) {
+        const int lineOffset = lineStartOffsets[i] - removedSoFar;
+        const char * lineStart = text + lineOffset;
+        int removableSpaces = 0;
+        while (removableSpaces < kIndentWidth && lineStart[removableSpaces] == ' ') {
+          removableSpaces++;
+        }
+        if (removableSpaces == 0) {
+          continue;
+        }
+
+        m_contentView.removeText(lineStart, lineStart + removableSpaces);
+        selectionStartOffset = OffsetAfterDeletion(selectionStartOffset, lineOffset, removableSpaces);
+        selectionEndOffset = OffsetAfterDeletion(selectionEndOffset, lineOffset, removableSpaces);
+        cursorOffset = OffsetAfterDeletion(cursorOffset, lineOffset, removableSpaces);
+        removedSoFar += removableSpaces;
+      }
+    }
+
+    const char * updatedText = m_contentView.editedText();
+    setCursorLocation(updatedText + cursorOffset);
+    m_contentView.resetSelection();
+    m_contentView.addSelection(updatedText + selectionStartOffset, updatedText + selectionEndOffset);
+    m_contentView.invalidateDelimiterColoringCache();
+    m_contentView.reloadRectFromPosition(updatedText, true);
+    scrollToCursor();
+    return true;
   }
 
   if (event == Ion::Events::Backspace && !m_contentView.isAutocompleting() && selectionIsEmpty()) {

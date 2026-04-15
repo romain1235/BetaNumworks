@@ -43,7 +43,7 @@ const EventData s_dataForEvent[4 * Event::PageSize] = {
   T("G"), T("H"), T("I"), T("J"), T("K"), T("L"),
   T("M"), T("N"), T("O"), T("P"), T("Q"), U(),
   T("R"), T("S"), T("T"), T("U"), T("V"), U(),
-  T("W"), T("X"), T("Y"), T("Z"), U(), U(),
+  T("W"), T("X"), T("Y"), T("Z"), U(), T(" "),
   U(), U(), U(), TL(), U(), U(),
 };
 
@@ -88,7 +88,7 @@ const char * const s_nameForEvent[255] = {
   "UpperG", "UpperH", "UpperI", "UpperJ", "UpperK", "UpperL",
   "UpperM", "UpperN", "UpperO", "UpperP", "UpperQ", nullptr,
   "UpperR", "UpperS", "UpperT", "UpperU", "UpperV", nullptr,
-  "UpperW", "UpperX", "UpperY", "UpperZ", nullptr, nullptr,
+  "UpperW", "UpperX", "UpperY", "UpperZ", nullptr, "ShiftSpace",
   // Special
   "None", "Termination", nullptr, nullptr, nullptr, nullptr,
 };
