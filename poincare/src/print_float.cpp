@@ -376,8 +376,9 @@ PrintFloat::TextLengths PrintFloat::ConvertFloatToTextPrivate(T f, char * buffer
   int neededNumberOfChars = numberOfCharsForMantissaWithSign;
   int neededNumberOfGlyphs = numberOfCharsForMantissaWithSign;
   if (!doNotWriteExponent) {
-    neededNumberOfChars += UTF8Decoder::CharSizeOfCodePoint(UCodePointLatinLetterSmallCapitalE) + numberOfCharExponent;
-    neededNumberOfGlyphs += 1 + numberOfCharExponent;
+    constexpr int kExponentPrefixLength = 4; // "*10^"
+    neededNumberOfChars += kExponentPrefixLength + numberOfCharExponent;
+    neededNumberOfGlyphs += kExponentPrefixLength + numberOfCharExponent;
   }
   if (neededNumberOfChars > bufferSize - 1 || neededNumberOfGlyphs > glyphLength) {
     // Exception 3: We are about to overflow the buffer.
@@ -391,7 +392,10 @@ PrintFloat::TextLengths PrintFloat::ConvertFloatToTextPrivate(T f, char * buffer
   // Print exponent
   assert(numberOfCharsForMantissaWithSign < bufferSize);
   int currentNumberOfChar = numberOfCharsForMantissaWithSign;
-  currentNumberOfChar+= UTF8Decoder::CodePointToChars(UCodePointLatinLetterSmallCapitalE, buffer + currentNumberOfChar, bufferSize - currentNumberOfChar);
+  buffer[currentNumberOfChar++] = '*';
+  buffer[currentNumberOfChar++] = '1';
+  buffer[currentNumberOfChar++] = '0';
+  buffer[currentNumberOfChar++] = '^';
   dividend = Long(exponent); // reuse dividend as it is not needed anymore
   PrintLongWithDecimalMarker(buffer + currentNumberOfChar, numberOfCharExponent, dividend, -1);
   buffer[currentNumberOfChar + numberOfCharExponent] = 0;

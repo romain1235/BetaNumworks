@@ -71,13 +71,25 @@ Layout PreferencesController::layoutForPreferences(I18n::Message message) {
       return LayoutHelper::String("0.1234", 6, k_layoutFont);
     case I18n::Message::Scientific:
     {
-      const char * text = "1.234ᴇ-1";
-      return LayoutHelper::String(text, strlen(text), k_layoutFont);
+        return HorizontalLayout::Builder({
+          LayoutHelper::String("1.234", 5, k_layoutFont),
+          CodePointLayout::Builder(UCodePointMultiplicationSign, k_layoutFont),
+          CodePointLayout::Builder('1', k_layoutFont),
+          CodePointLayout::Builder('0', k_layoutFont),
+          VerticalOffsetLayout::Builder(
+              LayoutHelper::String("-1", 2, k_layoutFont),
+            VerticalOffsetLayoutNode::Position::Superscript)});
     }
     case I18n::Message::Engineering:
     {
-      const char * text = "123.4ᴇ-3";
-      return LayoutHelper::String(text, strlen(text), k_layoutFont);
+        return HorizontalLayout::Builder({
+          LayoutHelper::String("123.4", 5, k_layoutFont),
+          CodePointLayout::Builder(UCodePointMultiplicationSign, k_layoutFont),
+          CodePointLayout::Builder('1', k_layoutFont),
+          CodePointLayout::Builder('0', k_layoutFont),
+          VerticalOffsetLayout::Builder(
+              LayoutHelper::String("-3", 2, k_layoutFont),
+            VerticalOffsetLayoutNode::Position::Superscript)});
     }
 
     // Edition mode
