@@ -855,7 +855,7 @@ bool PythonTextArea::handleEvent(Ion::Events::Event event) {
     if (cursor > text) {
       const char openingDelimiter = *(cursor - 1);
       const char matchingClosingDelimiter = MatchingClosingDelimiterChar(openingDelimiter);
-      if (matchingClosingDelimiter != 0 && *cursor == matchingClosingDelimiter) {
+      if (GlobalPreferences::sharedGlobalPreferences()->autoCloseParentheses() && matchingClosingDelimiter != 0 && *cursor == matchingClosingDelimiter) {
         const char * openingPosition = cursor - 1;
         m_contentView.removeText(openingPosition, cursor + 1);
         setCursorLocation(openingPosition);
@@ -897,7 +897,7 @@ bool PythonTextArea::handleEventWithText(const char * text, bool indentation, bo
     }
 
     const char currentDelimiter = *text;
-    if (IsClosingDelimiterChar(currentDelimiter) && *cursorLocation() == currentDelimiter) {
+    if (IsClosingDelimiterChar(currentDelimiter) && GlobalPreferences::sharedGlobalPreferences()->autoCloseParentheses() && *cursorLocation() == currentDelimiter) {
       setCursorLocation(cursorLocation() + 1);
       scrollToCursor();
       return true;
@@ -911,7 +911,7 @@ bool PythonTextArea::handleEventWithText(const char * text, bool indentation, bo
 
       char closingDelimiterText[2] = {MatchingClosingDelimiterChar(currentDelimiter), 0};
       const char * middlePosition = cursorLocation();
-      if (closingDelimiterText[0] != 0 && m_contentView.isAbleToInsertTextAt(1, middlePosition, false)) {
+      if (closingDelimiterText[0] != 0 && m_contentView.isAbleToInsertTextAt(1, middlePosition, false) && GlobalPreferences::sharedGlobalPreferences()->autoCloseParentheses()) {
         m_contentView.insertTextAtLocation(closingDelimiterText, const_cast<char *>(middlePosition), 1);
         setCursorLocation(middlePosition);
       }

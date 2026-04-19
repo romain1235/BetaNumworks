@@ -34,6 +34,8 @@ public:
   void setDfuUnlocked(bool unlocked) { m_dfuUnlocked = unlocked; }
   bool autocomplete() const { return m_autoComplete; }
   void setAutocomplete(bool autocomple) { m_autoComplete = autocomple; }
+  bool autoCloseParentheses() const { return m_autoCloseParentheses; }
+  void setAutoCloseParentheses(bool close) { m_autoCloseParentheses = close; }
   bool syntaxhighlighting() const { return m_syntaxhighlighting; }
   void setSyntaxhighlighting(bool syntaxhighlight) { m_syntaxhighlighting = syntaxhighlight; }
   bool clearShift() const { return m_clearshift; }
@@ -64,6 +66,7 @@ private:
     m_showPopUp(true),
     m_dfuUnlocked(false),
     m_autoComplete(true),
+    m_autoCloseParentheses(true),
     m_syntaxhighlighting(true),
     m_clearshift(true),
     m_brightnessLevel(Ion::Backlight::MaxBrightness),
@@ -82,6 +85,7 @@ private:
   bool m_showPopUp;
   bool m_dfuUnlocked;
   bool m_autoComplete;
+  bool m_autoCloseParentheses;
   bool m_syntaxhighlighting;
   bool m_clearshift;
   int m_brightnessLevel;

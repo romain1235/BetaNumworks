@@ -12,6 +12,7 @@ CodeOptionsController::CodeOptionsController(Responder * parentResponder) :
 {
   m_chevronCellFontSize.setMessageFont(KDFont::LargeFont);
   m_switchCellAutoCompletion.setMessageFont(KDFont::LargeFont);
+  m_switchCellAutoCloseParentheses.setMessageFont(KDFont::LargeFont);
   m_switchCellSyntaxHighlighting.setMessageFont(KDFont::LargeFont);
   m_switchCellClearShift.setMessageFont(KDFont::LargeFont);
 }
@@ -24,10 +25,14 @@ bool CodeOptionsController::handleEvent(Ion::Events::Event event) {
         m_selectableTableView.reloadCellAtLocation(m_selectableTableView.selectedColumn(), m_selectableTableView.selectedRow());
         break;
       case 2:
-        GlobalPreferences::sharedGlobalPreferences()->setSyntaxhighlighting(!GlobalPreferences::sharedGlobalPreferences()->syntaxhighlighting());
+        GlobalPreferences::sharedGlobalPreferences()->setAutoCloseParentheses(!GlobalPreferences::sharedGlobalPreferences()->autoCloseParentheses());
         m_selectableTableView.reloadCellAtLocation(m_selectableTableView.selectedColumn(), m_selectableTableView.selectedRow());
         break;
       case 3:
+        GlobalPreferences::sharedGlobalPreferences()->setSyntaxhighlighting(!GlobalPreferences::sharedGlobalPreferences()->syntaxhighlighting());
+        m_selectableTableView.reloadCellAtLocation(m_selectableTableView.selectedColumn(), m_selectableTableView.selectedRow());
+        break;
+      case 4:
         GlobalPreferences::sharedGlobalPreferences()->setClearShift(!GlobalPreferences::sharedGlobalPreferences()->clearShift());
         m_selectableTableView.reloadCellAtLocation(m_selectableTableView.selectedColumn(), m_selectableTableView.selectedRow());
         break;
@@ -54,6 +59,8 @@ HighlightCell * CodeOptionsController::reusableCell(int index, int type) {
   else if (index == 1) {
     return &m_switchCellAutoCompletion;
   } else if (index == 2) {
+    return &m_switchCellAutoCloseParentheses;
+  } else if (index == 3) {
     return &m_switchCellSyntaxHighlighting;
   }
   return &m_switchCellClearShift;
@@ -80,6 +87,11 @@ void CodeOptionsController::willDisplayCellForIndex(HighlightCell * cell, int in
     MessageTableCellWithSwitch * mySwitchCell = (MessageTableCellWithSwitch *)cell;
     SwitchView * mySwitch = (SwitchView *)mySwitchCell->accessoryView();
     mySwitch->setState(GlobalPreferences::sharedGlobalPreferences()->autocomplete());
+  }
+  else if (thisLabel == I18n::Message::AutoCloseParentheses) {
+    MessageTableCellWithSwitch * mySwitchCell = (MessageTableCellWithSwitch *)cell;
+    SwitchView * mySwitch = (SwitchView *)mySwitchCell->accessoryView();
+    mySwitch->setState(GlobalPreferences::sharedGlobalPreferences()->autoCloseParentheses());
   }
   else if (thisLabel == I18n::Message::SyntaxHighlighting) {
     MessageTableCellWithSwitch * mySwitchCell = (MessageTableCellWithSwitch *)cell;
