@@ -180,7 +180,8 @@ void TitleBarView::layoutSubviews(bool force) {
   KDCoordinate space = KDFont::SmallFont->glyphSize().width();
   m_batteryPercentView.setFrame(KDRect(batteryX - percentSize.width() - space, (bounds().height()- percentSize.height())/2, percentSize), force);
   if (GlobalPreferences::sharedGlobalPreferences()->isInExamMode()) {
-    m_examModeIconView.setFrame(KDRect(bounds().width() - clockSize.width() - batterySize.width() - k_examIconWidth - k_alphaRightMargin - Metric::TitleBarExternHorizontalMargin, (bounds().height() - k_examIconHeight)/2, k_examIconWidth, k_examIconHeight), force);
+    KDCoordinate examIconX = batteryX - percentSize.width() - space - k_examIconWidth - k_alphaRightMargin;
+    m_examModeIconView.setFrame(KDRect(examIconX, (bounds().height() - k_examIconHeight)/2, k_examIconWidth, k_examIconHeight), force);
   } else {
     m_examModeIconView.setFrame(KDRectZero, force);
   }
