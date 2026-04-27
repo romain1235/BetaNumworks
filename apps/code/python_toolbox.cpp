@@ -493,8 +493,8 @@ const ToolboxMessageTree TimeModuleChildren[] = {
 const ToolboxMessageTree ConsoleModuleChildren[] = {
   ToolboxMessageTree::Leaf(I18n::Message::PythonCommandImportConsole, I18n::Message::PythonImportConsole, false),
   ToolboxMessageTree::Leaf(I18n::Message::PythonCommandImportFromConsole, I18n::Message::PythonImportConsole, false),
-  ToolboxMessageTree::Leaf(I18n::Message::PythonCommandPrintColor, I18n::Message::PythonPrintColor),
-  ToolboxMessageTree::Leaf(I18n::Message::PythonCommandPrintColorList, I18n::Message::PythonPrintColorList)
+  ToolboxMessageTree::Leaf(I18n::Message::PythonCommandColoredText, I18n::Message::PythonColoredText),
+  ToolboxMessageTree::Leaf(I18n::Message::PythonCommandSelect, I18n::Message::PythonSelect)
 };
 
 const ToolboxMessageTree OsModuleChildren[] = {
@@ -692,6 +692,7 @@ const ToolboxMessageTree catalogChildren[] = {
   ToolboxMessageTree::Leaf(I18n::Message::PythonTurtleCommandRight, I18n::Message::PythonTurtleRight),
   ToolboxMessageTree::Leaf(I18n::Message::PythonCommandRound, I18n::Message::PythonRound),
   ToolboxMessageTree::Leaf(I18n::Message::PythonCommandScatter, I18n::Message::PythonScatter),
+  ToolboxMessageTree::Leaf(I18n::Message::PythonCommandSelect, I18n::Message::PythonSelect),
   ToolboxMessageTree::Leaf(I18n::Message::PythonTurtleCommandSetheading, I18n::Message::PythonTurtleSetheading),
   ToolboxMessageTree::Leaf(I18n::Message::PythonCommandSetPixel, I18n::Message::PythonSetPixel),
   ToolboxMessageTree::Leaf(I18n::Message::PythonCommandSeed, I18n::Message::PythonSeed),

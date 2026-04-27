@@ -21,6 +21,31 @@ namespace Code {
 
 static const char * sStandardPromptText = ">>> ";
 
+static void stripConsoleColorSequences(const char * text, char * buffer, size_t bufferSize) {
+  if (bufferSize == 0) {
+    return;
+  }
+  size_t out = 0;
+  for (const char * p = text; *p != 0 && out + 1 < bufferSize; ) {
+    if (p[0] == '\x1b' && p[1] == '[' && p[2] == 'C') {
+      const char * h = p + 3;
+      while (*h != 0 && *h != ';') {
+        h++;
+      }
+      if (*h == ';') {
+        h++;
+      }
+      while (*h != 0 && !(h[0] == '\x1b' && h[1] == '[' && h[2] == '0' && h[3] == 'm') && out + 1 < bufferSize) {
+        buffer[out++] = *h++;
+      }
+      p = *h == '\x1b' ? h + 4 : h;
+      continue;
+    }
+    buffer[out++] = *p++;
+  }
+  buffer[out] = 0;
+}
+
 ConsoleController::ConsoleController(Responder * parentResponder, App * pythonDelegate, ScriptStore * scriptStore
 #if EPSILON_GETOPT
       , bool lockOnConsole
@@ -36,7 +61,12 @@ ConsoleController::ConsoleController(Responder * parentResponder, App * pythonDe
   m_editCell(this, this, this),
   m_scriptStore(scriptStore),
   m_sandboxController(this),
-  m_inputRunLoopActive(false)
+  m_inputRunLoopActive(false),
+  m_selectRunLoopActive(false),
+  m_selectChoicesStartRow(0),
+  m_selectChoiceCount(0),
+  m_selectChoiceFirstIndex(0),
+  m_selectedChoiceIndex(0)
 #if EPSILON_GETOPT
   , m_locked(lockOnConsole)
 #endif
@@ -200,13 +230,42 @@ void ConsoleController::didBecomeFirstResponder() {
 }
 
 bool ConsoleController::handleEvent(Ion::Events::Event event) {
+  if (m_selectRunLoopActive) {
+    if (event == Ion::Events::Back) {
+      m_selectRunLoopActive = false;
+      m_selectedChoiceIndex = -1;
+      return true;
+    }
+    if (event == Ion::Events::Up) {
+      if (m_selectedChoiceIndex > 0) {
+        m_selectedChoiceIndex--;
+        m_selectableTableView.selectCellAtLocation(0, m_selectChoicesStartRow + m_selectedChoiceIndex);
+      }
+      return true;
+    }
+    if (event == Ion::Events::Down) {
+      if (m_selectedChoiceIndex < m_selectChoiceCount - 1) {
+        m_selectedChoiceIndex++;
+        m_selectableTableView.selectCellAtLocation(0, m_selectChoicesStartRow + m_selectedChoiceIndex);
+      }
+      return true;
+    }
+    if (event == Ion::Events::OK || event == Ion::Events::EXE) {
+      m_selectRunLoopActive = false;
+      return true;
+    }
+    return true;
+  }
+
   if (event == Ion::Events::OK || event == Ion::Events::EXE) {
     if (m_consoleStore.numberOfLines() > 0 && m_selectableTableView.selectedRow() < m_consoleStore.numberOfLines()) {
       const char * text = m_consoleStore.lineAtIndex(m_selectableTableView.selectedRow()).text();
+      char sanitizedText[TextField::maxBufferSize()];
+      stripConsoleColorSequences(text, sanitizedText, sizeof(sanitizedText));
       m_editCell.setEditing(true);
       m_selectableTableView.selectCellAtLocation(0, m_consoleStore.numberOfLines());
       Container::activeApp()->setFirstResponder(&m_editCell);
-      return m_editCell.insertText(text);
+      return m_editCell.insertText(sanitizedText);
     }
   } else if (event == Ion::Events::Clear) {
     m_selectableTableView.deselectTable();
@@ -236,6 +295,59 @@ bool ConsoleController::handleEvent(Ion::Events::Event event) {
 
 int ConsoleController::numberOfRows() const {
   return m_consoleStore.numberOfLines()+1;
+}
+
+int ConsoleController::selectText(const char * const * choices, size_t count) {
+  assert(count > 0);
+
+  AppsContainer * appsContainer = AppsContainer::sharedAppsContainer();
+
+  // Hide the sandbox if it is displayed
+  hideAnyDisplayedViewController();
+
+  for (size_t i = 0; i < count; i++) {
+    m_consoleStore.pushResult(choices[i]);
+  }
+
+  int availableLineCount = m_consoleStore.numberOfLines();
+  m_selectChoiceCount = std::min<int>(static_cast<int>(count), availableLineCount);
+  if (m_selectChoiceCount <= 0) {
+    return -1;
+  }
+  m_selectChoiceFirstIndex = static_cast<int>(count) - m_selectChoiceCount;
+  m_selectChoicesStartRow = availableLineCount - m_selectChoiceCount;
+  m_selectedChoiceIndex = 0;
+  m_selectRunLoopActive = true;
+
+  reloadData(false);
+  m_selectableTableView.selectCellAtLocation(0, m_selectChoicesStartRow);
+  tableViewDidChangeSelectionAndDidScroll(&m_selectableTableView, -1, -1, false);
+  Container::activeApp()->setFirstResponder(this);
+  m_selectableTableView.reloadData();
+  appsContainer->redrawWindow();
+
+  appsContainer->runWhile([](void * a) {
+    ConsoleController * c = static_cast<ConsoleController *>(a);
+    return c->m_selectRunLoopActive;
+  }, this);
+
+  if (m_selectedChoiceIndex < 0) {
+    m_selectChoiceCount = 0;
+    m_selectChoiceFirstIndex = 0;
+    m_selectRunLoopActive = false;
+    m_selectableTableView.selectCellAtLocation(0, m_consoleStore.numberOfLines());
+    m_editCell.setEditing(false);
+    return -1;
+  }
+
+  int selectedIndex = m_selectChoiceFirstIndex + m_selectedChoiceIndex;
+  m_selectChoiceCount = 0;
+  m_selectChoiceFirstIndex = 0;
+  m_selectRunLoopActive = false;
+  m_selectableTableView.selectCellAtLocation(0, m_consoleStore.numberOfLines());
+  m_editCell.setEditing(false);
+
+  return selectedIndex;
 }
 
 KDCoordinate ConsoleController::rowHeight(int j) {
@@ -290,6 +402,21 @@ void ConsoleController::willDisplayCellAtLocation(HighlightCell * cell, int i, i
 
 void ConsoleController::tableViewDidChangeSelectionAndDidScroll(SelectableTableView * t, int previousSelectedCellX, int previousSelectedCellY, bool withinTemporarySelection) {
   if (withinTemporarySelection) {
+    return;
+  }
+  if (m_selectRunLoopActive) {
+    int minRow = m_selectChoicesStartRow;
+    int maxRow = m_selectChoicesStartRow + m_selectChoiceCount - 1;
+    int selectedRow = t->selectedRow();
+    if (selectedRow < minRow) {
+      t->selectCellAtLocation(0, minRow);
+      return;
+    }
+    if (selectedRow > maxRow) {
+      t->selectCellAtLocation(0, maxRow);
+      return;
+    }
+    m_selectedChoiceIndex = selectedRow - minRow;
     return;
   }
   if (t->selectedRow() == m_consoleStore.numberOfLines()) {

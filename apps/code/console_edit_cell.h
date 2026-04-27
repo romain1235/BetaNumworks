@@ -5,7 +5,6 @@
 #include <escher/highlight_cell.h>
 #include <escher/text_field.h>
 #include <escher/text_field_delegate.h>
-#include <escher/pointer_text_view.h>
 #include <poincare/preferences.h>
 
 namespace Code {
@@ -37,7 +36,17 @@ public:
   void clearAndReduceSize();
   const char * shiftCurrentTextAndClear();
 private:
-  PointerTextView m_promptView;
+  class PromptTextView : public View {
+  public:
+    PromptTextView();
+    void setText(const char * text);
+    const char * text() const { return m_text; }
+    KDSize minimalSizeForOptimalDisplay() const override;
+    void drawRect(KDContext * ctx, KDRect rect) const override;
+  private:
+    const char * m_text;
+  };
+  PromptTextView m_promptView;
   TextField m_textField;
 };
 

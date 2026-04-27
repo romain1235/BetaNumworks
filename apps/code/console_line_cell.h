@@ -24,9 +24,7 @@ public:
   Responder * responder() override {
     return this;
   }
-  const char * text() const override {
-    return m_line.text();
-  }
+  const char * text() const override;
   /* View */
   int numberOfSubviews() const override;
   View * subviewAtIndex(int index) override;
@@ -58,6 +56,7 @@ private:
   MessageTextView m_promptView;
   ScrollableConsoleLineView m_scrollableView;
   ConsoleLine m_line;
+  mutable char m_sanitizedTextBuffer[1024];
 };
 
 }

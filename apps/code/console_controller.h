@@ -73,6 +73,7 @@ public:
   void refreshPrintOutput() override;
   void printText(const char * text, size_t length) override;
   const char * inputText(const char * prompt) override;
+  int selectText(const char * const * choices, size_t count) override;
 
 #if EPSILON_GETOPT
   bool locked() const {
@@ -112,6 +113,11 @@ private:
   ScriptStore * m_scriptStore;
   SandboxController m_sandboxController;
   bool m_inputRunLoopActive;
+  bool m_selectRunLoopActive;
+  int m_selectChoicesStartRow;
+  int m_selectChoiceCount;
+  int m_selectChoiceFirstIndex;
+  int m_selectedChoiceIndex;
   bool m_autoImportScripts;
 #if EPSILON_GETOPT
   bool m_locked;

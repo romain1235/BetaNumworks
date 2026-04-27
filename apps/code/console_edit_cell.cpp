@@ -6,12 +6,137 @@
 #include <assert.h>
 #include <algorithm>
 
+namespace {
+
+bool IsColorPrefix(const char * p) {
+  return p != nullptr && p[0] == '\x1b' && p[1] == '[' && p[2] == 'C';
+}
+
+const char * SkipColorHeader(const char * p) {
+  const char * h = p + 3;
+  while (*h != 0 && *h != ';') {
+    h++;
+  }
+  return *h == ';' ? h + 1 : h;
+}
+
+const char * FindColorSuffix(const char * p) {
+  while (*p != '\0') {
+    if (p[0] == '\x1b' && p[1] == '[' && p[2] == '0' && p[3] == 'm') {
+      return p;
+    }
+    p++;
+  }
+  return p;
+}
+
+void DrawConsoleText(KDContext * ctx, const char * text, const KDFont * font, KDColor defaultColor, KDColor background) {
+  KDCoordinate x = 0;
+  if (text == nullptr) {
+    return;
+  }
+  for (const char * p = text; *p != '\0'; ) {
+    if (IsColorPrefix(p)) {
+      const char * h = p + 3;
+      int r = 0, g = 0, b = 0;
+      while (*h >= '0' && *h <= '9') { r = r * 10 + (*h - '0'); h++; }
+      if (*h == ',') { h++; }
+      while (*h >= '0' && *h <= '9') { g = g * 10 + (*h - '0'); h++; }
+      if (*h == ',') { h++; }
+      while (*h >= '0' && *h <= '9') { b = b * 10 + (*h - '0'); h++; }
+      if (*h == ';') { h++; }
+      const char * segStart = h;
+      const char * segEnd = FindColorSuffix(segStart);
+      int segLen = segEnd - segStart;
+      if (segLen > 0) {
+        KDPoint point(x, 0);
+        if (segLen < 256) {
+          char buf[256];
+          memcpy(buf, segStart, segLen);
+          buf[segLen] = '\0';
+          KDSize s = font->stringSize(buf);
+          ctx->drawString(buf, point, font, KDColor::RGB888(r, g, b), background);
+          x += s.width();
+        } else {
+          char save = segStart[segLen];
+          ((char *)segStart)[segLen] = '\0';
+          KDSize s = font->stringSize(segStart);
+          ctx->drawString(segStart, point, font, KDColor::RGB888(r, g, b), background);
+          ((char *)segStart)[segLen] = save;
+          x += s.width();
+        }
+      }
+      p = *segEnd == '\x1b' ? segEnd + 4 : segEnd;
+    } else {
+      KDPoint point(x, 0);
+      KDSize s = font->stringSize(p);
+      ctx->drawString(p, point, font, defaultColor, background);
+      x += s.width();
+      break;
+    }
+  }
+}
+
+KDSize ConsoleTextSize(const char * text, const KDFont * font) {
+  if (text == nullptr) {
+    return KDSizeZero;
+  }
+  KDCoordinate width = 0;
+  for (const char * p = text; *p != '\0'; ) {
+    if (IsColorPrefix(p)) {
+      const char * segStart = SkipColorHeader(p);
+      const char * segEnd = FindColorSuffix(segStart);
+      int segLen = segEnd - segStart;
+      if (segLen > 0) {
+        if (segLen < 256) {
+          char buf[256];
+          memcpy(buf, segStart, segLen);
+          buf[segLen] = '\0';
+          width += font->stringSize(buf).width();
+        } else {
+          char save = segStart[segLen];
+          ((char *)segStart)[segLen] = '\0';
+          width += font->stringSize(segStart).width();
+          ((char *)segStart)[segLen] = save;
+        }
+      }
+      p = *segEnd == '\x1b' ? segEnd + 4 : segEnd;
+    } else {
+      width += font->stringSize(p).width();
+      break;
+    }
+  }
+  return KDSize(width, font->glyphSize().height());
+}
+
+}
+
 namespace Code {
+
+ConsoleEditCell::PromptTextView::PromptTextView() :
+  View(),
+  m_text(nullptr)
+{
+}
+
+void ConsoleEditCell::PromptTextView::setText(const char * text) {
+  m_text = text;
+}
+
+KDSize ConsoleEditCell::PromptTextView::minimalSizeForOptimalDisplay() const {
+  return ConsoleTextSize(m_text, GlobalPreferences::sharedGlobalPreferences()->font());
+}
+
+void ConsoleEditCell::PromptTextView::drawRect(KDContext * ctx, KDRect rect) const {
+  KDColor background = Palette::CodeBackground;
+  ctx->fillRect(bounds(), background);
+  DrawConsoleText(ctx, m_text, GlobalPreferences::sharedGlobalPreferences()->font(), Palette::CodeText, background);
+}
 
 ConsoleEditCell::ConsoleEditCell(Responder * parentResponder, InputEventHandlerDelegate * inputEventHandlerDelegate, TextFieldDelegate * delegate) :
   HighlightCell(),
   Responder(parentResponder),
-  m_promptView(GlobalPreferences::sharedGlobalPreferences()->font(), nullptr, 0, 0.5),
+  m_promptView(),
   m_textField(this, nullptr, TextField::maxBufferSize(), TextField::maxBufferSize(), inputEventHandlerDelegate, delegate, GlobalPreferences::sharedGlobalPreferences()->font())
 {
 }

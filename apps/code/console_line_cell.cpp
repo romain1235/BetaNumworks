@@ -5,6 +5,125 @@
 #include <apps/i18n.h>
 #include <apps/global_preferences.h>
 
+namespace {
+
+bool IsColorPrefix(const char * p) {
+  return p[0] == '\x1b' && p[1] == '[' && p[2] == 'C';
+}
+
+const char * SkipColorHeader(const char * p) {
+  const char * h = p + 3;
+  while (*h != 0 && *h != ';') {
+    h++;
+  }
+  return *h == ';' ? h + 1 : h;
+}
+
+const char * FindColorSuffix(const char * p) {
+  while (*p != '\0') {
+    if (p[0] == '\x1b' && p[1] == '[' && p[2] == '0' && p[3] == 'm') {
+      return p;
+    }
+    p++;
+  }
+  return p;
+}
+
+void StripColorSequences(const char * text, char * buffer, size_t bufferSize) {
+  if (bufferSize == 0) {
+    return;
+  }
+  size_t out = 0;
+  for (const char * p = text; *p != 0 && out + 1 < bufferSize; ) {
+    if (IsColorPrefix(p)) {
+      const char * segmentStart = SkipColorHeader(p);
+      const char * segmentEnd = FindColorSuffix(segmentStart);
+      while (segmentStart < segmentEnd && out + 1 < bufferSize) {
+        buffer[out++] = *segmentStart++;
+      }
+      p = *segmentEnd == '\x1b' ? segmentEnd + 4 : segmentEnd;
+      continue;
+    }
+    buffer[out++] = *p++;
+  }
+  buffer[out] = 0;
+}
+
+void DrawConsoleText(KDContext * ctx, const char * text, const KDFont * font, KDColor defaultColor, KDColor background) {
+  KDCoordinate x = 0;
+  for (const char * p = text; *p != '\0'; ) {
+    if (IsColorPrefix(p)) {
+      const char * h = p + 3;
+      int r = 0, g = 0, b = 0;
+      while (*h >= '0' && *h <= '9') { r = r * 10 + (*h - '0'); h++; }
+      if (*h == ',') { h++; }
+      while (*h >= '0' && *h <= '9') { g = g * 10 + (*h - '0'); h++; }
+      if (*h == ',') { h++; }
+      while (*h >= '0' && *h <= '9') { b = b * 10 + (*h - '0'); h++; }
+      if (*h == ';') { h++; }
+      const char * segStart = h;
+      const char * segEnd = FindColorSuffix(segStart);
+      int segLen = segEnd - segStart;
+      if (segLen > 0) {
+        KDPoint point(x, 0);
+        if (segLen < 256) {
+          char buf[256];
+          memcpy(buf, segStart, segLen);
+          buf[segLen] = '\0';
+          KDSize s = font->stringSize(buf);
+          ctx->drawString(buf, point, font, KDColor::RGB888(r, g, b), background);
+          x += s.width();
+        } else {
+          char save = segStart[segLen];
+          ((char *)segStart)[segLen] = '\0';
+          KDSize s = font->stringSize(segStart);
+          ctx->drawString(segStart, point, font, KDColor::RGB888(r, g, b), background);
+          ((char *)segStart)[segLen] = save;
+          x += s.width();
+        }
+      }
+      p = *segEnd == '\x1b' ? segEnd + 4 : segEnd;
+    } else {
+      KDPoint point(x, 0);
+      KDSize s = font->stringSize(p);
+      ctx->drawString(p, point, font, defaultColor, background);
+      x += s.width();
+      break;
+    }
+  }
+}
+
+KDSize ConsoleTextSize(const char * text, const KDFont * font) {
+  KDCoordinate width = 0;
+  for (const char * p = text; *p != '\0'; ) {
+    if (IsColorPrefix(p)) {
+      const char * segStart = SkipColorHeader(p);
+      const char * segEnd = FindColorSuffix(segStart);
+      int segLen = segEnd - segStart;
+      if (segLen > 0) {
+        if (segLen < 256) {
+          char buf[256];
+          memcpy(buf, segStart, segLen);
+          buf[segLen] = '\0';
+          width += font->stringSize(buf).width();
+        } else {
+          char save = segStart[segLen];
+          ((char *)segStart)[segLen] = '\0';
+          width += font->stringSize(segStart).width();
+          ((char *)segStart)[segLen] = save;
+        }
+      }
+      p = *segEnd == '\x1b' ? segEnd + 4 : segEnd;
+    } else {
+      width += font->stringSize(p).width();
+      break;
+    }
+  }
+  return KDSize(width, font->glyphSize().height());
+}
+
+}
+
 namespace Code {
 
 ConsoleLineCell::ScrollableConsoleLineView::ConsoleLineView::ConsoleLineView() :
@@ -20,125 +139,14 @@ void ConsoleLineCell::ScrollableConsoleLineView::ConsoleLineView::setLine(Consol
 void ConsoleLineCell::ScrollableConsoleLineView::ConsoleLineView::drawRect(KDContext * ctx, KDRect rect) const {
   KDColor background = isHighlighted() ? Palette::Select : Palette::CodeBackground;
   ctx->fillRect(bounds(), Palette::CodeBackground);
-  const char * text = m_line->text();
   const KDFont * font = GlobalPreferences::sharedGlobalPreferences()->font();
-  KDCoordinate x = 0;
   KDColor defaultColor = textColor(m_line);
-  // Parse escape sequences of the form "\x1b[C<r>,<g>,<b>;" ... "\x1b[0m"
-  for (const char * p = text; *p != '\0'; ) {
-    if (*p == '\x1b' && p[1] == '[' && p[2] == 'C') {
-      // parse header r,g,b; starting at p+3
-      const char * h = p + 3;
-      int r = 0, g = 0, b = 0;
-      int parsed = 0;
-      // read r
-      parsed = 0;
-      while (*h >= '0' && *h <= '9') { r = r*10 + (*h - '0'); h++; parsed = 1; }
-      if (*h == ',') h++; // skip comma
-      // read g
-      while (*h >= '0' && *h <= '9') { g = g*10 + (*h - '0'); h++; }
-      if (*h == ',') h++;
-      // read b
-      while (*h >= '0' && *h <= '9') { b = b*10 + (*h - '0'); h++; }
-      // skip terminating ';' if present
-      if (*h == ';') h++;
-      // now h points to start of segment text
-      const char * segStart = h;
-      // find terminating ESC sequence "\x1b[0m"
-      const char * segEnd = segStart;
-      while (*segEnd != '\0') {
-        if (*segEnd == '\x1b' && segEnd[1] == '[' && segEnd[2] == '0' && segEnd[3] == 'm') {
-          break;
-        }
-        segEnd++;
-      }
-      int segLen = segEnd - segStart;
-      if (segLen > 0) {
-        // draw this segment
-        KDPoint point(x, 0);
-        // temporary buffer for the segment (stack allocate max reasonable size)
-        // avoid allocating if segLen is small
-        if (segLen < 256) {
-          char buf[256];
-          memcpy(buf, segStart, segLen);
-          buf[segLen] = '\0';
-          KDSize s = font->stringSize(buf);
-          KDColor color = KDColor::RGB888(r, g, b);
-          ctx->drawString(buf, point, font, color, background);
-          x += s.width();
-        } else {
-          // large segment: draw directly from pointer by temporarily null-terminating
-          char save = segStart[segLen];
-          ((char *)segStart)[segLen] = '\0';
-          KDSize s = font->stringSize(segStart);
-          KDColor color = KDColor::RGB888(r, g, b);
-          ctx->drawString(segStart, point, font, color, background);
-          ((char *)segStart)[segLen] = save;
-          x += s.width();
-        }
-      }
-      // advance p past the terminating sequence if any
-      if (*segEnd == '\x1b') {
-        p = segEnd + 4; // skip "\x1b[0m"
-      } else {
-        p = segEnd;
-      }
-    } else {
-      // no escape: draw the remaining text normally
-      KDPoint point(x, 0);
-      KDSize s = font->stringSize(p);
-      ctx->drawString(p, point, font, defaultColor, background);
-      x += s.width();
-      break;
-    }
-  }
+  DrawConsoleText(ctx, m_line->text(), font, defaultColor, background);
 }
 
 KDSize ConsoleLineCell::ScrollableConsoleLineView::ConsoleLineView::minimalSizeForOptimalDisplay() const {
-  // compute size ignoring escape sequences
-  const char * text = m_line->text();
   const KDFont * font = GlobalPreferences::sharedGlobalPreferences()->font();
-  KDCoordinate width = 0;
-  for (const char * p = text; *p != '\0'; ) {
-    if (*p == '\x1b' && p[1] == '[' && p[2] == 'C') {
-      // skip header
-      const char * h = p + 3;
-      while (*h && *h != ';') { h++; }
-      if (*h == ';') h++;
-      // segment start
-      const char * segStart = h;
-      const char * segEnd = segStart;
-      while (*segEnd != '\0') {
-        if (*segEnd == '\x1b' && segEnd[1] == '[' && segEnd[2] == '0' && segEnd[3] == 'm') {
-          break;
-        }
-        segEnd++;
-      }
-      int segLen = segEnd - segStart;
-      if (segLen > 0) {
-        if (segLen < 256) {
-          char buf[256];
-          memcpy(buf, segStart, segLen);
-          buf[segLen] = '\0';
-          width += font->stringSize(buf).width();
-        } else {
-          char save = segStart[segLen];
-          ((char *)segStart)[segLen] = '\0';
-          width += font->stringSize(segStart).width();
-          ((char *)segStart)[segLen] = save;
-        }
-      }
-      if (*segEnd == '\x1b') {
-        p = segEnd + 4;
-      } else {
-        p = segEnd;
-      }
-    } else {
-      width += font->stringSize(p).width();
-      break;
-    }
-  }
-  return KDSize(width, font->glyphSize().height());
+  return ConsoleTextSize(m_line->text(), font);
 }
 
 ConsoleLineCell::ScrollableConsoleLineView::ScrollableConsoleLineView(Responder * parentResponder) :
@@ -160,7 +168,12 @@ void ConsoleLineCell::setLine(ConsoleLine line) {
   m_line = line;
   m_scrollableView.consoleLineView()->setLine(&m_line);
   m_promptView.setTextColor(textColor(&m_line));
+  StripColorSequences(m_line.text(), m_sanitizedTextBuffer, sizeof(m_sanitizedTextBuffer));
   reloadCell();
+}
+
+const char * ConsoleLineCell::text() const {
+  return m_sanitizedTextBuffer;
 }
 
 void ConsoleLineCell::setHighlighted(bool highlight) {

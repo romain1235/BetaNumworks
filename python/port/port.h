@@ -21,6 +21,7 @@ public:
   static ExecutionEnvironment * currentExecutionEnvironment();
   bool runCode(const char * );
   virtual const char * inputText(const char * prompt) { return nullptr; }
+  virtual int selectText(const char * const * choices, size_t count) { return -1; }
 
   // Sandbox
   void displaySandbox() { displayViewController(sandbox()); }

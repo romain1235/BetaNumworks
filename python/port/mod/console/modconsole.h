@@ -13,8 +13,8 @@ extern "C" {
 #ifdef __cplusplus
 extern "C" {
 #endif
-mp_obj_t modconsole_print_color(mp_obj_t text_obj, mp_obj_t color_obj);
-mp_obj_t modconsole_print_color_list(mp_obj_t list_obj);
+mp_obj_t modconsole_colored_text(mp_obj_t text_obj, mp_obj_t color_obj);
+mp_obj_t modconsole_select(size_t n_args, const mp_obj_t * args);
 #ifdef __cplusplus
 }
 #endif
