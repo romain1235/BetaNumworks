@@ -21,7 +21,7 @@ Beta est un fork d'Upsilon (lui-même dérivé d'Omega et d'Epsilon). Beta ajout
     - `set_fullscreen(bool)`, `get_pixels(x,y,w,h)`, `wait_vblank()`
   - Ion :
     - LED (désactiver en mode examen)
-  - Nouveau module `console` : `print_color(text, (r,g,b))`, `print_color_list([(text,(r,g,b)), ...])`
+  - Nouveau module `console` : `colored_text("texte", (r,g,b))` pour construire des chaines colorees et `select("choix 1", "choix 2", ...)` pour retourner l'index choisi
   - Correction d'un bug de `matplotlib` qui affichait un fond blanc quel que soit le thème
 - Améliorations de l'application `atomic`
 - Améliorations du parseur pour suivre le comportement d'Epsilon
