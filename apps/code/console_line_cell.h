@@ -56,7 +56,6 @@ private:
   MessageTextView m_promptView;
   ScrollableConsoleLineView m_scrollableView;
   ConsoleLine m_line;
-  mutable char m_sanitizedTextBuffer[1024];
 };
 
 }

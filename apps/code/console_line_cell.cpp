@@ -4,8 +4,12 @@
 #include <kandinsky/coordinate.h>
 #include <apps/i18n.h>
 #include <apps/global_preferences.h>
+#include <escher/text_field.h>
 
 namespace {
+
+constexpr size_t kSanitizedConsoleTextBufferSize = TextField::maxBufferSize();
+char s_sanitizedConsoleTextBuffer[kSanitizedConsoleTextBufferSize];
 
 bool IsColorPrefix(const char * p) {
   return p[0] == '\x1b' && p[1] == '[' && p[2] == 'C';
@@ -168,12 +172,12 @@ void ConsoleLineCell::setLine(ConsoleLine line) {
   m_line = line;
   m_scrollableView.consoleLineView()->setLine(&m_line);
   m_promptView.setTextColor(textColor(&m_line));
-  StripColorSequences(m_line.text(), m_sanitizedTextBuffer, sizeof(m_sanitizedTextBuffer));
   reloadCell();
 }
 
 const char * ConsoleLineCell::text() const {
-  return m_sanitizedTextBuffer;
+  StripColorSequences(m_line.text(), s_sanitizedConsoleTextBuffer, sizeof(s_sanitizedConsoleTextBuffer));
+  return s_sanitizedConsoleTextBuffer;
 }
 
 void ConsoleLineCell::setHighlighted(bool highlight) {
