@@ -15,6 +15,7 @@
 
 extern "C" {
 #include <stdlib.h>
+#include <python/port/mod/kandinsky/modkandinsky.h>
 }
 
 namespace Code {
@@ -511,6 +512,12 @@ VariableBoxController * ConsoleController::variableBoxForInputEventHandler(Input
 void ConsoleController::resetSandbox() {
   // Restore LED state saved before script execution (or turn off if none)
   micropython_port_restore_led_state();
+  // If set_fullscreen(True) was called but no drawing occurred (sandbox never
+  // displayed), viewDidDisappear is never called, so the flag must be cleared
+  // here to avoid it leaking into the next script run.
+  if (!isDisplayingViewController()) {
+    modkandinsky_reset_fullscreen();
+  }
   //m_sandboxController.reset();
 }
 

@@ -30,6 +30,10 @@ void SandboxController::viewWillAppear() {
 void SandboxController::viewDidDisappear() {
   modturtle_view_did_disappear();
   modkandinsky_view_did_disappear();
+  // Always force a full redraw when the sandbox is dismissed so that any
+  // area overwritten by fullscreen drawing (including the toolbar) is restored,
+  // even if the fullscreen flag was already cleared before this point.
+  AppsContainer::sharedAppsContainer()->redrawWindow(true);
 }
 
 bool SandboxController::handleEvent(Ion::Events::Event event) {
