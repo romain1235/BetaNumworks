@@ -5,3 +5,4 @@ mp_obj_t modos_getlogin();
 mp_obj_t modos_remove(mp_obj_t o_file_name);
 mp_obj_t modos_rename(mp_obj_t o_old_name, mp_obj_t o_new_name);
 mp_obj_t modos_listdir();
+mp_obj_t modos_heap_left();

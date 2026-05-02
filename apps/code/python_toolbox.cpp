@@ -505,6 +505,7 @@ const ToolboxMessageTree OsModuleChildren[] = {
   ToolboxMessageTree::Leaf(I18n::Message::PythonOsCommandRemove, I18n::Message::PythonOsRemove, false, I18n::Message::PythonOsCommandRemoveWithoutArg),
   ToolboxMessageTree::Leaf(I18n::Message::PythonOsCommandRename, I18n::Message::PythonOsRename, false, I18n::Message::PythonOsCommandRenameWithoutArg),
   ToolboxMessageTree::Leaf(I18n::Message::PythonOsCommandListdir, I18n::Message::PythonOsListdir, false)
+  ,ToolboxMessageTree::Leaf(I18n::Message::PythonOsCommandHeapLeft, I18n::Message::PythonOsHeapLeft, false)
 };
 
 #if MICROPY_PY_SYS
@@ -625,6 +626,8 @@ const ToolboxMessageTree catalogChildren[] = {
   ToolboxMessageTree::Leaf(I18n::Message::PythonCommandHex, I18n::Message::PythonHex),
   ToolboxMessageTree::Leaf(I18n::Message::PythonTurtleCommandHideturtle, I18n::Message::PythonTurtleHideturtle, false),
   ToolboxMessageTree::Leaf(I18n::Message::PythonCommandHist, I18n::Message::PythonHist),
+
+  ToolboxMessageTree::Leaf(I18n::Message::PythonOsCommandHeapLeft, I18n::Message::PythonOsHeapLeft, false),
   ToolboxMessageTree::Leaf(I18n::Message::PythonCommandImportCmath, I18n::Message::PythonImportCmath, false),
   ToolboxMessageTree::Leaf(I18n::Message::PythonCommandImportIon, I18n::Message::PythonImportIon, false),
   ToolboxMessageTree::Leaf(I18n::Message::PythonCommandImportKandinsky, I18n::Message::PythonImportKandinsky, false),

@@ -5,6 +5,7 @@ extern "C" {
 #include <py/runtime.h>
 #include <py/objstr.h>
 #include <py/objtuple.h>
+#include <py/gc.h>
 }
 
 #include <ion.h>
@@ -119,5 +120,11 @@ mp_obj_t modos_listdir(void) {
   }
   
   return list;
+}
+
+mp_obj_t modos_heap_left(void) {
+  gc_info_t info;
+  gc_info(&info);
+  return MP_OBJ_NEW_SMALL_INT(info.free);
 }
 
