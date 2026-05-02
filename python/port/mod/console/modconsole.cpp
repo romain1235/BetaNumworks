@@ -57,18 +57,54 @@ mp_obj_t modconsole_colored_text(mp_obj_t text_obj, mp_obj_t color_obj) {
 
   size_t textlen = strlen(text);
 
-  size_t total_len = (size_t)h + textlen + 4;
+  /* Each line must be independently wrapped so splitting on '\n' keeps
+   * well-formed color sequences in the console store. */
+  size_t newline_count = 0;
+  for (size_t i = 0; i < textlen; i++) {
+    if (text[i] == '\n') {
+      newline_count++;
+    }
+  }
+
+  size_t total_len = (size_t)h + textlen + 4 + newline_count * ((size_t)h + 4);
   char * out = static_cast<char *>(malloc(total_len + 1));
   if (out == nullptr) {
     mp_raise_msg(&mp_type_MemoryError, MP_ERROR_TEXT("out of memory"));
   }
 
-  memcpy(out, header, h);
-  memcpy(out + h, text, textlen);
-  memcpy(out + h + textlen, "\x1b[0m", 4);
-  out[total_len] = 0;
+  size_t out_pos = 0;
+  const char * p = text;
+  while (true) {
+    memcpy(out + out_pos, header, h);
+    out_pos += h;
 
-  mp_obj_t result = mp_obj_new_str(out, total_len);
+    const char * line_end = p;
+    while (*line_end != 0 && *line_end != '\n') {
+      line_end++;
+    }
+    size_t line_len = line_end - p;
+    if (line_len > 0) {
+      memcpy(out + out_pos, p, line_len);
+      out_pos += line_len;
+    }
+
+    memcpy(out + out_pos, "\x1b[0m", 4);
+    out_pos += 4;
+
+    if (*line_end != '\n') {
+      break;
+    }
+
+    out[out_pos++] = '\n';
+    p = line_end + 1;
+    if (*p == 0) {
+      break;
+    }
+  }
+
+  out[out_pos] = 0;
+
+  mp_obj_t result = mp_obj_new_str(out, out_pos);
   free(out);
   return result;
 }
