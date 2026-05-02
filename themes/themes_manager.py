@@ -85,18 +85,23 @@ def theme_to_dict(data):
                     r[key+sub_key] = data["colors"][key][sub_key]
     return r
         
-def write_palette_h(data, file_p):
-    """
-    Write the header to file_p
-    """
-    file_p.write("#ifndef ESCHER_PALETTE_H\n")
-    file_p.write("#define ESCHER_PALETTE_H\n\n")
-    file_p.write("#include <kandinsky/color.h>\n")
-    file_p.write("#include <stddef.h>\n\n")
-    file_p.write("class Palette {\n")
-    file_p.write("public:\n")
+_DATA_COLORS      = ["Red", "Blue", "Green", "YellowDark", "Magenta", "Turquoise", "Pink", "Orange"]
+_DATA_COLORS_LIGHT = ["RedLight", "BlueLight", "GreenLight", "YellowLight"]
+_ATOM_COLORS = [
+    "AtomUnknown", "AtomAlkaliMetal", "AtomAlkaliEarthMetal", "AtomLanthanide",
+    "AtomActinide", "AtomTransitionMetal", "AtomPostTransitionMetal", "AtomMetalloid",
+    "AtomHalogen", "AtomReactiveNonmetal", "AtomNobleGas"
+]
+_ATOM_COLORS_H = [
+    "AtomUnknownHighlighted", "AtomAlkaliMetalHighlighted", "AtomAlkaliEarthMetalHighlighted",
+    "AtomLanthanideHighlighted", "AtomActinideHighlighted", "AtomTransitionMetalHighlighted",
+    "AtomPostTransitionMetalHighlighted", "AtomMetalloidHighlighted", "AtomHalogenHighlighted",
+    "AtomReactiveNonmetalHighlighted", "AtomNobleGasHighlighted"
+]
 
-    # Default values - sometimes never used
+
+def get_palette_defaults(data):
+    """Return the merged defaults dict for the given theme data."""
     defaults = {
         "YellowDark": "ffb734",
         "YellowLight": "ffcc7b",
@@ -132,32 +137,178 @@ def write_palette_h(data, file_p):
         "parenthese_3": "5075f2",
         "invalid_parenthese": "ff000c",
     }
-
-    # First apply a fallback theme to ensure backwards compatibility
-    defaults.update(theme_to_dict(get_data("beta_dark",os.path.dirname(os.path.realpath(__file__)) + os.path.sep + "themes" + os.path.sep + "local")))
+    defaults.update(theme_to_dict(get_data("beta_dark", os.path.dirname(os.path.realpath(__file__)) + os.path.sep + "themes" + os.path.sep + "local")))
     defaults.update(theme_to_dict(data))
+    return defaults
+
+
+def write_palette_h(data, file_p):
+    """
+    Write the header to file_p (mutable static KDColor members for runtime override support).
+    """
+    defaults = get_palette_defaults(data)
+
+    file_p.write("#ifndef ESCHER_PALETTE_H\n")
+    file_p.write("#define ESCHER_PALETTE_H\n\n")
+    file_p.write("#include <kandinsky/color.h>\n")
+    file_p.write("#include <stddef.h>\n\n")
+    file_p.write("class Palette {\n")
+    file_p.write("public:\n")
+
     for key in defaults.keys():
-        file_p.write("  constexpr static KDColor " + key + " = KDColor::RGB24(0x" + defaults[key] + ");\n")
+        file_p.write("  static KDColor " + key + ";\n")
 
-    file_p.write("  constexpr static KDColor DataColor[] = {Red, Blue, Green, YellowDark, Magenta, Turquoise, Pink, Orange};\n")
-    file_p.write("  constexpr static KDColor DataColorLight[] = {RedLight, BlueLight, GreenLight, YellowLight};\n")
+    file_p.write("  static KDColor DataColor[8];\n")
+    file_p.write("  static KDColor DataColorLight[4];\n")
+    file_p.write("  static KDColor AtomColor[11];\n")
+    file_p.write("  static KDColor AtomColorHighlighted[11];\n\n")
 
-    file_p.write("  constexpr static KDColor AtomColor[] = {\n")
-    file_p.write("    AtomUnknown, AtomAlkaliMetal, AtomAlkaliEarthMetal, AtomLanthanide, AtomActinide, AtomTransitionMetal,\n")
-    file_p.write("    AtomPostTransitionMetal, AtomMetalloid, AtomHalogen, AtomReactiveNonmetal, AtomNobleGas\n")
-    file_p.write("  };\n\n")
-
-    file_p.write("  constexpr static KDColor AtomColorHighlighted[] = {\n")
-    file_p.write("    AtomUnknownHighlighted, AtomAlkaliMetalHighlighted, AtomAlkaliEarthMetalHighlighted, AtomLanthanideHighlighted, AtomActinideHighlighted, AtomTransitionMetalHighlighted,\n")
-    file_p.write("    AtomPostTransitionMetalHighlighted, AtomMetalloidHighlighted, AtomHalogenHighlighted, AtomReactiveNonmetalHighlighted, AtomNobleGasHighlighted\n")
-    file_p.write("  };\n\n")
-
-    file_p.write("  constexpr static size_t numberOfDataColors() { return sizeof(DataColor)/sizeof(KDColor); }\n")
-    file_p.write("  constexpr static size_t numberOfLightDataColors() { return sizeof(DataColorLight)/sizeof(KDColor); }\n")
+    file_p.write("  constexpr static size_t numberOfDataColors() { return 8; }\n")
+    file_p.write("  constexpr static size_t numberOfLightDataColors() { return 4; }\n")
     file_p.write("  static KDColor nextDataColor(int * colorIndex);\n")
+    file_p.write("  static void overrideColor(const char* key, KDColor value);\n")
+    file_p.write("  static void rebuildArrayColors();\n")
+    file_p.write("  static void resetToDefaults();\n")
     file_p.write("};\n\n")
 
     file_p.write("#endif\n")
+
+
+def _path_to_varname(firmware_path):
+    """Convert a firmware icon path to its ImageStore variable name (same logic as inliner.c)."""
+    filename = os.path.basename(firmware_path)        # e.g. "exam_icon.png"
+    name = filename.rsplit('.', 1)[0]                  # e.g. "exam_icon"
+    parts = name.split('_')
+    return ''.join(p.capitalize() for p in parts)      # e.g. "ExamIcon"
+
+
+def write_image_store_override_h(file_p):
+    """Generate image_store_override.h declaring overrideIcon() and resetIconPool()."""
+    file_p.write("// Auto-generated by themes_manager.py - do not edit.\n")
+    file_p.write("#ifndef ESCHER_IMAGE_STORE_OVERRIDE_H\n")
+    file_p.write("#define ESCHER_IMAGE_STORE_OVERRIDE_H\n\n")
+    file_p.write("#include <escher/image.h>\n")
+    file_p.write("#include <stdint.h>\n\n")
+    file_p.write("namespace ImageStore {\n")
+    file_p.write("  void overrideIcon(const char* key, const uint8_t* data, uint16_t w, uint16_t h, uint32_t dataLen);\n")
+    file_p.write("  void resetIconPool();\n")
+    file_p.write("}\n\n")
+    file_p.write("#endif\n")
+
+
+def write_image_store_override_cpp(file_p):
+    """Generate image_store_override.cpp with overrideIcon() + resetIconPool() implementation."""
+    icons = get_icons_list()
+
+    file_p.write("// Auto-generated by themes_manager.py - do not edit.\n")
+    file_p.write("#include <escher/image_store_override.h>\n")
+    file_p.write("#include <string.h>\n")
+    file_p.write("#include <new>\n\n")
+
+    # Re-declare all ImageStore pointers as weak (may not be present if app is excluded)
+    file_p.write("namespace ImageStore {\n\n")
+    for firmware_path in icons.keys():
+        varname = _path_to_varname(firmware_path)
+        file_p.write("  extern const Image * " + varname + " __attribute__((weak));\n")
+
+    file_p.write("\n  // Pool for runtime image overrides (data pointers into external flash)\n")
+    file_p.write("  static constexpr int k_maxIcons = " + str(len(icons) + 4) + ";\n")
+    file_p.write("  static char s_iconPool[k_maxIcons * sizeof(Image)] __attribute__((aligned(4)));\n")
+    file_p.write("  static int s_iconPoolSize = 0;\n\n")
+
+    # Keep originals so reset can restore compiled-in icons
+    for firmware_path, _ in icons.items():
+        varname = _path_to_varname(firmware_path)
+        file_p.write("  static const Image * s_original_" + varname + " = nullptr;\n")
+    file_p.write("  static bool s_originalsRecorded = false;\n\n")
+
+    file_p.write("  static void recordOriginalIcons() {\n")
+    file_p.write("    if (s_originalsRecorded) return;\n")
+    for firmware_path, _ in icons.items():
+        varname = _path_to_varname(firmware_path)
+        file_p.write("    s_original_" + varname + " = " + varname + ";\n")
+    file_p.write("    s_originalsRecorded = true;\n")
+    file_p.write("  }\n\n")
+
+    file_p.write("  void overrideIcon(const char* key, const uint8_t* data, uint16_t w, uint16_t h, uint32_t dataLen) {\n")
+    file_p.write("    recordOriginalIcons();\n")
+    file_p.write("    if (s_iconPoolSize >= k_maxIcons) return;\n")
+    file_p.write("    void * slot = s_iconPool + s_iconPoolSize * sizeof(Image);\n")
+    file_p.write("    new (slot) Image(w, h, data, (uint16_t)dataLen);\n")
+    file_p.write("    const Image* img = reinterpret_cast<const Image*>(slot);\n")
+    file_p.write("    s_iconPoolSize++;\n")
+    for firmware_path, _ in icons.items():
+        varname = _path_to_varname(firmware_path)
+        file_p.write("    if (strcmp(key, \"" + firmware_path + "\") == 0) { if (" + varname + ") " + varname + " = img; return; }\n")
+    file_p.write("    s_iconPoolSize--;  // key not found, reuse slot\n")
+    file_p.write("  }\n\n")
+
+    file_p.write("  void resetIconPool() {\n")
+    file_p.write("    // Drop runtime overrides and restore original pointers\n")
+    file_p.write("    s_iconPoolSize = 0;\n")
+    file_p.write("    recordOriginalIcons();\n")
+    for firmware_path, _ in icons.items():
+        varname = _path_to_varname(firmware_path)
+        file_p.write("    if (s_original_" + varname + ") " + varname + " = s_original_" + varname + ";\n")
+    file_p.write("  }\n\n")
+    file_p.write("}\n")
+
+
+def write_palette_init_cpp(data, file_p):
+    """
+    Write the palette_init.cpp companion file with definitions and runtime helpers.
+    """
+    defaults = get_palette_defaults(data)
+
+    file_p.write("#include <escher/palette.h>\n")
+    file_p.write("#include <string.h>\n\n")
+
+    # Scalar definitions
+    for key, hex_val in defaults.items():
+        file_p.write("KDColor Palette::" + key + " = KDColor::RGB24(0x" + hex_val + ");\n")
+
+    # Array definitions
+    def write_array(name, keys):
+        file_p.write("\nKDColor Palette::" + name + "[] = {\n")
+        for k in keys:
+            hex_val = defaults.get(k, "000000")
+            file_p.write("  KDColor::RGB24(0x" + hex_val + "),\n")
+        file_p.write("};\n")
+
+    write_array("DataColor", _DATA_COLORS)
+    write_array("DataColorLight", _DATA_COLORS_LIGHT)
+    write_array("AtomColor", _ATOM_COLORS)
+    write_array("AtomColorHighlighted", _ATOM_COLORS_H)
+
+    # overrideColor — big if/else chain matching key names
+    file_p.write("\nvoid Palette::overrideColor(const char* key, KDColor value) {\n")
+    first = True
+    for k in defaults.keys():
+        prefix = "  if" if first else "  } else if"
+        first = False
+        file_p.write(prefix + " (strcmp(key, \"" + k + "\") == 0) {\n")
+        file_p.write("    " + k + " = value;\n")
+    file_p.write("  }\n")
+    file_p.write("}\n")
+
+    # rebuildArrayColors — sync arrays from scalar values after all overrides applied
+    file_p.write("\nvoid Palette::rebuildArrayColors() {\n")
+    for i, k in enumerate(_DATA_COLORS):
+        file_p.write("  DataColor[" + str(i) + "] = " + k + ";\n")
+    for i, k in enumerate(_DATA_COLORS_LIGHT):
+        file_p.write("  DataColorLight[" + str(i) + "] = " + k + ";\n")
+    for i, k in enumerate(_ATOM_COLORS):
+        file_p.write("  AtomColor[" + str(i) + "] = " + k + ";\n")
+    for i, k in enumerate(_ATOM_COLORS_H):
+        file_p.write("  AtomColorHighlighted[" + str(i) + "] = " + k + ";\n")
+    file_p.write("}\n")
+
+    # resetToDefaults — re-apply all compiled-in default values
+    file_p.write("\nvoid Palette::resetToDefaults() {\n")
+    for key, hex_val in defaults.items():
+        file_p.write("  " + key + " = KDColor::RGB24(0x" + hex_val + ");\n")
+    file_p.write("  rebuildArrayColors();\n")
+    file_p.write("}\n")
 
 
 def handle_git(args):
@@ -231,6 +382,20 @@ def handle_theme(args, path):
         else:
             with open(args.output, "w") as palette_file:
                 write_palette_h(data, palette_file)
+            # Also generate the companion palette_init.cpp alongside palette.h
+            init_cpp_path = args.output.replace("palette.h", "palette_init.cpp")
+            if init_cpp_path != args.output:
+                with open(init_cpp_path, "w") as init_file:
+                    write_palette_init_cpp(data, init_file)
+            # Also generate image_store_override.h and image_store_override.cpp
+            override_h_path = args.output.replace("palette.h", "image_store_override.h")
+            override_cpp_path = args.output.replace("palette.h", "image_store_override.cpp")
+            if override_h_path != args.output:
+                with open(override_h_path, "w") as f:
+                    write_image_store_override_h(f)
+            if override_cpp_path != args.output:
+                with open(override_cpp_path, "w") as f:
+                    write_image_store_override_cpp(f)
 
 
 def main(args):

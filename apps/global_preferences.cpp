@@ -1,4 +1,5 @@
 #include "global_preferences.h"
+#include <ion/backlight.h>
 
 GlobalPreferences * GlobalPreferences::sharedGlobalPreferences() {
   static GlobalPreferences globalPreferences;
@@ -37,10 +38,11 @@ void GlobalPreferences::setTempExamMode(ExamMode mode) {
 }
 
 void GlobalPreferences::setBrightnessLevel(int brightnessLevel) {
+  brightnessLevel = brightnessLevel < 0 ? 0 : brightnessLevel;
+  brightnessLevel = brightnessLevel > Ion::Backlight::MaxBrightness ? Ion::Backlight::MaxBrightness : brightnessLevel;
   if (m_brightnessLevel != brightnessLevel) {
-    brightnessLevel = brightnessLevel < 0 ? 0 : brightnessLevel;
-    brightnessLevel = brightnessLevel > Ion::Backlight::MaxBrightness ? Ion::Backlight::MaxBrightness : brightnessLevel;
     m_brightnessLevel = brightnessLevel;
+    Ion::Backlight::setBrightness(m_brightnessLevel);
   }
 }
 

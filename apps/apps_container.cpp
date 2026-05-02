@@ -2,6 +2,7 @@
 #include "apps_container_storage.h"
 #include "global_preferences.h"
 #include "exam_mode_configuration.h"
+#include "theme/theme_loader.h"
 #include <ion.h>
 #include <poincare/init.h>
 #include <poincare/exception_checkpoint.h>
@@ -220,12 +221,26 @@ bool AppsContainer::dispatchEvent(Ion::Events::Event event) {
   if (event.isKeyboardEvent()) {
     m_backlightDimmingTimer.reset();
     m_suspendTimer.reset();
-    Ion::Backlight::setBrightness(GlobalPreferences::sharedGlobalPreferences()->brightnessLevel());
+    int targetBrightness = GlobalPreferences::sharedGlobalPreferences()->brightnessLevel();
+    if (Ion::Backlight::brightness() < targetBrightness) {
+      Ion::Backlight::setBrightness(targetBrightness);
+    }
   }
   if (!didProcessEvent && alphaLockWantsRedraw) {
     window()->redraw();
     return true;
   }
+
+  // Some views cache palette/icon pointers at construction. After a theme
+  // change, rebuild the active app once to refresh all themed assets.
+  if (ThemeLoader::needsAppReload() && s_activeApp) {
+    App::Snapshot * snapshot = s_activeApp->snapshot();
+    if (switchTo(nullptr) && switchTo(snapshot)) {
+      ThemeLoader::acknowledgeAppReload();
+      return true;
+    }
+  }
+
   return didProcessEvent || alphaLockWantsRedraw;
 }
 

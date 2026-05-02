@@ -19,7 +19,7 @@
  * the DFU code (namely, Ion::USB::Device::Calculator::Poll). We're simply
  * making sure this is the first symbol output. */
 
-EPSILON_STACK_END = 0x20000000 + 256K - 32K;
+EPSILON_STACK_END = 0x20000000 + 256K - 28K;
 
 MEMORY {
   RAM_BUFFER (rw) : ORIGIN = EPSILON_STACK_END, LENGTH = 9K

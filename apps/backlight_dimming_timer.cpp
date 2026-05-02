@@ -11,6 +11,7 @@ BacklightDimmingTimer::BacklightDimmingTimer() :
 
 bool BacklightDimmingTimer::fire(){
   int i = Ion::Backlight::brightness();
+  int delta = Ion::Backlight::MaxBrightness/GlobalPreferences::NumberOfBrightnessStates;
   while (i > 0){
     int t = 20;
     Ion::Events::Event e = Ion::Events::getEvent(&t);
@@ -20,7 +21,7 @@ bool BacklightDimmingTimer::fire(){
     }
 
     Ion::Backlight::setBrightness(i);
-    i -= 15;
+    i -= delta;
   }
   return false;
 }

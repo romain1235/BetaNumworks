@@ -33,7 +33,7 @@ void Turtle::reset() {
   m_y = 0;
   m_heading = 0;
   m_color = k_defaultColor;
-  m_bgcolor = k_defaultColorBG;
+  m_bgcolor = Turtle::defaultColorBG();
   m_penDown = true;
   m_visible = true;
   m_speed = k_defaultSpeed;

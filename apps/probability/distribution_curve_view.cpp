@@ -6,7 +6,7 @@ using namespace Shared;
 
 namespace Probability {
 
-constexpr KDColor DistributionCurveView::k_backgroundColor;
+
 
 void DistributionCurveView::reload() {
   CurveView::reload();
@@ -16,9 +16,9 @@ void DistributionCurveView::reload() {
 void DistributionCurveView::drawRect(KDContext * ctx, KDRect rect) const {
   float lowerBound = m_calculation->lowerBound();
   float upperBound = m_calculation->upperBound();
-  ctx->fillRect(bounds(), k_backgroundColor);
+  ctx->fillRect(bounds(), Palette::BackgroundApps);
   drawAxis(ctx, rect, Axis::Horizontal);
-  drawLabelsAndGraduations(ctx, rect, Axis::Horizontal, false, false, false, 0, k_backgroundColor);
+  drawLabelsAndGraduations(ctx, rect, Axis::Horizontal, false, false, false, 0, Palette::BackgroundApps);
   if (m_distribution->type() == Distribution::Type::Normal) {
     /* Special case for the normal distribution, which has always the same curve
      * We indicate the pixels from and to which we color under the curve, not

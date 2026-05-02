@@ -53,7 +53,12 @@ void BrightnessController::willDisplayCellForIndex(HighlightCell * cell, int ind
   if(index == 0){
     MessageTableCellWithGauge * myGaugeCell = (MessageTableCellWithGauge *)cell;
     GaugeView * myGauge = (GaugeView *)myGaugeCell->accessoryView();
-    myGauge->setLevel((float)GlobalPreferences::sharedGlobalPreferences()->brightnessLevel()/(float)Ion::Backlight::MaxBrightness);
+    int delta = Ion::Backlight::MaxBrightness/GlobalPreferences::NumberOfBrightnessStates;
+    int currentLevel = GlobalPreferences::sharedGlobalPreferences()->brightnessLevel();
+    if (currentLevel < delta) {
+      currentLevel = delta;
+    }
+    myGauge->setLevel((float)(currentLevel - delta)/(float)(Ion::Backlight::MaxBrightness - delta));
     return;
   } else {
     MessageTableCellWithEditableText * myCell = (MessageTableCellWithEditableText *)cell;
@@ -84,8 +89,19 @@ void BrightnessController::willDisplayCellForIndex(HighlightCell * cell, int ind
 bool BrightnessController::handleEvent(Ion::Events::Event event) {
     if ((selectedRow() == 0) && (event == Ion::Events::Right || event == Ion::Events::Left || event == Ion::Events::Plus || event == Ion::Events::Minus)) {
       int delta = Ion::Backlight::MaxBrightness/GlobalPreferences::NumberOfBrightnessStates;
-      int direction = (event == Ion::Events::Right || event == Ion::Events::Plus) ? delta : -delta;
-      GlobalPreferences::sharedGlobalPreferences()->setBrightnessLevel(GlobalPreferences::sharedGlobalPreferences()->brightnessLevel()+direction);
+      int currentLevel = GlobalPreferences::sharedGlobalPreferences()->brightnessLevel();
+      if (currentLevel < delta) {
+        currentLevel = delta;
+      }
+      int currentStep = (currentLevel - delta) / delta;
+      int direction = (event == Ion::Events::Right || event == Ion::Events::Plus) ? 1 : -1;
+      int nextStep = currentStep + direction;
+      if (nextStep < 0) {
+        nextStep = 0;
+      } else if (nextStep > GlobalPreferences::NumberOfBrightnessStates - 1) {
+        nextStep = GlobalPreferences::NumberOfBrightnessStates - 1;
+      }
+      GlobalPreferences::sharedGlobalPreferences()->setBrightnessLevel(delta + nextStep * delta);
       m_selectableTableView.reloadCellAtLocation(m_selectableTableView.selectedColumn(), m_selectableTableView.selectedRow());
       return true;
     }
@@ -93,7 +109,11 @@ bool BrightnessController::handleEvent(Ion::Events::Event event) {
       int delta = Ion::Backlight::MaxBrightness/GlobalPreferences::NumberOfBrightnessStates;
       int NumberOfStepsPerShortcut = GlobalPreferences::sharedGlobalPreferences()->brightnessShortcut();
       int direction = (event == Ion::Events::BrightnessPlus) ? NumberOfStepsPerShortcut*delta : -delta*NumberOfStepsPerShortcut;
-      GlobalPreferences::sharedGlobalPreferences()->setBrightnessLevel(GlobalPreferences::sharedGlobalPreferences()->brightnessLevel()+direction);
+      int nextLevel = GlobalPreferences::sharedGlobalPreferences()->brightnessLevel() + direction;
+      if (nextLevel < delta) {
+        nextLevel = delta;
+      }
+      GlobalPreferences::sharedGlobalPreferences()->setBrightnessLevel(nextLevel);
       m_selectableTableView.reloadCellAtLocation(m_selectableTableView.selectedColumn(), 0);
       return true;
     }

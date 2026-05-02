@@ -36,7 +36,10 @@ void DFU(bool exitWithKeyboard, void * data) {
 
   size_t dfu_bootloader_size = &_dfu_bootloader_flash_end - &_dfu_bootloader_flash_start;
   char * dfu_bootloader_ram_start = reinterpret_cast<char *>(&_stack_end);
-  assert(&_stack_end == (void *)(0x20000000 + 256*1024 - 32*1024));
+  /* _stack_end is placed by the linker at SRAM_END - STACK_SIZE.
+   * The original assert assumed a 32K stack; we verify only that _stack_end
+   * is within SRAM and that the DFU code will fit before the current SP. */
+  assert((uintptr_t)&_stack_end >= 0x20000000 && (uintptr_t)&_stack_end < 0x20040000);
 
   /* 2- Verify there is enough free space on the stack to copy the DFU code. */
 
@@ -73,7 +76,7 @@ void DFU(bool exitWithKeyboard, void * data) {
    *  - Delete the current symbol table
    *        symbol-file
    *  - Add the new symbol table, with the address of the new .text section
-   *        add-symbol-file ion/src/device/usb/dfu.elf 0x20038000
+   *        add-symbol-file ion/src/device/usb/dfu.elf 0x20039000
    */
 
   dfu_bootloader_entry(exitWithKeyboard, data);

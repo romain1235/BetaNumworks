@@ -14,6 +14,7 @@
 #include "sub_menu/preferences_controller.h"
 #include "sub_menu/external_controller.h"
 #include "sub_menu/brightness_controller.h"
+#include "../theme/theme_controller.h"
 
 namespace Settings {
 
@@ -83,6 +84,7 @@ private:
   AboutController m_aboutController;
   PreferencesController m_preferencesController;
   ExternalController m_externalController;
+  ThemeController m_themeController;
 };
 
 }

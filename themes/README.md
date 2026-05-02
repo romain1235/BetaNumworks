@@ -42,6 +42,42 @@ make THEME_REPO=https://github.com/Omega-Numworks/Omega-Theme-Example.git THEME_
 
 > You can use `./themes/script.sh your_theme_name` to build the icons of your theme from the colors of `themes/logocolors.json`.
 
+## Building a .theme file
+
+You can generate a binary `.theme` package from a local theme using the
+provided `theme_builder.py` script. This is useful to test or distribute a
+single theme file.
+
+Usage:
+
+```bash
+python3 themes/theme_builder.py <theme_name> <output.theme>
+```
+
+Examples:
+
+```bash
+# Build `beta_dark.theme` from local theme data
+python3 themes/theme_builder.py beta_dark output/beta_dark.theme
+
+# List available local themes
+python3 themes/theme_builder.py --list
+```
+
+To include icon assets in the `.theme` file, install the optional Python
+dependencies:
+
+```bash
+pip install Pillow lz4
+```
+
+The script reads theme JSON files from `themes/local/<theme_name>.json` and
+icon PNGs from the corresponding `themes/local/<theme_name>/` folder.
+
+## Installing `.theme` files with Upsilon-External
+
+to install your .theme file, go to UpsilonExternal and install the file.
+
 ## License
 
 Omega-Themes is released under a [CC BY-NC-SA License](https://creativecommons.org/licenses/by-nc-sa/4.0/legalcode). NumWorks is a registered trademark.

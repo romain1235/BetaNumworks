@@ -10,6 +10,7 @@ public:
   ShiftAlphaLockView();
   void drawRect(KDContext * ctx, KDRect rect) const override;
   bool setStatus(Ion::Events::ShiftAlphaStatus status);
+  void reload();
   KDSize minimalSizeForOptimalDisplay() const override;
 private:
   constexpr static KDCoordinate k_lockRightMargin = 5;

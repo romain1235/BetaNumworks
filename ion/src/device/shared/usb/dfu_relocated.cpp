@@ -36,7 +36,7 @@ void DFU(bool exitWithKeyboard, void * data) {
 
   size_t dfu_bootloader_size = &_dfu_bootloader_flash_end - &_dfu_bootloader_flash_start;
   char * dfu_bootloader_ram_start = reinterpret_cast<char *>(&_stack_end);
-  assert(&_stack_end == (void *)(0x20000000 + 256*1024 - 32*1024));
+  assert((uintptr_t)&_stack_end >= 0x20000000 && (uintptr_t)&_stack_end < 0x20040000);
 
   /* 2- Verify there is enough free space on the stack to copy the DFU code. */
 

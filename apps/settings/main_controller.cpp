@@ -43,7 +43,8 @@ MainController::MainController(Responder * parentResponder, InputEventHandlerDel
   m_examModeController(this),
   m_aboutController(this),
   m_preferencesController(this),
-  m_externalController(this)
+  m_externalController(this),
+  m_themeController(this)
 {
   for (int i = 0; i < k_numberOfSimpleChevronCells; i++) {
     m_cells[i].setMessageFont(KDFont::LargeFont);
@@ -102,6 +103,9 @@ bool MainController::handleEvent(Ion::Events::Event event) {
       subController = &m_codeOptionsController;
     } else if (title == I18n::Message::ExternalApps) {
       subController = &m_externalController;
+    } else if (title == I18n::Message::Theme) {
+      stackController()->push(&m_themeController);
+      return true;
     } else {
       subController = &m_preferencesController;
     }

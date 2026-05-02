@@ -1,5 +1,6 @@
 #include "apps_container.h"
 #include "global_preferences.h"
+#include "theme/theme_loader.h"
 #include <poincare/init.h>
 #include <string.h>
 
@@ -28,6 +29,10 @@ void ion_main(int argc, const char * const argv[]) {
 
   // Initialize Poincare::TreePool::sharedPool
   Poincare::Init();
+  // Apply stored theme BEFORE AppsContainer is constructed, so that all views
+  // (including TitleBarView which caches Palette::Toolbar at construction) get
+  // the correct theme colors.
+  ThemeLoader::applyStoredTheme();
 
 #if EPSILON_GETOPT
   for (int i=1; i<argc; i++) {

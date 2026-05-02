@@ -115,6 +115,17 @@ escher_src += $(addprefix escher/src/,\
   window.cpp \
 )
 
+# Generated palette_init.cpp (definitions + overrideColor + rebuildArrayColors)
+# It is emitted by themes_manager.py alongside palette.h.
+escher_src += escher/palette_init.cpp
+
+$(BUILD_DIR)/escher/palette_init.cpp: $(BUILD_DIR)/escher/palette.h
+
+# Generated image_store_override.cpp (overrideIcon + resetIconPool)
+escher_src += escher/image_store_override.cpp
+
+$(BUILD_DIR)/escher/image_store_override.cpp: $(BUILD_DIR)/escher/palette.h
+
 tests_src += $(addprefix escher/test/,\
   clipboard.cpp \
   layout_field.cpp\

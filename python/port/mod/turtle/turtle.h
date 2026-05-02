@@ -31,7 +31,7 @@ public:
     m_y(0),
     m_heading(0),
     m_color(k_defaultColor),
-    m_bgcolor(k_defaultColorBG),
+    m_bgcolor(),
     m_colorMode(MicroPython::Color::Mode::MaxIntensity255),
     m_penDown(true),
     m_visible(true),
@@ -109,7 +109,7 @@ private:
   static constexpr uint8_t k_defaultSpeed = 8;
   static constexpr uint8_t k_maxSpeed = 10;
   static constexpr KDColor k_defaultColor = KDColorBlack;
-  static constexpr KDColor k_defaultColorBG = Palette::CodeBackground;
+  static KDColor defaultColorBG() { return Palette::CodeBackground; }
   static constexpr uint8_t k_defaultPenSize = 1;
   static constexpr const KDFont * k_font = KDFont::LargeFont;
   static constexpr mp_float_t k_maxPosition = KDCOORDINATE_MAX * 0.75f;

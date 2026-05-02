@@ -1,7 +1,9 @@
 #include "localization_controller.h"
+#include "app.h"
 #include <algorithm>
 #include <apps/apps_container.h>
 #include <apps/global_preferences.h>
+#include <apps/theme/theme_loader.h>
 
 namespace OnBoarding {
 
@@ -18,11 +20,16 @@ bool LocalizationController::handleEvent(Ion::Events::Event event) {
       viewWillAppear();
     } else {
       assert(mode() == Mode::Country);
-      AppsContainer * appsContainer = AppsContainer::sharedAppsContainer();
-      if (appsContainer->promptController()) {
-        Container::activeApp()->displayModalViewController(appsContainer->promptController(), 0.5f, 0.5f);
+      // If there are .theme files on flash, show the theme picker before going home
+      if (ThemeLoader::numberOfThemeFiles() > 0) {
+        static_cast<App *>(Container::activeApp())->showThemePicker();
       } else {
-        appsContainer->switchTo(appsContainer->appSnapshotAtIndex(0));
+        AppsContainer * appsContainer = AppsContainer::sharedAppsContainer();
+        if (appsContainer->promptController()) {
+          Container::activeApp()->displayModalViewController(appsContainer->promptController(), 0.5f, 0.5f);
+        } else {
+          appsContainer->switchTo(appsContainer->appSnapshotAtIndex(0));
+        }
       }
     }
     return true;

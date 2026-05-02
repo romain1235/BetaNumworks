@@ -36,6 +36,12 @@ bool ShiftAlphaLockView::setStatus(Ion::Events::ShiftAlphaStatus status) {
   return false;
 }
 
+void ShiftAlphaLockView::reload() {
+  m_shiftAlphaView.setTextColor(Palette::ToolbarText);
+  m_shiftAlphaView.setBackgroundColor(Palette::Toolbar);
+  markRectAsDirty(bounds());
+}
+
 KDSize ShiftAlphaLockView::minimalSizeForOptimalDisplay() const {
   KDSize modifierSize = KDFont::SmallFont->stringSize(I18n::translate(I18n::Message::Alpha));
   KDSize lockSize = m_lockView.minimalSizeForOptimalDisplay();

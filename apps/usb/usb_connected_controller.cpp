@@ -15,18 +15,6 @@ static constexpr I18n::Message sUSBConnectedMessages[] = {
   I18n::Message::ConnectedMessage6
 };
 
-static constexpr KDColor sUSBConnectedFGColors[] = {
-  Palette::PrimaryText,
-  Palette::PrimaryText,
-  Palette::PrimaryText,
-  Palette::AccentText,
-  KDColorWhite,
-  Palette::PrimaryText,
-  Palette::PrimaryText,
-  Palette::PrimaryText,
-  Palette::PrimaryText,
-  Palette::AccentText};
-
 USBConnectedController::USBConnectedController() : 
   ViewController(nullptr)
 {
@@ -34,10 +22,22 @@ USBConnectedController::USBConnectedController() :
 }
 
 USBConnectedController::ContentView::ContentView() {
+  const KDColor fgColors[] = {
+    Palette::PrimaryText,
+    Palette::PrimaryText,
+    Palette::PrimaryText,
+    Palette::AccentText,
+    KDColorWhite,
+    Palette::PrimaryText,
+    Palette::PrimaryText,
+    Palette::PrimaryText,
+    Palette::PrimaryText,
+    Palette::AccentText
+  };
   for (uint8_t i = 0; i < k_numberOfUSBMessages; i++) {
     m_messageTextViews[i].setFont(i == 0 ? KDFont::LargeFont : KDFont::SmallFont);
     m_messageTextViews[i].setAlignment(0.5f, 0.5f);
-    m_messageTextViews[i].setTextColor(sUSBConnectedFGColors[i]);
+    m_messageTextViews[i].setTextColor(fgColors[i]);
     m_messageTextViews[i].setBackgroundColor(Palette::BackgroundHard);
     m_messageTextViews[i].setText(I18n::translate(sUSBConnectedMessages[i]));
   }

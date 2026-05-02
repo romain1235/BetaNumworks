@@ -15,26 +15,31 @@ extern "C" {
 
 namespace Code {
 
-constexpr KDColor CommentColor = Palette::CodeComment;
-constexpr KDColor NumberColor =  Palette::CodeNumber;
-constexpr KDColor KeywordColor = Palette::CodeKeyword;
-// constexpr KDColor BuiltinColor = KDColor::RGB24(0x0086B3);
-constexpr KDColor OperatorColor = Palette::CodeOperator;
-constexpr KDColor StringColor = Palette::CodeString;
-constexpr KDColor BackgroundColor = Palette::CodeBackground;
-constexpr KDColor HighlightColor = Palette::CodeBackgroundSelected;
-constexpr KDColor AutocompleteColor = KDColor::RGB24(0xC6C6C6); // TODO Palette change
-constexpr KDColor ParenthesisColors[] = {Palette::parenthese_1, Palette::parenthese_2, Palette::parenthese_3};
-constexpr KDColor InvalidParenthesisColor = Palette::invalid_parenthese;
-constexpr KDColor IndentGuideColor = Palette::CodeComment;
+// These are macros rather than const variables so that they read the
+// (potentially runtime-overridden) Palette values without introducing
+// any global constructors (which are not supported on this platform).
+#define CommentColor            (Palette::CodeComment)
+#define NumberColor             (Palette::CodeNumber)
+#define KeywordColor            (Palette::CodeKeyword)
+#define OperatorColor           (Palette::CodeOperator)
+#define StringColor             (Palette::CodeString)
+#define BackgroundColor         (Palette::CodeBackground)
+#define HighlightColor          (Palette::CodeBackgroundSelected)
+#define InvalidParenthesisColor (Palette::invalid_parenthese)
+#define IndentGuideColor        (Palette::CodeComment)
+// AutocompleteColor is a fixed color, not palette-driven
+constexpr KDColor AutocompleteColor = KDColor::RGB24(0xC6C6C6);
 
 static inline KDColor ParenthesisColorForDepth(int depth) {
-  constexpr int kParenthesisColorsCount = sizeof(ParenthesisColors) / sizeof(KDColor);
-  int normalizedDepth = depth % kParenthesisColorsCount;
+  int normalizedDepth = depth % 3;
   if (normalizedDepth < 0) {
-    normalizedDepth += kParenthesisColorsCount;
+    normalizedDepth += 3;
   }
-  return ParenthesisColors[normalizedDepth];
+  switch (normalizedDepth) {
+    case 0: return Palette::parenthese_1;
+    case 1: return Palette::parenthese_2;
+    default: return Palette::parenthese_3;
+  }
 }
 
 static inline int NextDelimiterDepth(int depth) {
@@ -1040,4 +1045,14 @@ void PythonTextArea::acceptAutocompletion(bool moveCursorToEndOfAutocompletion) 
   }
 }
 
-}
+} // namespace Code
+
+#undef CommentColor
+#undef NumberColor
+#undef KeywordColor
+#undef OperatorColor
+#undef StringColor
+#undef BackgroundColor
+#undef HighlightColor
+#undef InvalidParenthesisColor
+#undef IndentGuideColor

@@ -31,6 +31,7 @@ Beta est un fork d'Upsilon (lui-même dérivé d'Omega et d'Epsilon). Beta ajout
 - espaces entre les milliers de 3px(1000->1 000)
 - amélioration de l'éditeur de code
 - Nouveau thème `beta_dark`
+- installation de plusieurs thèmes en même temps.
 
 ## Installation
 

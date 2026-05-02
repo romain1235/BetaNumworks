@@ -16,7 +16,8 @@ App::Descriptor * App::Snapshot::descriptor() {
 App::App(Snapshot * snapshot) :
   ::App(snapshot, &m_localizationController),
   m_localizationController(&m_modalViewController, Metric::CommonTopMargin, LocalizationController::Mode::Language),
-  m_logoController()
+  m_logoController(),
+  m_themeController(&m_modalViewController, this)
 {
   AppsContainer::sharedAppsContainer()->addTimer(&m_logoController);
 }
@@ -39,6 +40,23 @@ void App::didBecomeActive(Window * window) {
 void App::reinitOnBoarding() {
   m_localizationController.resetSelection();
   displayModalViewController(&m_logoController, 0.5f, 0.5f);
+}
+
+void App::showThemePicker() {
+  displayModalViewController(&m_themeController, 0.f, 0.f);
+}
+
+void App::themeControllerDidSelectTheme(ThemeController *) {
+  finishOnBoarding();
+}
+
+void App::finishOnBoarding() {
+  AppsContainer * appsContainer = AppsContainer::sharedAppsContainer();
+  if (appsContainer->promptController()) {
+    displayModalViewController(appsContainer->promptController(), 0.5f, 0.5f);
+  } else {
+    appsContainer->switchTo(appsContainer->appSnapshotAtIndex(0));
+  }
 }
 
 }

@@ -223,6 +223,17 @@ void TitleBarView::refreshPreferences() {
 }
 
 void TitleBarView::reload() {
+  // Re-apply current palette colors to all sub-views whose colors were
+  // captured by value at construction time.
+  m_titleView.setTextColor(Palette::ToolbarText);
+  m_titleView.setBackgroundColor(Palette::Toolbar);
+  m_preferenceView.setTextColor(Palette::ToolbarText);
+  m_preferenceView.setBackgroundColor(Palette::Toolbar);
+  m_batteryPercentView.setTextColor(Palette::ToolbarText);
+  m_batteryPercentView.setBackgroundColor(Palette::Toolbar);
+  m_clockView.setTextColor(Palette::ToolbarText);
+  m_clockView.setBackgroundColor(Palette::Toolbar);
+  m_shiftAlphaLockView.reload();
   refreshPreferences();
   markRectAsDirty(bounds());
 }

@@ -37,3 +37,5 @@ apps_src += $(app_settings_src)
 i18n_files += $(call i18n_with_universal_for,settings/base)
 
 $(eval $(call depends_on_image,apps/settings/app.cpp,apps/settings/settings_icon.png))
+
+include apps/theme/Makefile
