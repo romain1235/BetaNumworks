@@ -476,6 +476,13 @@ const ToolboxMessageTree IonModuleChildren[] = {
   ToolboxMessageTree::Node(I18n::Message::IonKeyList, IonKeyModuleChildren)
 };
 
+const ToolboxMessageTree EscherModuleChildren[] = {
+  ToolboxMessageTree::Leaf(I18n::Message::PythonCommandImportEscher, I18n::Message::PythonImportEscher, false),
+  ToolboxMessageTree::Leaf(I18n::Message::PythonCommandImportFromEscher, I18n::Message::PythonImportEscher, false),
+  ToolboxMessageTree::Leaf(I18n::Message::PythonEscherCommandGetClipboard, I18n::Message::PythonEscherGetClipboard, false),
+  ToolboxMessageTree::Leaf(I18n::Message::PythonEscherCommandSetClipboard, I18n::Message::PythonEscherSetClipboard, false)
+};
+
 const ToolboxMessageTree TimeModuleChildren[] = {
   ToolboxMessageTree::Leaf(I18n::Message::PythonCommandImportTime, I18n::Message::PythonImportTime, false),
   ToolboxMessageTree::Leaf(I18n::Message::PythonCommandImportFromTime, I18n::Message::PythonImportTime, false),
@@ -533,6 +540,7 @@ const ToolboxMessageTree modulesChildren[] = {
   ToolboxMessageTree::Node(I18n::Message::RandomModule, RandomModuleChildren),
   ToolboxMessageTree::Node(I18n::Message::KandinskyModule, KandinskyModuleChildren),
   ToolboxMessageTree::Node(I18n::Message::IonModule, IonModuleChildren),
+  ToolboxMessageTree::Node(I18n::Message::EscherModule, EscherModuleChildren),
   ToolboxMessageTree::Node(I18n::Message::OsModule, OsModuleChildren),
 #if MICROPY_PY_SYS
   ToolboxMessageTree::Node(I18n::Message::SysModule, SysModuleChildren),

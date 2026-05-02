@@ -145,6 +145,8 @@ port_src += $(addprefix python/port/,\
   mod/kandinsky/modkandinsky_table.c \
   mod/console/modconsole.cpp \
   mod/console/modconsole_table.c \
+  mod/escher/modescher.cpp \
+  mod/escher/modescher_table.cpp \
   mod/matplotlib/modmatplotlib.cpp \
   mod/matplotlib/modmatplotlib_table.c \
   mod/matplotlib/pyplot/modpyplot.cpp \

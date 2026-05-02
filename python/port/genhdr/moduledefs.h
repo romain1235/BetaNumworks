@@ -54,6 +54,10 @@ extern const struct _mp_obj_module_t modconsole_module;
 #undef MODULE_DEF_MP_QSTR_CONSOLE
 #define MODULE_DEF_MP_QSTR_CONSOLE { MP_ROM_QSTR(MP_QSTR_console), MP_ROM_PTR(&modconsole_module) },
 
+extern const struct _mp_obj_module_t modescher_module;
+#undef MODULE_DEF_MP_QSTR_ESCHER
+#define MODULE_DEF_MP_QSTR_ESCHER { MP_ROM_QSTR(MP_QSTR_escher), MP_ROM_PTR(&modescher_module) },
+
 extern const struct _mp_obj_module_t modmatplotlib_module;
 #undef MODULE_DEF_MP_QSTR_MATPLOTLIB
 #define MODULE_DEF_MP_QSTR_MATPLOTLIB { MP_ROM_QSTR(MP_QSTR_matplotlib), MP_ROM_PTR(&modmatplotlib_module) },
@@ -87,6 +91,7 @@ extern const struct _mp_obj_module_t modturtle_module;
     MODULE_DEF_MP_QSTR_ION \
     MODULE_DEF_MP_QSTR_KANDINSKY \
     MODULE_DEF_MP_QSTR_CONSOLE \
+    MODULE_DEF_MP_QSTR_ESCHER \
     MODULE_DEF_MP_QSTR_MATPLOTLIB \
     MODULE_DEF_MP_QSTR_PYPLOT \
     MODULE_DEF_MP_QSTR_TIME \
@@ -108,6 +113,7 @@ extern const struct _mp_obj_module_t ulab_user_cmodule;
     MODULE_DEF_MP_QSTR_ION \
     MODULE_DEF_MP_QSTR_KANDINSKY \
     MODULE_DEF_MP_QSTR_CONSOLE \
+    MODULE_DEF_MP_QSTR_ESCHER \
     MODULE_DEF_MP_QSTR_MATPLOTLIB \
     MODULE_DEF_MP_QSTR_PYPLOT \
     MODULE_DEF_MP_QSTR_TIME \

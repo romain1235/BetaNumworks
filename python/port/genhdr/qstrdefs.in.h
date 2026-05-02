@@ -342,6 +342,9 @@ Q(zip)
 
   // Ion QSTR
 Q(get_keys)
+Q(get_clipboard)
+Q(set_clipboard)
+Q(escher)
 Q(ion)
 Q(keydown)
 Q(battery)
