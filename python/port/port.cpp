@@ -132,6 +132,10 @@ extern "C" {
 
 #include <escher/palette.h>
 
+/* Using mp_printf avoids reliance on snprintf from the C runtime.
+ * We replace the snprintf usage below with mp_printf, so no fallback is
+ * required here. */
+
 static MicroPython::ScriptProvider * sScriptProvider = nullptr;
 static MicroPython::ExecutionEnvironment * sCurrentExecutionEnvironment = nullptr;
 
@@ -196,28 +200,19 @@ bool MicroPython::ExecutionEnvironment::runCode(const char * str) {
 #ifdef __EMSCRIPTEN__
               python_error_add_trace((const char*) qstr_str(values[i]), (int) values[i + 1], (const char*) qstr_str(values[i+2]));
 #endif
-#if MICROPY_ENABLE_SOURCE_LINE
-              char buf[512];
-              snprintf(buf, sizeof(buf), "  File \"%s\", line %d", qstr_str(values[i]), (int)values[i + 1]);
-#else
-              char buf[512];
-              snprintf(buf, sizeof(buf), "  File \"%s\"", qstr_str(values[i]));
-#endif
               // the block name can be NULL if it's unknown
               qstr block = values[i + 2];
+              mp_print_str(&mp_plat_print, colorStart);
+#if MICROPY_ENABLE_SOURCE_LINE
+              mp_printf(&mp_plat_print, "  File \"%s\", line %d", qstr_str(values[i]), (int)values[i + 1]);
+#else
+              mp_printf(&mp_plat_print, "  File \"%s\"", qstr_str(values[i]));
+#endif
               if (block == MP_QSTRnull) {
-                mp_print_str(&mp_plat_print, colorStart);
-                mp_print_str(&mp_plat_print, buf);
                 mp_print_str(&mp_plat_print, colorEnd);
                 mp_print_str(&mp_plat_print, "\n");
               } else {
-                size_t len = strlen(buf);
-                size_t rem = sizeof(buf) - len;
-                if (rem > 0) {
-                  snprintf(buf + len, rem, ", in %s", qstr_str(block));
-                }
-                mp_print_str(&mp_plat_print, colorStart);
-                mp_print_str(&mp_plat_print, buf);
+                mp_printf(&mp_plat_print, ", in %s", qstr_str(block));
                 mp_print_str(&mp_plat_print, colorEnd);
                 mp_print_str(&mp_plat_print, "\n");
               }
