@@ -179,6 +179,40 @@ static inline size_t palette_find_closest_index(kandinsky_framebuffer_obj_t *sel
   return best;
 }
 
+static inline KDColor framebuffer_color_from_index(kandinsky_framebuffer_obj_t *self, uint32_t v) {
+  if (self->format == 1) {
+    return rgb222_to_kdcolor[v];
+  }
+  if (self->format == 2) {
+    return rgb332_to_kdcolor[v];
+  }
+  if (self->format == 3) {
+    return KDColor::RGB16((uint16_t)v);
+  }
+  return (v < self->palette_len) ? self->palette[v] : KDColor::RGB16(0);
+}
+
+static inline uint32_t framebuffer_index_from_color(kandinsky_framebuffer_obj_t *self, KDColor c, bool requireExactPaletteColor) {
+  if (self->format == 1) {
+    return (uint32_t)kdcolor_to_rgb222(c);
+  }
+  if (self->format == 2) {
+    return (uint32_t)(((c.red() >> 5) << 5) | ((c.green() >> 5) << 2) | (c.blue() >> 6));
+  }
+  if (self->format == 3) {
+    return (uint32_t)(((c.red() >> 3) << 11) | ((c.green() >> 2) << 5) | (c.blue() >> 3));
+  }
+  if (requireExactPaletteColor) {
+    for (size_t i = 0; i < self->palette_len; i++) {
+      if (self->palette[i].red() == c.red() && self->palette[i].green() == c.green() && self->palette[i].blue() == c.blue()) {
+        return (uint32_t)i;
+      }
+    }
+    mp_raise_ValueError("color not in palette");
+  }
+  return (uint32_t)palette_find_closest_index(self, c);
+}
+
 static void framebuffer_print(const mp_print_t *print, mp_obj_t self_in, mp_print_kind_t kind) {
   (void)kind;
   kandinsky_framebuffer_obj_t * self = (kandinsky_framebuffer_obj_t*) MP_OBJ_TO_PTR(self_in);
@@ -867,6 +901,68 @@ const mp_obj_fun_builtin_var_t framebuffer_fill_polygon_obj = {
   {(mp_fun_var_t)framebuffer_fill_polygon}
 };
 
+// draw_on_buffer(self, dst, x, y[, pixel_size])
+// Draw this framebuffer into another framebuffer while converting formats.
+STATIC mp_obj_t framebuffer_draw_on_buffer(size_t n_args, const mp_obj_t *args) {
+  kandinsky_framebuffer_obj_t * self = (kandinsky_framebuffer_obj_t*) MP_OBJ_TO_PTR(args[0]);
+  if (!mp_obj_is_type(args[1], &kandinsky_framebuffer_type)) {
+    mp_raise_TypeError("dst must be a framebuffer");
+  }
+  kandinsky_framebuffer_obj_t * dst = (kandinsky_framebuffer_obj_t*) MP_OBJ_TO_PTR(args[1]);
+  int x = mp_obj_get_int(args[2]);
+  int y = mp_obj_get_int(args[3]);
+  int pixel_size = (n_args >= 5) ? mp_obj_get_int(args[4]) : 1;
+  if (pixel_size <= 0) {
+    mp_raise_ValueError("pixel_size must be > 0");
+  }
+
+  init_rgb222_table();
+  init_rgb332_table();
+
+  int srcW = self->size.width();
+  int srcH = self->size.height();
+  int dstW = dst->size.width();
+  int dstH = dst->size.height();
+
+  for (int sy = 0; sy < srcH; sy++) {
+    int dy0 = y + sy * pixel_size;
+    int dy1 = dy0 + pixel_size;
+    if (dy1 <= 0 || dy0 >= dstH) {
+      continue;
+    }
+    int clippedDy0 = dy0 < 0 ? 0 : dy0;
+    int clippedDy1 = dy1 > dstH ? dstH : dy1;
+    for (int sx = 0; sx < srcW; sx++) {
+      int dx0 = x + sx * pixel_size;
+      int dx1 = dx0 + pixel_size;
+      if (dx1 <= 0 || dx0 >= dstW) {
+        continue;
+      }
+      int clippedDx0 = dx0 < 0 ? 0 : dx0;
+      int clippedDx1 = dx1 > dstW ? dstW : dx1;
+
+      size_t srcIdx = (size_t)sy * (size_t)srcW + (size_t)sx;
+      uint32_t srcValue = packed_get_pixel_bits(self->pixels, srcIdx, self->bitsPerPixel);
+      KDColor c = framebuffer_color_from_index(self, srcValue);
+      uint32_t dstValue = framebuffer_index_from_color(dst, c, false);
+
+      for (int dy = clippedDy0; dy < clippedDy1; dy++) {
+        size_t rowBase = (size_t)dy * (size_t)dstW;
+        for (int dx = clippedDx0; dx < clippedDx1; dx++) {
+          packed_set_pixel_bits(dst->pixels, rowBase + (size_t)dx, dstValue, dst->bitsPerPixel);
+        }
+      }
+    }
+  }
+
+  return mp_const_none;
+}
+const mp_obj_fun_builtin_var_t framebuffer_draw_on_buffer_obj = {
+  {&mp_type_fun_builtin_var},
+  MP_OBJ_FUN_MAKE_SIG(4,5,false),
+  {(mp_fun_var_t)framebuffer_draw_on_buffer}
+};
+
 // draw(self[, x, y, pixel_size])
 // If x/y are omitted, draw at (0,0). pixel_size defaults to 1.
 STATIC mp_obj_t framebuffer_draw(size_t n_args, const mp_obj_t *args) {
@@ -1027,13 +1123,8 @@ STATIC void framebuffer_attr(mp_obj_t self_in, qstr attribute, mp_obj_t *destina
     destination[0] = (mp_obj_t) MP_ROM_PTR(&framebuffer_get_raw_index_obj);
     destination[1] = self_in;
   }
-  // provide __del__ at runtime: prefer compile-time qstr if available
-#if defined(MP_QSTR___del__)
-  if (attribute == MP_QSTR___del__) {
-#else
-  if (attribute == qstr_from_str("__del__")) {
-#endif
-    destination[0] = (mp_obj_t) MP_ROM_PTR(&framebuffer_close_obj);
+  if (attribute == qstr_from_str("draw_on_buffer")) {
+    destination[0] = (mp_obj_t) MP_ROM_PTR(&framebuffer_draw_on_buffer_obj);
     destination[1] = self_in;
   }
 }

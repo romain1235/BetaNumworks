@@ -368,6 +368,7 @@ const ToolboxMessageTree RandomModuleChildren[] = {
 const ToolboxMessageTree FrameBufferModuleChildren[] = {
   ToolboxMessageTree::Leaf(I18n::Message::PythonCommandFrameBufferCreate, I18n::Message::PythonFrameBufferCreate),
   ToolboxMessageTree::Leaf(I18n::Message::PythonCommandFrameBufferDraw, I18n::Message::PythonFrameBufferDraw),
+  ToolboxMessageTree::Leaf(I18n::Message::PythonCommandFrameBufferDrawOnBuffer, I18n::Message::PythonFrameBufferDrawOnBuffer),
   ToolboxMessageTree::Leaf(I18n::Message::PythonCommandFrameBufferDrawLine, I18n::Message::PythonFrameBufferDrawLine),
   ToolboxMessageTree::Leaf(I18n::Message::PythonCommandFrameBufferDrawString, I18n::Message::PythonFrameBufferDrawString),
   ToolboxMessageTree::Leaf(I18n::Message::PythonCommandFrameBufferDrawCircle, I18n::Message::PythonFrameBufferDrawCircle),
@@ -376,6 +377,8 @@ const ToolboxMessageTree FrameBufferModuleChildren[] = {
   ToolboxMessageTree::Leaf(I18n::Message::PythonCommandFrameBufferFillPolygon, I18n::Message::PythonFrameBufferFillPolygon),
   ToolboxMessageTree::Leaf(I18n::Message::PythonCommandFrameBufferGetPixel, I18n::Message::PythonFrameBufferGetPixel),
   ToolboxMessageTree::Leaf(I18n::Message::PythonCommandFrameBufferGetPixels, I18n::Message::PythonFrameBufferGetPixels),
+  ToolboxMessageTree::Leaf(I18n::Message::PythonCommandFrameBufferWidth, I18n::Message::PythonFrameBufferWidth),
+  ToolboxMessageTree::Leaf(I18n::Message::PythonCommandFrameBufferHeight, I18n::Message::PythonFrameBufferHeight),
   
   ToolboxMessageTree::Leaf(I18n::Message::PythonCommandFrameBufferSetPixel, I18n::Message::PythonFrameBufferSetPixel),
   ToolboxMessageTree::Leaf(I18n::Message::PythonCommandFrameBufferFill, I18n::Message::PythonFrameBufferFill),
