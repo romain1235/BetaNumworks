@@ -129,6 +129,14 @@ void StackViewController::pop() {
   vc->viewDidDisappear();
 }
 
+void StackViewController::setStackFrameColors(KDColor textColor, KDColor backgroundColor, KDColor separatorColor) {
+  for (int i = 0; i < m_numberOfChildren; i++) {
+    m_childrenFrame[i].setTextColor(textColor);
+    m_childrenFrame[i].setBackgroundColor(backgroundColor);
+    m_childrenFrame[i].setSeparatorColor(separatorColor);
+  }
+}
+
 void StackViewController::pushModel(Frame frame) {
   m_childrenFrame[m_numberOfChildren++] = frame;
 }

@@ -111,6 +111,7 @@ void NestedMenuController::didBecomeFirstResponder() {
 }
 
 void NestedMenuController::viewWillAppear() {
+  setStackFrameColors(Palette::ToolboxHeaderText, Palette::ToolboxHeaderBackground, Palette::ToolboxHeaderBorder);
   StackViewController::viewWillAppear();
   m_selectableTableView.reloadData();
   m_stack.resetStack();

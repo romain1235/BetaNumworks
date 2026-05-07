@@ -15,6 +15,7 @@ public:
   /* Push creates a new StackView and adds it */
   void push(ViewController * vc, KDColor textColor = Palette::SubMenuText, KDColor backgroundColor = Palette::SubMenuBackground, KDColor separatorColor = Palette::SubMenuBorder);
   void pop();
+  void setStackFrameColors(KDColor textColor, KDColor backgroundColor, KDColor separatorColor);
 
   int depth() const { return m_numberOfChildren; }
   View * view() override { return &m_view; }
@@ -37,6 +38,9 @@ private:
     KDColor textColor() { return m_textColor; }
     KDColor backgroundColor() { return m_backgroundColor; }
     KDColor separatorColor() { return m_separatorColor; }
+    void setTextColor(KDColor textColor) { m_textColor = textColor; }
+    void setBackgroundColor(KDColor backgroundColor) { m_backgroundColor = backgroundColor; }
+    void setSeparatorColor(KDColor separatorColor) { m_separatorColor = separatorColor; }
   private:
     ViewController * m_viewController;
     KDColor m_textColor;

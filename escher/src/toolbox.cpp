@@ -14,6 +14,22 @@ Toolbox::Toolbox(Responder * parentResponder, I18n::Message title) :
 
 void Toolbox::viewWillAppear() {
   m_messageTreeModel = (ToolboxMessageTree *)rootModel();
+
+  // Re-apply current palette colors when the toolbox is shown.
+  // Reusable cells can outlive theme changes, so their text colors must be
+  // refreshed from the active palette.
+  for (int i = 0; i < maxNumberOfDisplayedRows(); i++) {
+    auto * leafCell = leafCellAtIndex(i);
+    auto * nodeCell = nodeCellAtIndex(i);
+    leafCell->setTextColor(Palette::PrimaryText);
+    leafCell->setAccessoryTextColor(Palette::SecondaryText);
+    nodeCell->setTextColor(Palette::PrimaryText);
+    // Re-run highlight painting to refresh message/accessory backgrounds from
+    // current palette values (selected and non-selected states).
+    leafCell->setHighlighted(leafCell->isHighlighted());
+    nodeCell->setHighlighted(nodeCell->isHighlighted());
+  }
+
   NestedMenuController::viewWillAppear();
 
   if (!m_hasSavedState) {
