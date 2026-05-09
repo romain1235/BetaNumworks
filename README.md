@@ -1,4 +1,4 @@
-<p align="center"><img src="https://github.com/Laporte12974/UpsilonDesign/blob/89a15953ae128aef8aa7d066dcaaf8d5c70f02a5/UPSILogo.png" /></p>
+<p align="center"><img src="https://github.com/TildeEthDoUsPart/UpsilonDesign/blob/89a15953ae128aef8aa7d066dcaaf8d5c70f02a5/UPSILogo.png" /></p>
 
 <p align="center">
   <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/"><img alt="cc by-nc-sa 4.0" src="https://img.shields.io/badge/License-CC%20BY--NC--SA%204.0-525252.svg?labelColor=292929&logo=creative%20commons&style=for-the-badge" /></a>
@@ -110,10 +110,12 @@ nix-shell -p gcc libpng libjpeg xorg.libX11 pkg-config freetype xorg.libXext pyt
 It's recommended to use [Homebrew](https://brew.sh/). Once it's installed, just run:
 
 ```bash
-brew install numworks/tap/epsilon-sdk
+brew install freetype imagemagick libpng libusb pkg-config python3
+python3 -m venv .venv
+.venv/bin/pip3 install setuptools lz4 pypng stringcase
 ```
 
-and it will install all dependencies.
+and all dependencies will be installed.
 
 <br>
 
@@ -405,8 +407,8 @@ First, install emsdk :
 ```bash
 git clone https://github.com/emscripten-core/emsdk.git
 cd emsdk
-./emsdk install 1.40.1
-./emsdk activate 1.40.1
+./emsdk install 4.0.22
+./emsdk activate 4.0.22
 source emsdk_env.sh
 ```
 
@@ -447,18 +449,18 @@ You can then put epsilon.3dsx on a SD card to run it from the HBC or use 3dslink
 <summary><b>Android Simulator</b></summary>
 
 Make sure you have JDK 25 installed.
-Then, download the Android toolchain r21e as following :
+Then, download the Android toolchain r27d as following :
 ```
 export ANDROID_HOME=$PWD/android-sdk
 wget -nv https://gitlab.com/fdroid/sdkmanager/-/raw/master/sdkmanager.py
 python3 sdkmanager.py --licenses
-python3 sdkmanager.py --install "ndk-bundle;r21e"
+python3 sdkmanager.py --install "ndk-bundle;r27d"
 ```
 All you have to do is run this command to compile Upsilon.
 ```
 make -j$(nproc) PLATFORM=simulator TARGET=android
 ```
-The compiled file named `epsilon.apk` will be the one to install on the phone from your file manager. Shoudl work on Android 4.1+.
+The compiled file named `epsilon.apk` will be the one to install on the phone from your file manager. Should work on Android 5+.
 
 </details>
 
@@ -470,7 +472,7 @@ First, install gint and fxsdk along with a cross compiler for the calculator. Th
 Next:
 ```bash
 git clone --recursive https://github.com/UpsilonNumworks/Upsilon.git
-cd Omega
+cd Upsilon
 git checkout upsilon-dev
 make PLATFORM=simulator TARGET=fxcg -j$(nproc)
 ```

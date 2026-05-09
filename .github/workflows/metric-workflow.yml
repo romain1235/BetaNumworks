@@ -10,7 +10,7 @@ jobs:
       - name: Install ARM toolchain
         run: sudo apt-get install gcc-arm-none-eabi binutils-arm-none-eabi
       - name: Checkout PR base
-        uses: actions/checkout@v5
+        uses: actions/checkout@main
         with:
           submodules: recursive
           ref: ${{ github.event.pull_request.base.sha }}
@@ -18,7 +18,7 @@ jobs:
       - name: Build base
         run: make -j2 -C base MODEL=n0110 epsilon.elf
       - name: Checkout PR head
-        uses: actions/checkout@v5
+        uses: actions/checkout@main
         with:
           submodules: recursive
           ref: ${{ github.event.pull_request.head.sha }}

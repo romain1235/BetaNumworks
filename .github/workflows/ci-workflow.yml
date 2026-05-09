@@ -17,16 +17,11 @@ on:
         description: 'Run 3DS tests'
         required: true
         default: 'yes'
-      triggerFxcg:
-        description: 'Run fxcg tests'
-        required: true
-        default: 'no'
 jobs:
-  fxcg: # fxcg build is broken for now, disabling it for now to avoid noise
-    if: github.event.inputs.triggerFxcg == 'yes'
+  fxcg:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@main
         with:
           submodules: 'recursive'
       - name: Install dependencies
@@ -41,7 +36,7 @@ jobs:
         id: get-latest-commit-hash
       - name: Cache gint/fxsdk installation
         id: cache-gint
-        uses: actions/cache@v4
+        uses: actions/cache@main
         with:
           path: |
             ~/.local/*/*
@@ -49,13 +44,10 @@ jobs:
           key: ${{ runner.os }}-gint-${{ steps.get-latest-commit-hash.outputs.LATEST_COMMIT_HASH }}
       - name: Install gint/fxsdk
         if: steps.cache-gint.outputs.cache-hit != 'true'
-        env:
-          URL: "https://git.planet-casio.com/Lephenixnoir/GiteaPC/archive/master.tar.gz"
         run: |
           export PATH="~/.local/bin:$PATH"
           cd "$(mktemp -d)"
-          curl "$URL" -o giteapc-master.tar.gz
-          tar -xzf giteapc-master.tar.gz
+          git clone https://git.planet-casio.com/Lephenixnoir/GiteaPC.git giteapc
           cd giteapc
           python3 giteapc.py install Lephenixnoir/GiteaPC -y
           sudo apt-get install python3-pil libusb-1.0-0-dev libudev-dev libsdl2-dev libpng-dev libudisks2-dev libglib2.0-dev libmpfr-dev libmpc-dev libppl-dev -y
@@ -64,9 +56,10 @@ jobs:
           giteapc install Lephenixnoir/gint -y
       - name: Add fxsdk to PATH
         run: echo "~/.local/bin" >> $GITHUB_PATH
+      - run: sed -i "/GINT_RENDER_RGB/d" ~/.local/share/fxsdk/sysroot/sh3eb-elf/include/gint/display-cg.h # WORKAROUND
       - run: make -j2 PLATFORM=simulator TARGET=fxcg
       - if: ${{ github.event_name == 'push' && github.ref_name == 'upsilon-dev' && github.repository == 'UpsilonNumworks/Upsilon' }}
-        uses: actions/checkout@v5
+        uses: actions/checkout@main
         with:
           repository: Yaya-Cout/Upsilon-binfiles
           ref: 'main'
@@ -84,38 +77,39 @@ jobs:
           git pull
           git commit -m "Update from CI"
           git push
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@main
         with:
           name: epsilon.g3a
           path: output/release/simulator/fxcg/epsilon.g3a
   nintendo_3ds:
     if: github.event.inputs.trigger3DS == 'yes' || github.event.inputs.trigger3DS == ''
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04-arm
     container: devkitpro/devkitarm:latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@main
         with:
           submodules: true
       - run: sudo apt-get update
       - run: sudo apt-get install build-essential imagemagick libfreetype6-dev libjpeg-dev libpng-dev pkg-config -y
       - run: yes | sudo dkp-pacman -S --needed devkitARM 3dstools libctru
-      - run: wget https://github.com/3DSGuy/Project_CTR/releases/download/makerom-v0.18.3/makerom-v0.18.3-ubuntu_x86_64.zip
-      - run: unzip makerom-v0.18.3-ubuntu_x86_64.zip
-      - run: rm makerom-v0.18.3-ubuntu_x86_64.zip
-      - run: chmod +x ./makerom
+      - name: Compile makerom from source
+        run: |
+          git clone https://github.com/3DSGuy/Project_CTR.git
+          make -C Project_CTR
+          mv Project_CTR/makerom/bin/makerom .
       - run: echo "PATH=.:$PATH" >> $GITHUB_ENV
       - run: make -j2 PLATFORM=simulator TARGET=3ds
       - run: make -j2 PLATFORM=simulator TARGET=3ds epsilon.cia
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@main
         with:
           name: epsilon-3ds.3dsx
           path: output/release/simulator/3ds/epsilon.3dsx
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@main
         with:
           name: epsilon-3ds.cia
           path: output/release/simulator/3ds/epsilon.cia
       - if: ${{ github.event_name == 'push' && github.ref_name == 'upsilon-dev' && github.repository == 'UpsilonNumworks/Upsilon' }}
-        uses: actions/checkout@v5
+        uses: actions/checkout@main
         with:
           repository: Yaya-Cout/Upsilon-binfiles
           ref: 'main'
@@ -136,22 +130,22 @@ jobs:
   android:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@main
         with:
           submodules: 'recursive'
       - run: |
           sudo apt-get update
           sudo apt-get install imagemagick libfreetype-dev libpng-dev
       - name: Set up JDK 25
-        uses: actions/setup-java@v5
+        uses: actions/setup-java@main
         with:
           java-version: '25'
           distribution: 'temurin'
-      - run: wget -nv https://dl.google.com/android/repository/android-ndk-r21e-linux-x86_64.zip
-      - run: unzip -q android-ndk-r21e-linux-x86_64.zip
-      - run: make -j2 PLATFORM=simulator TARGET=android NDK_PATH=./android-ndk-r21e
+      - run: wget -nv https://dl.google.com/android/repository/android-ndk-r27d-linux.zip
+      - run: unzip -q android-ndk-r27d-linux.zip
+      - run: make -j2 PLATFORM=simulator TARGET=android NDK_PATH=./android-ndk-r27d
       - if: ${{ github.event_name == 'push' && github.ref_name == 'upsilon-dev' && github.repository == 'UpsilonNumworks/Upsilon' }}
-        uses: actions/checkout@v5
+        uses: actions/checkout@main
         with:
           repository: Yaya-Cout/Upsilon-binfiles
           ref: 'main'
@@ -169,7 +163,7 @@ jobs:
           git pull
           git commit -m "Update from CI"
           git push
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@main
         with:
           name: epsilon-android.apk
           path: output/release/simulator/android/epsilon.apk
@@ -179,7 +173,7 @@ jobs:
       - run: |
           sudo apt-get update
           sudo apt-get install build-essential imagemagick libfreetype6-dev libjpeg-dev libpng-dev pkg-config gcc-arm-none-eabi binutils-arm-none-eabi
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@main
         with:
           submodules: 'recursive'
       - run: mkdir final-output
@@ -222,12 +216,12 @@ jobs:
       - run: mv output/release/device/n0100/flasher.verbose.bin final-output/flasher.verbose.bin
       - run: find final-output/ -type f -exec bash -c "shasum -a 256 -b {} > {}.sha256" \;
       - run: tar cvfz binpack-n0100.tgz final-output/*
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@main
         with:
           name: epsilon-binpack-n0100.tgz
           path: binpack-n0100.tgz
       - if: ${{ github.event_name == 'push' && github.ref_name == 'upsilon-dev' && github.repository == 'UpsilonNumworks/Upsilon' }}
-        uses: actions/checkout@v5
+        uses: actions/checkout@main
         with:
           repository: Yaya-Cout/Upsilon-binfiles
           ref: 'main'
@@ -251,7 +245,7 @@ jobs:
       - run: |
           sudo apt-get update
           sudo apt-get install build-essential imagemagick libfreetype6-dev libjpeg-dev libpng-dev pkg-config gcc-arm-none-eabi binutils-arm-none-eabi
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@main
         with:
           submodules: 'recursive'
       - run: make -j2 MODEL=n0110 epsilon.dfu
@@ -268,12 +262,12 @@ jobs:
       - run: cp output/release/device/n0110/flasher.verbose.bin output/release/device/n0110/binpack/
       - run: cd output/release/device/n0110 && for binary in *.bin; do shasum -a 256 -b binpack/${binary} > binpack/${binary}.sha256;done
       - run: cp output/release/device/n0110/binpack-n0110-`git rev-parse HEAD | head -c 7`.tgz output/release/device/n0110/binpack/binpack.tgz
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@main
         with:
           name: epsilon-binpack-n0110.tgz
           path: output/release/device/n0110/binpack-n0110.tgz
       - if: ${{ github.event_name == 'push' && github.ref_name == 'upsilon-dev' && github.repository == 'UpsilonNumworks/Upsilon' }}
-        uses: actions/checkout@v5
+        uses: actions/checkout@main
         with:
           repository: Yaya-Cout/Upsilon-binfiles
           ref: 'main'
@@ -297,7 +291,7 @@ jobs:
       - run: |
           sudo apt-get update
           sudo apt-get install build-essential imagemagick libfreetype6-dev libjpeg-dev libpng-dev pkg-config gcc-arm-none-eabi binutils-arm-none-eabi
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@main
         with:
           submodules: 'recursive'
       - run: make -j2 MODEL=n0110 bootloader
@@ -314,12 +308,12 @@ jobs:
       - run: cp output/release/device/n0110/bootloader.bin output/release/device/bootloader/
       - run: cd output/release/device/bootloader && for binary in *.bin; do shasum -a 256 -b binpack/${binary} > binpack/${binary}.sha256;done
       - run: cd output/release/device/bootloader && tar cvfz binpack-bootloader.tgz binpack/*
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@main
         with:
           name: epsilon-binpack-bootloader.tgz
           path: output/release/device/bootloader/binpack-bootloader.tgz
       - if: ${{ github.event_name == 'push' && github.ref_name == 'upsilon-dev' && github.repository == 'UpsilonNumworks/Upsilon' }}
-        uses: actions/checkout@v5
+        uses: actions/checkout@main
         with:
           repository: Yaya-Cout/Upsilon-binfiles
           ref: 'main'
@@ -344,7 +338,7 @@ jobs:
          shell: msys2 {0}
     steps:
       - uses: msys2/setup-msys2@v2
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@main
         with:
           submodules: 'recursive'
       - run: pacman -S --noconfirm mingw-w64-x86_64-gcc mingw-w64-x86_64-freetype mingw-w64-x86_64-pkg-config make mingw-w64-x86_64-python3 mingw-w64-x86_64-libjpeg-turbo mingw-w64-x86_64-libpng git
@@ -352,7 +346,7 @@ jobs:
       - run: make -j2 PLATFORM=simulator test.exe
       - run: cmd /c output\release\simulator\windows\test.exe --headless
       - if: ${{ github.event_name == 'push' && github.ref_name == 'upsilon-dev' && github.repository == 'UpsilonNumworks/Upsilon' }}
-        uses: actions/checkout@v5
+        uses: actions/checkout@main
         with:
           repository: Yaya-Cout/Upsilon-binfiles
           ref: 'main'
@@ -370,20 +364,21 @@ jobs:
           git pull
           git commit -m "Update from CI"
           git push
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@main
         with:
           name: epsilon-windows.exe
           path: output/release/simulator/windows/epsilon.exe
   web:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04-arm
     steps:
-      - uses: numworks/setup-emscripten@master
+      - name: Setup emsdk
+        uses: emscripten-core/setup-emsdk@main
         with:
-          sdk: latest
-      - uses: actions/checkout@v4
+          version: 4.0.22 # TODO: Fix for latest releases of Emscripten
+      - uses: actions/checkout@main
         with:
           submodules: 'recursive'
-      # Install the Linux toolchin to avoid dependancies issues, but maybe only libpng is needed
+      # Install the Linux toolchain to avoid dependancies issues, but maybe only libpng is needed
       - run: |
           sudo apt-get update
           sudo apt-get install build-essential imagemagick libfreetype6-dev libjpeg-dev libpng-dev pkg-config libxtst-dev
@@ -391,7 +386,7 @@ jobs:
       - run: make -j2 PLATFORM=simulator TARGET=web test.js
       - run: node output/release/simulator/web/test.js --headless
       - if: ${{ github.event_name == 'push' && github.ref_name == 'upsilon-dev' && github.repository == 'UpsilonNumworks/Upsilon' }}
-        uses: actions/checkout@v5
+        uses: actions/checkout@main
         with:
           repository: Yaya-Cout/Upsilon-binfiles
           ref: 'main'
@@ -409,7 +404,7 @@ jobs:
           git pull
           git commit -m "Update from CI"
           git push
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@main
         with:
           name: epsilon-web.zip
           path: output/release/simulator/web/epsilon.zip
@@ -419,14 +414,14 @@ jobs:
       - run: |
           sudo apt-get update
           sudo apt-get install build-essential imagemagick libfreetype6-dev libjpeg-dev libpng-dev pkg-config libxtst-dev
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@main
         with:
           submodules: 'recursive'
       - run: make -j2 PLATFORM=simulator
       - run: make -j2 PLATFORM=simulator test.bin
       - run: output/release/simulator/linux/test.bin --headless
       - if: ${{ github.event_name == 'push' && github.ref_name == 'upsilon-dev' && github.repository == 'UpsilonNumworks/Upsilon' }}
-        uses: actions/checkout@v5
+        uses: actions/checkout@main
         with:
           repository: Yaya-Cout/Upsilon-binfiles
           ref: 'main'
@@ -444,7 +439,7 @@ jobs:
           git pull
           git commit -m "Update from CI"
           git push
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@main
         with:
           name: epsilon-linux.bin
           path: output/release/simulator/linux/epsilon.bin
@@ -452,20 +447,22 @@ jobs:
     if: github.event.inputs.triggerMacos == 'yes' || github.event.inputs.triggerMacos == ''
     runs-on: macOS-latest
     steps:
-      - run: brew install python-setuptools
-      - run: brew install numworks/tap/epsilon-sdk
-      - uses: actions/checkout@v5
+      - run: |
+          brew install imagemagick
+          python3 -m venv .venv
+          .venv/bin/pip3 install setuptools lz4 pypng stringcase
+      - uses: actions/checkout@main
         with:
           submodules: 'recursive'
       - run: make -j2 PLATFORM=simulator
       - run: make -j2 PLATFORM=simulator ARCH=x86_64 test.bin
       - run: output/release/simulator/macos/x86_64/test.bin --headless
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@main
         with:
           name: epsilon-macos.zip
           path: output/release/simulator/macos/epsilon.app
       - if: ${{ github.event_name == 'push' && github.ref_name == 'upsilon-dev' && github.repository == 'UpsilonNumworks/Upsilon' }}
-        uses: actions/checkout@v5
+        uses: actions/checkout@main
         with:
           repository: Yaya-Cout/Upsilon-binfiles
           ref: 'main'
@@ -485,21 +482,23 @@ jobs:
           git push
   ios:
     if: github.event.inputs.triggerIos == 'yes' || github.event.inputs.triggerIos == ''
-    runs-on: macos-14
+    runs-on: macos-14 # TODO: Fix for macos-latest runners
     steps:
-      - run: brew install python-setuptools
-      - run: brew install numworks/tap/epsilon-sdk
-      - uses: actions/checkout@v5
+      - run: |
+          brew install imagemagick
+          python3 -m venv .venv
+          .venv/bin/pip3 install setuptools lz4 pypng stringcase
+      - uses: actions/checkout@main
         with:
           submodules: 'recursive'
       - run: make -j2 PLATFORM=simulator TARGET=ios EPSILON_TELEMETRY=0
       - run: make -j2 PLATFORM=simulator TARGET=ios EPSILON_TELEMETRY=0 APPLE_PLATFORM=ios-simulator
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@main
         with:
           name: epsilon-ios.ipa
           path: output/release/simulator/ios/epsilon.ipa
       - if: ${{ github.event_name == 'push' && github.ref_name == 'upsilon-dev' && github.repository == 'UpsilonNumworks/Upsilon' }}
-        uses: actions/checkout@v5
+        uses: actions/checkout@main
         with:
           repository: Yaya-Cout/Upsilon-binfiles
           ref: 'main'
