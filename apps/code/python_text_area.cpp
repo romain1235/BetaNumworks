@@ -12,6 +12,7 @@ extern "C" {
 }
 #include <stdlib.h>
 #include <algorithm>
+#include <string.h>
 
 namespace Code {
 
@@ -400,6 +401,213 @@ bool PythonTextArea::ContentView::isInvalidClosingDelimiter(const char * positio
   updateDelimiterColoringCache();
   DelimiterOffset offset = OffsetForPosition(editedText(), position);
   return offset != UINT16_MAX && OffsetInList(offset, m_invalidClosings, m_invalidClosingsCount);
+}
+
+bool PythonTextArea::ContentView::delimiterColoringCacheIsValid() const {
+  return m_delimiterColoringCacheIsValid;
+}
+
+bool PythonTextArea::ContentView::hasInvalidClosingAfter(const char * position, int maxDistance) const {
+  if (!m_delimiterColoringCacheIsValid) {
+    return false;
+  }
+  DelimiterOffset offset = OffsetForPosition(editedText(), position);
+  if (offset == UINT16_MAX) {
+    return false;
+  }
+  for (int i = 0; i < m_invalidClosingsCount; i++) {
+    DelimiterOffset off = m_invalidClosings[i];
+    if (off > offset && off - offset <= maxDistance) {
+      return true;
+    }
+  }
+  return false;
+}
+
+int PythonTextArea::ContentView::estimateInvalidDeltaForInsertion(const char * position, const char * insertedText, int insertedLen, int windowRadius) const {
+  const char * fullText = editedText();
+  if (fullText == nullptr) {
+    return 0;
+  }
+  const char * fullEnd = fullText + strlen(fullText);
+
+  // Determine window bounds around position
+  int back = 0;
+  const char * windowStart = position;
+  while (windowStart > fullText && back < windowRadius) {
+    windowStart--;
+    back++;
+    if (*windowStart == '\n') { windowStart++; break; }
+  }
+  const char * windowEnd = position;
+  int forward = 0;
+  while (windowEnd < fullEnd && forward < windowRadius) {
+    if (*windowEnd == '\n') { break; }
+    windowEnd++;
+    forward++;
+  }
+
+  size_t origLen = windowEnd - windowStart;
+  // Build original buffer (C-style)
+  char * origBuf = (char *)malloc(origLen + 1);
+  if (origBuf == nullptr) {
+    return 0;
+  }
+  memcpy(origBuf, windowStart, origLen);
+  origBuf[origLen] = '\0';
+
+  // Build new buffer with insertion
+  size_t relPos = position - windowStart;
+  size_t newLen = origLen + insertedLen;
+  char * newBuf = (char *)malloc(newLen + 1);
+  if (newBuf == nullptr) {
+    free(origBuf);
+    return 0;
+  }
+  memcpy(newBuf, origBuf, relPos);
+  memcpy(newBuf + relPos, insertedText, insertedLen);
+  memcpy(newBuf + relPos + insertedLen, origBuf + relPos, origLen - relPos);
+  newBuf[newLen] = '\0';
+
+  auto countInvalidsInBuffer = [](const char * buf, size_t len) -> int {
+    const int kDelimiterTypeCount = 3;
+    int openingDepth[kDelimiterTypeCount] = {0,0,0};
+    int invalidClosings = 0;
+
+    mp_lexer_t * lex = mp_lexer_new_from_str_len(0, buf, len, 0);
+    const char * lineStart = buf;
+    int currentLine = 1;
+    while (lex->tok_kind != MP_TOKEN_END && lex->tok_kind != MP_TOKEN_FSTRING_RAW) {
+      while (currentLine < lex->tok_line) {
+        const char * nextLine = UTF8Helper::CodePointSearch(lineStart, '\n');
+        if (UTF8Helper::CodePointIs(nextLine, UCodePointNull)) break;
+        lineStart = nextLine + 1;
+        currentLine++;
+      }
+      int delimiterType = DelimiterTypeIndex(lex->tok_kind);
+      if (delimiterType >= 0) {
+        if (IsOpeningDelimiter(lex->tok_kind)) {
+          openingDepth[delimiterType]++;
+        } else if (IsClosingDelimiter(lex->tok_kind)) {
+          if (openingDepth[delimiterType] > 0) {
+            openingDepth[delimiterType]--;
+          } else {
+            invalidClosings++;
+          }
+        }
+      }
+      mp_lexer_to_next(lex);
+    }
+    mp_lexer_free(lex);
+    int remainingOpenings = openingDepth[0] + openingDepth[1] + openingDepth[2];
+    return invalidClosings + remainingOpenings;
+  };
+
+  int before = countInvalidsInBuffer(origBuf, origLen);
+  int after = countInvalidsInBuffer(newBuf, newLen);
+  free(origBuf);
+  free(newBuf);
+  return after - before;
+}
+
+int PythonTextArea::ContentView::estimateInvalidDeltaForDeletion(const char * position, int deletionLen, int windowRadius) const {
+  const char * fullText = editedText();
+  if (fullText == nullptr || deletionLen <= 0) {
+    return 0;
+  }
+  const char * fullEnd = fullText + strlen(fullText);
+
+  // Determine window bounds around position
+  int back = 0;
+  const char * windowStart = position;
+  while (windowStart > fullText && back < windowRadius) {
+    windowStart--;
+    back++;
+    if (*windowStart == '\n') { windowStart++; break; }
+  }
+  const char * windowEnd = position;
+  int forward = 0;
+  while (windowEnd < fullEnd && forward < windowRadius) {
+    if (*windowEnd == '\n') { break; }
+    windowEnd++;
+    forward++;
+  }
+
+  size_t origLen = windowEnd - windowStart;
+  if (origLen == 0) {
+    return 0;
+  }
+
+  // Build original buffer (C-style)
+  char * origBuf = (char *)malloc(origLen + 1);
+  if (origBuf == nullptr) {
+    return 0;
+  }
+  memcpy(origBuf, windowStart, origLen);
+  origBuf[origLen] = '\0';
+
+  // Compute deletion relative to window
+  size_t relPos = position - windowStart;
+  int clampedDeletion = deletionLen;
+  if ((size_t)clampedDeletion > origLen - relPos) {
+    clampedDeletion = (int)(origLen - relPos);
+  }
+  if (clampedDeletion <= 0) {
+    free(origBuf);
+    return 0;
+  }
+
+  size_t newLen = origLen - clampedDeletion;
+  char * newBuf = (char *)malloc(newLen + 1);
+  if (newBuf == nullptr) {
+    free(origBuf);
+    return 0;
+  }
+  // Copy before deletion
+  memcpy(newBuf, origBuf, relPos);
+  // Copy after deletion
+  memcpy(newBuf + relPos, origBuf + relPos + clampedDeletion, origLen - relPos - clampedDeletion);
+  newBuf[newLen] = '\0';
+
+  auto countInvalidsInBuffer = [](const char * buf, size_t len) -> int {
+    const int kDelimiterTypeCount = 3;
+    int openingDepth[kDelimiterTypeCount] = {0,0,0};
+    int invalidClosings = 0;
+
+    mp_lexer_t * lex = mp_lexer_new_from_str_len(0, buf, len, 0);
+    const char * lineStart = buf;
+    int currentLine = 1;
+    while (lex->tok_kind != MP_TOKEN_END && lex->tok_kind != MP_TOKEN_FSTRING_RAW) {
+      while (currentLine < lex->tok_line) {
+        const char * nextLine = UTF8Helper::CodePointSearch(lineStart, '\n');
+        if (UTF8Helper::CodePointIs(nextLine, UCodePointNull)) break;
+        lineStart = nextLine + 1;
+        currentLine++;
+      }
+      int delimiterType = DelimiterTypeIndex(lex->tok_kind);
+      if (delimiterType >= 0) {
+        if (IsOpeningDelimiter(lex->tok_kind)) {
+          openingDepth[delimiterType]++;
+        } else if (IsClosingDelimiter(lex->tok_kind)) {
+          if (openingDepth[delimiterType] > 0) {
+            openingDepth[delimiterType]--;
+          } else {
+            invalidClosings++;
+          }
+        }
+      }
+      mp_lexer_to_next(lex);
+    }
+    mp_lexer_free(lex);
+    int remainingOpenings = openingDepth[0] + openingDepth[1] + openingDepth[2];
+    return invalidClosings + remainingOpenings;
+  };
+
+  int before = countInvalidsInBuffer(origBuf, origLen);
+  int after = countInvalidsInBuffer(newBuf, newLen);
+  free(origBuf);
+  free(newBuf);
+  return after - before;
 }
 
 void PythonTextArea::ContentView::updateDelimiterColoringCache() const {
@@ -861,8 +1069,17 @@ bool PythonTextArea::handleEvent(Ion::Events::Event event) {
       const char openingDelimiter = *(cursor - 1);
       const char matchingClosingDelimiter = MatchingClosingDelimiterChar(openingDelimiter);
       if (GlobalPreferences::sharedGlobalPreferences()->autoCloseParentheses() && matchingClosingDelimiter != 0 && *cursor == matchingClosingDelimiter) {
+        // Compare deleting only the opening delimiter vs deleting the pair
+        // (opening + closing). Choose the option that minimizes invalid
+        // delimiters in a local window.
         const char * openingPosition = cursor - 1;
-        m_contentView.removeText(openingPosition, cursor + 1);
+        int deltaSingle = m_contentView.estimateInvalidDeltaForDeletion(openingPosition, 1, 512);
+        int deltaPair = m_contentView.estimateInvalidDeltaForDeletion(openingPosition, 2, 512);
+        if (deltaPair < deltaSingle) {
+          m_contentView.removeText(openingPosition, cursor + 1);
+        } else {
+          m_contentView.removeText(openingPosition, cursor);
+        }
         setCursorLocation(openingPosition);
         m_contentView.invalidateDelimiterColoringCache();
         addAutocompletion();
@@ -893,7 +1110,6 @@ bool PythonTextArea::handleEventWithText(const char * text, bool indentation, bo
   if (*text == 0) {
     return false;
   }
-
   bool singleDelimiterInput = text[1] == 0 && (IsOpeningDelimiterChar(*text) || IsClosingDelimiterChar(*text));
 
   if (singleDelimiterInput && selectionIsEmpty()) {
@@ -903,6 +1119,19 @@ bool PythonTextArea::handleEventWithText(const char * text, bool indentation, bo
 
     const char currentDelimiter = *text;
     if (IsClosingDelimiterChar(currentDelimiter) && GlobalPreferences::sharedGlobalPreferences()->autoCloseParentheses() && *cursorLocation() == currentDelimiter) {
+      // Compare the two options: inserting the typed closing delimiter
+      // here vs skipping over the existing closing delimiter. Choose the
+      // option that yields fewer invalid delimiters locally.
+      int delta = m_contentView.estimateInvalidDeltaForInsertion(cursorLocation(), &currentDelimiter, 1, 512);
+      if (delta < 0 && m_contentView.isAbleToInsertTextAt(1, cursorLocation(), false)) {
+        // Inserting reduces invalids: perform the insertion via base
+        // TextArea implementation (user-initiated insertion).
+        TextArea::handleEventWithText(text, indentation, forceCursorRightOfText, shouldRemoveLastCharacter);
+        m_contentView.invalidateDelimiterColoringCache();
+        m_contentView.reloadRectFromPosition(m_contentView.editedText(), true);
+        return true;
+      }
+      // Otherwise, prefer skipping over the existing closing delimiter.
       setCursorLocation(cursorLocation() + 1);
       scrollToCursor();
       return true;
@@ -914,11 +1143,20 @@ bool PythonTextArea::handleEventWithText(const char * text, bool indentation, bo
         return false;
       }
 
-      char closingDelimiterText[2] = {MatchingClosingDelimiterChar(currentDelimiter), 0};
+      char closingChar = MatchingClosingDelimiterChar(currentDelimiter);
+      char closingDelimiterText[2] = {closingChar, 0};
       const char * middlePosition = cursorLocation();
-      if (closingDelimiterText[0] != 0 && m_contentView.isAbleToInsertTextAt(1, middlePosition, false) && GlobalPreferences::sharedGlobalPreferences()->autoCloseParentheses()) {
-        m_contentView.insertTextAtLocation(closingDelimiterText, const_cast<char *>(middlePosition), 1);
-        setCursorLocation(middlePosition);
+      if (closingChar != 0 && GlobalPreferences::sharedGlobalPreferences()->autoCloseParentheses()) {
+        // Estimate the change in invalid delimiters if we insert the
+        // closing char here. Insert if it does not increase invalids
+        // (delta <= 0). This allows nested insertions like "(((" ->
+        // "((()))" when appropriate.
+        int delta = m_contentView.estimateInvalidDeltaForInsertion(middlePosition, &closingChar, 1, 512);
+        if (delta <= 0 && m_contentView.isAbleToInsertTextAt(1, middlePosition, false)) {
+          m_contentView.insertTextAtLocation(closingDelimiterText, const_cast<char *>(middlePosition), 1);
+          // After insertion, keep the cursor between the pair
+          setCursorLocation(middlePosition);
+        }
       }
 
       m_contentView.invalidateDelimiterColoringCache();
@@ -1011,11 +1249,17 @@ bool PythonTextArea::addAutocompletionTextAtIndex(int nextIndex, int * currentIn
   assert(strlen(parentheses) == parenthesesLength);
   /* If couldInsertText is false, we should not try to add the parentheses as
    * there was already not enough space to add the autocompletion. */
-  if (addParentheses && m_contentView.isAbleToInsertTextAt(parenthesesLength, autocompletionLocation, false)) {
-    m_contentView.insertTextAtLocation(parentheses, const_cast<char *>(autocompletionLocation), parenthesesLength);
-    m_contentView.setAutocompleting(true);
-    m_contentView.setAutocompletionEnd(autocompletionLocation + parenthesesLength);
-    return true;
+  if (addParentheses) {
+    // Estimate the local effect of inserting `()` here and only do it if it
+    // does not increase invalid delimiters (delta <= 0). This permits
+    // autocompletion to add parentheses when it helps nesting/matching.
+    int delta = m_contentView.estimateInvalidDeltaForInsertion(autocompletionLocation, parentheses, parenthesesLength, 512);
+    if (delta <= 0 && m_contentView.isAbleToInsertTextAt(parenthesesLength, autocompletionLocation, false)) {
+      m_contentView.insertTextAtLocation(parentheses, const_cast<char *>(autocompletionLocation), parenthesesLength);
+      m_contentView.setAutocompleting(true);
+      m_contentView.setAutocompletionEnd(autocompletionLocation + parenthesesLength);
+      return true;
+    }
   }
   return (textToInsertLength > 0);
 }

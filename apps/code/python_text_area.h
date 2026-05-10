@@ -57,6 +57,22 @@ protected:
     void loadSyntaxHighlighter();
     void unloadSyntaxHighlighter();
     void invalidateDelimiterColoringCache();
+    /* Light-weight accessors for the delimiter-coloring cache.
+     * These do NOT force a full re-lex: prefer using them only when the
+     * cache is already valid (checked via delimiterColoringCacheIsValid()). */
+    bool delimiterColoringCacheIsValid() const;
+    bool hasInvalidClosingAfter(const char * position, int maxDistance = 256) const;
+    /* Estimate the change in number of invalid delimiters when inserting
+     * `insertedText` at `position`. The function lexes a local window around
+     * `position` (cost controlled by `windowRadius`) and returns
+     * `invalid_after - invalid_before`. Positive means worse (more invalids),
+     * negative means better (fewer invalids). */
+    int estimateInvalidDeltaForInsertion(const char * position, const char * insertedText, int insertedLen, int windowRadius = 1024) const;
+    /* Estimate the change in number of invalid delimiters when deleting
+     * `deletionLen` characters starting at `position`. Returns
+     * `invalid_after - invalid_before`. Positive means worse, negative
+     * means better. */
+    int estimateInvalidDeltaForDeletion(const char * position, int deletionLen, int windowRadius = 1024) const;
     void clearRect(KDContext * ctx, KDRect rect) const override;
     void drawLine(KDContext * ctx, int line, const char * text, size_t length, int fromColumn, int toColumn, const char * selectionStart, const char * selectionEnd) const override;
     KDRect dirtyRectFromPosition(const char * position, bool includeFollowingLines) const override;
@@ -94,6 +110,7 @@ private:
   const ContentView * nonEditableContentView() const override { return &m_contentView; }
   ContentView m_contentView;
   int m_autocompletionResultIndex;
+ 
 };
 
 }
