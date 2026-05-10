@@ -126,11 +126,11 @@
             "CellBackgroundActive": "ffd400",
             "CellText": "45ada8",
             "CellTextActive": "0f6b5c",
-            "CellTextExternal": "ffffff",
+            "CellTextExternal": "000000",
             "CellTextExternalActive": "000000"
         },
         "Atom": {
-            "Text": "ffffff",
+            "Text": "000000",
             "Unknown": "181818",
             "AlkaliMetal": "443207",
             "AlkaliEarthMetal": "021f18",
@@ -153,7 +153,7 @@
             "HalogenHighlighted": "b8c7ba",
             "ReactiveNonmetalHighlighted": "ea6f61",
             "NobleGasHighlighted": "9182ce",
-            "TableLines": "cdcacd",            
+            "TableLines": "cdcacd",
             "Highlight": "000000",
             "Background": "d9d9d9"
         }
