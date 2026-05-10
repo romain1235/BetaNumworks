@@ -3,7 +3,7 @@
 theme_builder.py — Build a .theme binary file from a local theme folder.
 
 Usage:
-    python themes/theme_builder.py <theme_name> <output.theme>
+    python themes/theme_builder.py <theme_name> [output.theme]
 
 The .theme binary format:
     Version 1 header (8 bytes):
@@ -237,7 +237,8 @@ def main():
     parser = argparse.ArgumentParser(
         description="Build a .theme binary from a local theme.")
     parser.add_argument("theme", help="Theme name (e.g. beta_dark, omega_light)")
-    parser.add_argument("output", help="Output .theme file path")
+    parser.add_argument("output", nargs="?", default=None,
+                        help="Output .theme file path (optional). If omitted, writes to the theme's folder as <theme>.theme")
     parser.add_argument("-l", "--list", action="store_true",
                         help="List available local themes and exit")
     args = parser.parse_args()
@@ -251,14 +252,38 @@ def main():
 
     data = build_theme_binary(args.theme)
 
-    with open(args.output, "wb") as f:
+    # Compute output path. If no output was provided, write to the theme folder
+    theme_dir = os.path.join(THEMES_LOCAL_DIR, args.theme)
+    # Make sure theme folder exists so we can write the output there
+    try:
+        os.makedirs(theme_dir, exist_ok=True)
+    except Exception:
+        pass
+
+    if args.output is None:
+        output_path = os.path.join(theme_dir, args.theme + ".theme")
+    else:
+        out = args.output
+        # If the provided output is an existing directory or ends with a separator,
+        # place the file inside that directory using the theme name.
+        if out.endswith(os.sep) or os.path.isdir(out):
+            output_path = os.path.join(out, args.theme + ".theme")
+        else:
+            # If only a filename was provided (no directory part), place it in the theme folder
+            if os.path.dirname(out) == "":
+                output_path = os.path.join(theme_dir, out)
+            else:
+                output_path = out
+
+    os.makedirs(os.path.dirname(output_path), exist_ok=True)
+    with open(output_path, "wb") as f:
         f.write(data)
 
     # Parse header to report counts
     version = struct.unpack_from("<H", data, 4)[0]
     nb_colors = struct.unpack_from("<H", data, 6)[0]
     nb_icons = struct.unpack_from("<H", data, 8)[0] if version == 2 else 0
-    print(f"Written {len(data)} bytes → {args.output}  "
+    print(f"Written {len(data)} bytes → {output_path}  "
           f"({nb_colors} colors, {nb_icons} icons, format v{version})")
 
 
