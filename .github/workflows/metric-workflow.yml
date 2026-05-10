@@ -6,7 +6,7 @@ jobs:
     runs-on: ubuntu-24.04-arm
     steps:
       - name: Install dependencies
-        run: sudo apt-get install build-essential imagemagick libfreetype6-dev libjpeg-dev libpng-dev pkg-config
+        run: sudo apt-get update && sudo apt-get install build-essential imagemagick libfreetype6-dev libjpeg-dev libpng-dev pkg-config
       - name: Install ARM toolchain
         run: sudo apt-get install gcc-arm-none-eabi binutils-arm-none-eabi
       - name: Checkout PR base
@@ -34,7 +34,7 @@ jobs:
             echo EOF
           } >> "$GITHUB_ENV"
       - name: Add comment
-        uses: actions/github-script@v8
+        uses: actions/github-script@v9
         with:
           script: |
             await  github.rest.issues.createComment({
