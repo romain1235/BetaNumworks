@@ -13,7 +13,7 @@ ToDeactivateExamMode2 = "csatlakoztassa a számológépet a számítógéphez"
 ToDeactivateExamMode3 = "vagy egy konnektorhoz."
 # --------------------- Please do not edit these messages ---------------------
 ExamModeWarning1 = "Vigyázat: a használt szoftver nem"
-ExamModeWarning2 = "hivatalos, Numworks nem garantálja"
+ExamModeWarning2 = "hivatalos, Numworks/Omega/Beta nem garantálja"
 ExamModeWarning3 = "a vizsgálati mód megfelelőségét."
 AboutWarning1 = "Vigyázat: a használt szoftver"
 AboutWarning2 = "nem hivatalos. A NumWorks nem"
