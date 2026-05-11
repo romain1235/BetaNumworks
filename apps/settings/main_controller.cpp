@@ -1,13 +1,50 @@
 #include "main_controller.h"
 #include "../global_preferences.h"
+#include "../theme/theme_loader.h"
 #include <apps/i18n.h>
 #include <assert.h>
 #include <ion/backlight.h>
+#include <string.h>
 
 using namespace Poincare;
 using namespace Shared;
 
 namespace Settings {
+
+namespace {
+void themeSubtitle(char * buffer, size_t bufferSize) {
+  if (bufferSize == 0) {
+    return;
+  }
+  constexpr size_t kThemeDisplayOffset = 1;
+  const size_t maxNameLength = bufferSize - 1 - kThemeDisplayOffset;
+  char persistedThemeName[ThemeLoader::k_maxThemeNameLength] = {0};
+  if (!ThemeLoader::readPersistedThemeName(persistedThemeName, sizeof(persistedThemeName)) || persistedThemeName[0] == '\0') {
+    const char * defaultThemeName = I18n::translate(I18n::Message::DefaultTheme);
+    size_t defaultThemeNameLength = strlen(defaultThemeName);
+    if (defaultThemeNameLength > maxNameLength) {
+      defaultThemeNameLength = maxNameLength;
+    }
+    memcpy(buffer, defaultThemeName, defaultThemeNameLength);
+    buffer[defaultThemeNameLength] = ' ';
+    buffer[defaultThemeNameLength + 1] = '\0';
+    return;
+  }
+
+  size_t nameLength = strlen(persistedThemeName);
+  constexpr const char * kThemeSuffix = ".theme";
+  constexpr size_t kThemeSuffixLength = 6;
+  if (nameLength > kThemeSuffixLength && strcmp(persistedThemeName + nameLength - kThemeSuffixLength, kThemeSuffix) == 0) {
+    nameLength -= kThemeSuffixLength;
+  }
+  if (nameLength > maxNameLength) {
+    nameLength = maxNameLength;
+  }
+  memcpy(buffer, persistedThemeName, nameLength);
+  buffer[nameLength] = ' ';
+  buffer[nameLength + 1] = '\0';
+}
+}
 
 constexpr SettingsMessageTree s_modelAngleChildren[3] = {SettingsMessageTree(I18n::Message::Degrees), SettingsMessageTree(I18n::Message::Radian), SettingsMessageTree(I18n::Message::Gradians)};
 constexpr SettingsMessageTree s_modelEditionModeChildren[2] = {SettingsMessageTree(I18n::Message::Edition2D), SettingsMessageTree(I18n::Message::EditionLinear)};
@@ -179,14 +216,21 @@ void MainController::willDisplayCellForIndex(HighlightCell * cell, int index) {
   }
   MessageTableCell<> * myCell = (MessageTableCell<> *)cell;
   myCell->setMessage(title);
+  MessageTableCellWithChevronAndBuffer * myTextCell = static_cast<MessageTableCellWithChevronAndBuffer *>(cell);
   if (model()->childAtIndex(index)->label() == I18n::Message::Language) {
     int index = (int)(globalPreferences->language());
-    static_cast<MessageTableCellWithChevronAndMessage *>(cell)->setSubtitle(I18n::LanguageNames[index]);
+    myTextCell->setAccessoryText(I18n::translate(I18n::LanguageNames[index]));
     return;
   }
   if (model()->childAtIndex(index)->label() == I18n::Message::Country) {
     int index = (int)(globalPreferences->country());
-    static_cast<MessageTableCellWithChevronAndMessage *>(cell)->setSubtitle(I18n::CountryNames[index]);
+    myTextCell->setAccessoryText(I18n::translate(I18n::CountryNames[index]));
+    return;
+  }
+  if (model()->childAtIndex(index)->label() == I18n::Message::Theme) {
+    char themeNameBuffer[ThemeController::k_maxNameLen + 2];
+    themeSubtitle(themeNameBuffer, sizeof(themeNameBuffer));
+    myTextCell->setAccessoryText(themeNameBuffer);
     return;
   }
   if (model()->childAtIndex(index)->label() == I18n::Message::UpdatePopUp || model()->childAtIndex(index)->label() == I18n::Message::BetaPopUp) {
@@ -195,14 +239,13 @@ void MainController::willDisplayCellForIndex(HighlightCell * cell, int index) {
     mySwitch->setState(globalPreferences->showPopUp());
     return;
   }
-  MessageTableCellWithChevronAndMessage * myTextCell = (MessageTableCellWithChevronAndMessage *)cell;
   int childIndex = -1;
   switch (model()->childAtIndex(index)->label()) {
     default:
       break;
   }
   I18n::Message message = childIndex >= 0 ? model()->childAtIndex(index)->childAtIndex(childIndex)->label() : I18n::Message::Default;
-  myTextCell->setSubtitle(message);
+  myTextCell->setAccessoryText(I18n::translate(message));
 }
 
 void MainController::viewWillAppear() {

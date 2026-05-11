@@ -79,6 +79,10 @@ void ThemeController::didBecomeFirstResponder() {
   Container::activeApp()->setFirstResponder(&m_tableView);
 }
 
+void ThemeController::viewDidDisappear() {
+  m_tableView.deselectTable();
+}
+
 bool ThemeController::handleEvent(Ion::Events::Event event) {
   if (event == Ion::Events::OK || event == Ion::Events::EXE) {
     applySelectedTheme(selectedRow());

@@ -71,7 +71,7 @@ private:
   I18n::Message promptMessage() const;
   bool hasPrompt() const { return promptMessage() != I18n::Message::Default; }
   constexpr static int k_numberOfSimpleChevronCells = 10;
-  MessageTableCellWithChevronAndMessage m_cells[k_numberOfSimpleChevronCells];
+  MessageTableCellWithChevronAndBuffer m_cells[k_numberOfSimpleChevronCells];
   MessageTableCellWithSwitch m_popUpCell;
   SelectableTableView m_selectableTableView;
   MathOptionsController m_mathOptionsController;

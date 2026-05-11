@@ -30,6 +30,7 @@ public:
   View * view() override { return &m_contentView; }
   const char * title() override;
   void viewWillAppear() override;
+  void viewDidDisappear() override;
   void didBecomeFirstResponder() override;
   bool handleEvent(Ion::Events::Event event) override;
 
