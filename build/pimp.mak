@@ -1,14 +1,12 @@
 # You gotta PIMP MY CALC
 
 ifndef NO_PIMP
-PLS_IGNORE := $(shell >&2 printf "\e[91m\e[36m         __  __      ______ ____   ____  ______\n")
-PLS_IGNORE := $(shell >&2 printf "\e[91m\e[36m        / / / /_____/ _____/_/ /  / __ \/ _   /\n")
-PLS_IGNORE := $(shell >&2 printf "\e[91m\e[36m       / / / / __  / /____/ / /  / / / / / / / \n")
-PLS_IGNORE := $(shell >&2 printf "\e[91m\e[36m      / /_/ / /_/ /____  / / /__/ /_/ / / / /  \n")
-PLS_IGNORE := $(shell >&2 printf "\e[91m\e[36m      \____/ ____/______/_/____/\____/_/ /_/   \n")
-PLS_IGNORE := $(shell >&2 printf "\e[91m\e[36m          / /                                  \n")
-PLS_IGNORE := $(shell >&2 printf "\e[91m\e[36m         /_/                                   \n")
-PLS_IGNORE := $(shell >&2 printf "\e[0;34m          - When Epsiloff and Omegout          \e[0m\n")
+PLS_IGNORE := $(shell >&2 printf "\e[38;2;255;212;0m     ______\e[38;2;69;173;168m ______\e[38;2;255;212;0m ______\e[38;2;69;173;168m ____\n")
+PLS_IGNORE := $(shell >&2 printf "\e[38;2;255;212;0m    / __  /\e[38;2;69;173;168m/ ____/\e[38;2;255;212;0m/_  __/\e[38;2;69;173;168m/   |\n")
+PLS_IGNORE := $(shell >&2 printf "\e[38;2;255;212;0m   / /_/ /\e[38;2;69;173;168m/ /__  \e[38;2;255;212;0m  / / \e[38;2;69;173;168m / /| |\n")
+PLS_IGNORE := $(shell >&2 printf "\e[38;2;255;212;0m  / __ \/\e[38;2;69;173;168m/ ___/ \e[38;2;255;212;0m  / / \e[38;2;69;173;168m / /_| |\n")
+PLS_IGNORE := $(shell >&2 printf "\e[38;2;255;212;0m / /_/ /\e[38;2;69;173;168m/ /___ \e[38;2;255;212;0m  / / \e[38;2;69;173;168m / ___  |\n")
+PLS_IGNORE := $(shell >&2 printf "\e[38;2;255;212;0m/_____/\e[38;2;69;173;168m/_____/ \e[38;2;255;212;0m /_/ \e[38;2;69;173;168m /_/   |_|\n")
 PLS_IGNORE := $(shell >&2 printf "\n")
 PLS_IGNORE := $(shell >&2 printf "\e[32mBuilding U$(UPSILON_VERSION)-E$(EPSILON_VERSION)\n")
 
