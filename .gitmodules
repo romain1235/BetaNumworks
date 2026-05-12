@@ -3,4 +3,4 @@
 	url = https://github.com/UpsilonNumworks/Upsilon-RPN.git
 [submodule "apps/atomic"]
 	path = apps/atomic
-	url = https://github.com/UpsilonNumworks/atomic
+	url = https://github.com/romain1235/atomic.git
