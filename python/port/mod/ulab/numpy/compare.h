@@ -6,7 +6,7 @@
  *
  * The MIT License (MIT)
  *
- * Copyright (c) 2020-2021 Zoltán Vörös
+ * Copyright (c) 2020-2025 Zoltán Vörös
 */
 
 #ifndef _COMPARE_
@@ -23,12 +23,14 @@ enum COMPARE_FUNCTION_TYPE {
     COMPARE_CLIP,
 };
 
+MP_DECLARE_CONST_FUN_OBJ_KW(compare_bincount_obj);
 MP_DECLARE_CONST_FUN_OBJ_3(compare_clip_obj);
 MP_DECLARE_CONST_FUN_OBJ_2(compare_equal_obj);
 MP_DECLARE_CONST_FUN_OBJ_2(compare_isfinite_obj);
 MP_DECLARE_CONST_FUN_OBJ_2(compare_isinf_obj);
 MP_DECLARE_CONST_FUN_OBJ_2(compare_minimum_obj);
 MP_DECLARE_CONST_FUN_OBJ_2(compare_maximum_obj);
+MP_DECLARE_CONST_FUN_OBJ_1(compare_nonzero_obj);
 MP_DECLARE_CONST_FUN_OBJ_2(compare_not_equal_obj);
 MP_DECLARE_CONST_FUN_OBJ_3(compare_where_obj);
 

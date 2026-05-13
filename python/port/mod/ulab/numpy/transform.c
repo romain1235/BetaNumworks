@@ -9,6 +9,7 @@
  *
 */
 
+#include <sys/types.h>
 #include <unistd.h>
 #include <math.h>
 #include <stdlib.h>
@@ -26,9 +27,9 @@
 #if ULAB_NUMPY_HAS_COMPRESS
 static mp_obj_t transform_compress(size_t n_args, const mp_obj_t *pos_args, mp_map_t *kw_args) {
     static const mp_arg_t allowed_args[] = {
-        { MP_QSTR_, MP_ARG_REQUIRED | MP_ARG_OBJ, { .u_rom_obj = mp_const_none } },
-        { MP_QSTR_, MP_ARG_REQUIRED | MP_ARG_OBJ, { .u_rom_obj = mp_const_none } },
-        { MP_QSTR_axis, MP_ARG_KW_ONLY | MP_ARG_OBJ, { .u_rom_obj = mp_const_none } },
+        { MP_QSTR_, MP_ARG_REQUIRED | MP_ARG_OBJ, { .u_rom_obj = MP_ROM_NONE } },
+        { MP_QSTR_, MP_ARG_REQUIRED | MP_ARG_OBJ, { .u_rom_obj = MP_ROM_NONE } },
+        { MP_QSTR_axis, MP_ARG_KW_ONLY | MP_ARG_OBJ, { .u_rom_obj = MP_ROM_NONE } },
     };
 
     mp_arg_val_t args[MP_ARRAY_SIZE(allowed_args)];
@@ -37,7 +38,7 @@ static mp_obj_t transform_compress(size_t n_args, const mp_obj_t *pos_args, mp_m
     mp_obj_t condition = args[0].u_obj;
 
     if(!mp_obj_is_type(args[1].u_obj, &ulab_ndarray_type)) {
-        mp_raise_TypeError(translate("wrong input type"));
+        mp_raise_TypeError(MP_ERROR_TEXT("wrong input type"));
     }
     ndarray_obj_t *ndarray = MP_OBJ_TO_PTR(args[1].u_obj);
     uint8_t *array = (uint8_t *)ndarray->array;
@@ -54,7 +55,7 @@ static mp_obj_t transform_compress(size_t n_args, const mp_obj_t *pos_args, mp_m
 
     if(((axis == mp_const_none) && (len != ndarray->len)) ||
         ((axis != mp_const_none) && (len != ndarray->shape[shift_ax]))) {
-        mp_raise_ValueError(translate("wrong length of condition array"));
+        mp_raise_ValueError(MP_ERROR_TEXT("wrong length of condition array"));
     }
 
     size_t true_count = 0;
@@ -156,7 +157,7 @@ static mp_obj_t transform_compress(size_t n_args, const mp_obj_t *pos_args, mp_m
     m_del(int32_t, strides, ULAB_MAX_DIMS);
     m_del(int32_t, rstrides, ULAB_MAX_DIMS);
 
-    return result;
+    return MP_OBJ_FROM_PTR(result);
 }
 
 MP_DEFINE_CONST_FUN_OBJ_KW(transform_compress_obj, 2, transform_compress);
@@ -165,16 +166,16 @@ MP_DEFINE_CONST_FUN_OBJ_KW(transform_compress_obj, 2, transform_compress);
 #if ULAB_NUMPY_HAS_DELETE
 static mp_obj_t transform_delete(size_t n_args, const mp_obj_t *pos_args, mp_map_t *kw_args) {
     static const mp_arg_t allowed_args[] = {
-        { MP_QSTR_, MP_ARG_REQUIRED | MP_ARG_OBJ, { .u_rom_obj = mp_const_none } },
-        { MP_QSTR_, MP_ARG_REQUIRED | MP_ARG_OBJ, { .u_rom_obj = mp_const_none } },
-        { MP_QSTR_axis, MP_ARG_KW_ONLY | MP_ARG_OBJ, { .u_rom_obj = mp_const_none } },
+        { MP_QSTR_, MP_ARG_REQUIRED | MP_ARG_OBJ, { .u_rom_obj = MP_ROM_NONE } },
+        { MP_QSTR_, MP_ARG_REQUIRED | MP_ARG_OBJ, { .u_rom_obj = MP_ROM_NONE } },
+        { MP_QSTR_axis, MP_ARG_KW_ONLY | MP_ARG_OBJ, { .u_rom_obj = MP_ROM_NONE } },
     };
 
     mp_arg_val_t args[MP_ARRAY_SIZE(allowed_args)];
     mp_arg_parse_all(n_args, pos_args, kw_args, MP_ARRAY_SIZE(allowed_args), allowed_args, args);
 
     if(!mp_obj_is_type(args[0].u_obj, &ulab_ndarray_type)) {
-        mp_raise_TypeError(translate("first argument must be an ndarray"));
+        mp_raise_TypeError(MP_ERROR_TEXT("first argument must be an ndarray"));
     }
     ndarray_obj_t *ndarray = MP_OBJ_TO_PTR(args[0].u_obj);
     uint8_t *array = (uint8_t *)ndarray->array;
@@ -200,13 +201,18 @@ static mp_obj_t transform_delete(size_t n_args, const mp_obj_t *pos_args, mp_map
         index_len = 1;
     } else {
         if(mp_obj_len_maybe(indices) == MP_OBJ_NULL) {
-            mp_raise_TypeError(translate("wrong index type"));
+            mp_raise_TypeError(MP_ERROR_TEXT("wrong index type"));
         }
         index_len = MP_OBJ_SMALL_INT_VALUE(mp_obj_len_maybe(indices));
+        if (index_len == 0){
+            // if the second positional argument is empty
+            // return the original array
+            return MP_OBJ_FROM_PTR(ndarray);
+        }
     }
 
     if(index_len > axis_len) {
-        mp_raise_ValueError(translate("wrong length of index array"));
+        mp_raise_ValueError(MP_ERROR_TEXT("wrong length of index array"));
     }
 
     size_t *index_array = m_new(size_t, index_len);
@@ -217,7 +223,7 @@ static mp_obj_t transform_delete(size_t n_args, const mp_obj_t *pos_args, mp_map
             value += axis_len;
         }
         if((value < 0) || (value > (ssize_t)axis_len)) {
-            mp_raise_ValueError(translate("index is out of bounds"));
+            mp_raise_ValueError(MP_ERROR_TEXT("index is out of bounds"));
         } else {
             *index_array++ = (size_t)value;
         }
@@ -230,7 +236,7 @@ static mp_obj_t transform_delete(size_t n_args, const mp_obj_t *pos_args, mp_map
                 value += axis_len;
             }
             if((value < 0) || (value > (ssize_t)axis_len)) {
-                mp_raise_ValueError(translate("index is out of bounds"));
+                mp_raise_ValueError(MP_ERROR_TEXT("index is out of bounds"));
             } else {
                 *index_array++ = (size_t)value;
             }
@@ -355,7 +361,7 @@ mp_obj_t transform_dot(mp_obj_t _m1, mp_obj_t _m2) {
     // TODO: should the results be upcast?
     // This implements 2D operations only!
     if(!mp_obj_is_type(_m1, &ulab_ndarray_type) || !mp_obj_is_type(_m2, &ulab_ndarray_type)) {
-        mp_raise_TypeError(translate("arguments must be ndarrays"));
+        mp_raise_TypeError(MP_ERROR_TEXT("arguments must be ndarrays"));
     }
     ndarray_obj_t *m1 = MP_OBJ_TO_PTR(_m1);
     ndarray_obj_t *m2 = MP_OBJ_TO_PTR(_m2);
@@ -369,7 +375,7 @@ mp_obj_t transform_dot(mp_obj_t _m1, mp_obj_t _m2) {
     mp_float_t (*func2)(void *) = ndarray_get_float_function(m2->dtype);
 
     if(m1->shape[ULAB_MAX_DIMS - 1] != m2->shape[ULAB_MAX_DIMS - m2->ndim]) {
-        mp_raise_ValueError(translate("dimensions do not match"));
+        mp_raise_ValueError(MP_ERROR_TEXT("dimensions do not match"));
     }
     uint8_t ndim = MIN(m1->ndim, m2->ndim);
     size_t shape1 = m1->ndim == 2 ? m1->shape[ULAB_MAX_DIMS - m1->ndim] : 1;
@@ -379,7 +385,7 @@ mp_obj_t transform_dot(mp_obj_t _m1, mp_obj_t _m2) {
     if(ndim == 2) { // matrix times matrix -> matrix
         shape = ndarray_shape_vector(0, 0, shape1, shape2);
     } else { // matrix times vector -> vector, vector times vector -> vector (size 1)
-        shape = ndarray_shape_vector(0, 0, 0, shape1);
+        shape = ndarray_shape_vector(0, 0, 0, shape1 * shape2);
     }
     ndarray_obj_t *results = ndarray_new_dense_ndarray(ndim, shape, NDARRAY_FLOAT);
     mp_float_t *rarray = (mp_float_t *)results->array;
@@ -415,8 +421,8 @@ MP_DEFINE_CONST_FUN_OBJ_2(transform_dot_obj, transform_dot);
 #if ULAB_NUMPY_HAS_SIZE
 static mp_obj_t transform_size(size_t n_args, const mp_obj_t *pos_args, mp_map_t *kw_args) {
     static const mp_arg_t allowed_args[] = {
-        { MP_QSTR_, MP_ARG_REQUIRED | MP_ARG_OBJ, { .u_rom_obj = mp_const_none } },
-        { MP_QSTR_axis, MP_ARG_KW_ONLY | MP_ARG_OBJ, { .u_rom_obj = mp_const_none } },
+        { MP_QSTR_, MP_ARG_REQUIRED | MP_ARG_OBJ, { .u_rom_obj = MP_ROM_NONE } },
+        { MP_QSTR_axis, MP_ARG_KW_ONLY | MP_ARG_OBJ, { .u_rom_obj = MP_ROM_NONE } },
     };
 
     mp_arg_val_t args[MP_ARRAY_SIZE(allowed_args)];
@@ -427,7 +433,7 @@ static mp_obj_t transform_size(size_t n_args, const mp_obj_t *pos_args, mp_map_t
     }
 
     if(!ndarray_object_is_array_like(args[0].u_obj)) {
-        mp_raise_TypeError(translate("first argument must be an ndarray"));
+        mp_raise_TypeError(MP_ERROR_TEXT("first argument must be an ndarray"));
     }
     if(!mp_obj_is_type(args[0].u_obj, &ulab_ndarray_type)) {
         return mp_obj_len_maybe(args[0].u_obj);

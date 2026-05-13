@@ -37,9 +37,9 @@ typedef struct _mp_obj_enumerate_t {
     mp_int_t cur;
 } mp_obj_enumerate_t;
 
-STATIC mp_obj_t enumerate_iternext(mp_obj_t self_in);
+static mp_obj_t enumerate_iternext(mp_obj_t self_in);
 
-STATIC mp_obj_t enumerate_make_new(const mp_obj_type_t *type, size_t n_args, size_t n_kw, const mp_obj_t *args) {
+static mp_obj_t enumerate_make_new(const mp_obj_type_t *type, size_t n_args, size_t n_kw, const mp_obj_t *args) {
     #if MICROPY_CPYTHON_COMPAT
     static const mp_arg_t allowed_args[] = {
         { MP_QSTR_iterable, MP_ARG_REQUIRED | MP_ARG_OBJ, {.u_obj = MP_OBJ_NULL} },
@@ -67,15 +67,15 @@ STATIC mp_obj_t enumerate_make_new(const mp_obj_type_t *type, size_t n_args, siz
     return MP_OBJ_FROM_PTR(o);
 }
 
-const mp_obj_type_t mp_type_enumerate = {
-    { &mp_type_type },
-    .name = MP_QSTR_enumerate,
-    .make_new = enumerate_make_new,
-    .iternext = enumerate_iternext,
-    .getiter = mp_identity_getiter,
-};
+MP_DEFINE_CONST_OBJ_TYPE(
+    mp_type_enumerate,
+    MP_QSTR_enumerate,
+    MP_TYPE_FLAG_ITER_IS_ITERNEXT,
+    make_new, enumerate_make_new,
+    iter, enumerate_iternext
+    );
 
-STATIC mp_obj_t enumerate_iternext(mp_obj_t self_in) {
+static mp_obj_t enumerate_iternext(mp_obj_t self_in) {
     assert(mp_obj_is_type(self_in, &mp_type_enumerate));
     mp_obj_enumerate_t *self = MP_OBJ_TO_PTR(self_in);
     mp_obj_t next = mp_iternext(self->iter);

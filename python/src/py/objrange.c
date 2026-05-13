@@ -33,31 +33,30 @@
 
 typedef struct _mp_obj_range_it_t {
     mp_obj_base_t base;
-    // TODO make these values generic objects or something
     mp_int_t cur;
     mp_int_t stop;
     mp_int_t step;
 } mp_obj_range_it_t;
 
-STATIC mp_obj_t range_it_iternext(mp_obj_t o_in) {
+static mp_obj_t range_it_iternext(mp_obj_t o_in) {
     mp_obj_range_it_t *o = MP_OBJ_TO_PTR(o_in);
     if ((o->step > 0 && o->cur < o->stop) || (o->step < 0 && o->cur > o->stop)) {
-        mp_obj_t o_out = MP_OBJ_NEW_SMALL_INT(o->cur);
+        mp_int_t cur = o->cur;
         o->cur += o->step;
-        return o_out;
+        return mp_obj_new_int(cur);
     } else {
         return MP_OBJ_STOP_ITERATION;
     }
 }
 
-STATIC const mp_obj_type_t mp_type_range_it = {
-    { &mp_type_type },
-    .name = MP_QSTR_iterator,
-    .getiter = mp_identity_getiter,
-    .iternext = range_it_iternext,
-};
+static MP_DEFINE_CONST_OBJ_TYPE(
+    mp_type_range_it,
+    MP_QSTR_iterator,
+    MP_TYPE_FLAG_ITER_IS_ITERNEXT,
+    iter, range_it_iternext
+    );
 
-STATIC mp_obj_t mp_obj_new_range_iterator(mp_int_t cur, mp_int_t stop, mp_int_t step, mp_obj_iter_buf_t *iter_buf) {
+static mp_obj_t mp_obj_new_range_iterator(mp_int_t cur, mp_int_t stop, mp_int_t step, mp_obj_iter_buf_t *iter_buf) {
     assert(sizeof(mp_obj_range_it_t) <= sizeof(mp_obj_iter_buf_t));
     mp_obj_range_it_t *o = (mp_obj_range_it_t *)iter_buf;
     o->base.type = &mp_type_range_it;
@@ -72,13 +71,12 @@ STATIC mp_obj_t mp_obj_new_range_iterator(mp_int_t cur, mp_int_t stop, mp_int_t 
 
 typedef struct _mp_obj_range_t {
     mp_obj_base_t base;
-    // TODO make these values generic objects or something
     mp_int_t start;
     mp_int_t stop;
     mp_int_t step;
 } mp_obj_range_t;
 
-STATIC void range_print(const mp_print_t *print, mp_obj_t self_in, mp_print_kind_t kind) {
+static void range_print(const mp_print_t *print, mp_obj_t self_in, mp_print_kind_t kind) {
     (void)kind;
     mp_obj_range_t *self = MP_OBJ_TO_PTR(self_in);
     mp_printf(print, "range(" INT_FMT ", " INT_FMT "", self->start, self->stop);
@@ -89,7 +87,7 @@ STATIC void range_print(const mp_print_t *print, mp_obj_t self_in, mp_print_kind
     }
 }
 
-STATIC mp_obj_t range_make_new(const mp_obj_type_t *type, size_t n_args, size_t n_kw, const mp_obj_t *args) {
+static mp_obj_t range_make_new(const mp_obj_type_t *type, size_t n_args, size_t n_kw, const mp_obj_t *args) {
     mp_arg_check_num(n_args, n_kw, 1, 3, false);
 
     mp_obj_range_t *o = mp_obj_malloc(mp_obj_range_t, type);
@@ -112,7 +110,7 @@ STATIC mp_obj_t range_make_new(const mp_obj_type_t *type, size_t n_args, size_t 
     return MP_OBJ_FROM_PTR(o);
 }
 
-STATIC mp_int_t range_len(mp_obj_range_t *self) {
+static mp_int_t range_len(mp_obj_range_t *self) {
     // When computing length, need to take into account step!=1 and step<0.
     mp_int_t len = self->stop - self->start + self->step;
     if (self->step > 0) {
@@ -127,21 +125,21 @@ STATIC mp_int_t range_len(mp_obj_range_t *self) {
     return len;
 }
 
-STATIC mp_obj_t range_unary_op(mp_unary_op_t op, mp_obj_t self_in) {
+static mp_obj_t range_unary_op(mp_unary_op_t op, mp_obj_t self_in) {
     mp_obj_range_t *self = MP_OBJ_TO_PTR(self_in);
     mp_int_t len = range_len(self);
     switch (op) {
         case MP_UNARY_OP_BOOL:
             return mp_obj_new_bool(len > 0);
         case MP_UNARY_OP_LEN:
-            return MP_OBJ_NEW_SMALL_INT(len);
+            return mp_obj_new_int(len);
         default:
             return MP_OBJ_NULL;      // op not supported
     }
 }
 
 #if MICROPY_PY_BUILTINS_RANGE_BINOP
-STATIC mp_obj_t range_binary_op(mp_binary_op_t op, mp_obj_t lhs_in, mp_obj_t rhs_in) {
+static mp_obj_t range_binary_op(mp_binary_op_t op, mp_obj_t lhs_in, mp_obj_t rhs_in) {
     if (!mp_obj_is_type(rhs_in, &mp_type_range) || op != MP_BINARY_OP_EQUAL) {
         return MP_OBJ_NULL; // op not supported
     }
@@ -158,7 +156,7 @@ STATIC mp_obj_t range_binary_op(mp_binary_op_t op, mp_obj_t lhs_in, mp_obj_t rhs
 }
 #endif
 
-STATIC mp_obj_t range_subscr(mp_obj_t self_in, mp_obj_t index, mp_obj_t value) {
+static mp_obj_t range_subscr(mp_obj_t self_in, mp_obj_t index, mp_obj_t value) {
     if (value == MP_OBJ_SENTINEL) {
         // load
         mp_obj_range_t *self = MP_OBJ_TO_PTR(self_in);
@@ -166,33 +164,29 @@ STATIC mp_obj_t range_subscr(mp_obj_t self_in, mp_obj_t index, mp_obj_t value) {
         #if MICROPY_PY_BUILTINS_SLICE
         if (mp_obj_is_type(index, &mp_type_slice)) {
             mp_bound_slice_t slice;
-            mp_seq_get_fast_slice_indexes(len, index, &slice);
+            mp_obj_slice_indices(index, len, &slice);
             mp_obj_range_t *o = mp_obj_malloc(mp_obj_range_t, &mp_type_range);
             o->start = self->start + slice.start * self->step;
             o->stop = self->start + slice.stop * self->step;
             o->step = slice.step * self->step;
-            if (slice.step < 0) {
-                // Negative slice steps have inclusive stop, so adjust for exclusive
-                o->stop -= self->step;
-            }
             return MP_OBJ_FROM_PTR(o);
         }
         #endif
         size_t index_val = mp_get_index(self->base.type, len, index, false);
-        return MP_OBJ_NEW_SMALL_INT(self->start + index_val * self->step);
+        return mp_obj_new_int(self->start + index_val * self->step);
     } else {
         return MP_OBJ_NULL; // op not supported
     }
 }
 
-STATIC mp_obj_t range_getiter(mp_obj_t o_in, mp_obj_iter_buf_t *iter_buf) {
+static mp_obj_t range_getiter(mp_obj_t o_in, mp_obj_iter_buf_t *iter_buf) {
     mp_obj_range_t *o = MP_OBJ_TO_PTR(o_in);
     return mp_obj_new_range_iterator(o->start, o->stop, o->step, iter_buf);
 }
 
 
 #if MICROPY_PY_BUILTINS_RANGE_ATTRS
-STATIC void range_attr(mp_obj_t o_in, qstr attr, mp_obj_t *dest) {
+static void range_attr(mp_obj_t o_in, qstr attr, mp_obj_t *dest) {
     if (dest[0] != MP_OBJ_NULL) {
         // not load attribute
         return;
@@ -208,18 +202,27 @@ STATIC void range_attr(mp_obj_t o_in, qstr attr, mp_obj_t *dest) {
 }
 #endif
 
-const mp_obj_type_t mp_type_range = {
-    { &mp_type_type },
-    .name = MP_QSTR_range,
-    .print = range_print,
-    .make_new = range_make_new,
-    .unary_op = range_unary_op,
-    #if MICROPY_PY_BUILTINS_RANGE_BINOP
-    .binary_op = range_binary_op,
-    #endif
-    .subscr = range_subscr,
-    .getiter = range_getiter,
-    #if MICROPY_PY_BUILTINS_RANGE_ATTRS
-    .attr = range_attr,
-    #endif
-};
+#if MICROPY_PY_BUILTINS_RANGE_BINOP
+#define RANGE_TYPE_BINOP binary_op, range_binary_op,
+#else
+#define RANGE_TYPE_BINOP
+#endif
+
+#if MICROPY_PY_BUILTINS_RANGE_ATTRS
+#define RANGE_TYPE_ATTR attr, range_attr,
+#else
+#define RANGE_TYPE_ATTR
+#endif
+
+MP_DEFINE_CONST_OBJ_TYPE(
+    mp_type_range,
+    MP_QSTR_range,
+    MP_TYPE_FLAG_NONE,
+    make_new, range_make_new,
+    RANGE_TYPE_BINOP
+    RANGE_TYPE_ATTR
+    print, range_print,
+    unary_op, range_unary_op,
+    subscr, range_subscr,
+    iter, range_getiter
+    );

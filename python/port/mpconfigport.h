@@ -119,10 +119,10 @@
 #define MICROPY_PY_SYS (0)
 
 // Whether to provide the "urandom" module
-#define MICROPY_PY_URANDOM (1)
+#define MICROPY_PY_RANDOM (1)
 
 // Whether to include: randrange, randint, choice, random, uniform
-#define MICROPY_PY_URANDOM_EXTRA_FUNCS (1)
+#define MICROPY_PY_RANDOM_EXTRA_FUNCS (1)
 
 // Whether to support rounding of integers (incl bignum); eg round(123,-1)=120
 #define MICROPY_PY_BUILTINS_ROUND_INT (1)
@@ -131,7 +131,19 @@
 #define MICROPY_PY_ALL_SPECIAL_METHODS (1)
 
 // Function to seed URANDOM with on init
-#define MICROPY_PY_URANDOM_SEED_INIT_FUNC micropython_port_random()
+#define MICROPY_PY_RANDOM_SEED_INIT_FUNC micropython_port_random()
+
+// Whether to allow built-in modules to have sub-packages (by making the
+// sub-package a member of their locals dict). Sub-packages should not be
+// registered with MP_REGISTER_MODULE, instead they should be added as
+// members of the parent's globals dict. To match CPython behavior,
+// their __name__ should be "foo.bar"(i.e. QSTR_foo_dot_bar) which will
+// require an entry in qstrdefs, although it does also work to just call
+// it "bar". Also, because subpackages can be accessed without being
+// imported (e.g. as foo.bar after `import foo`), they should not
+// have __init__ methods. Instead, the top-level package's __init__ should
+// initialise all sub-packages.
+#define MICROPY_MODULE_BUILTIN_SUBPACKAGES 1
 
 // Make a pointer to RAM callable (eg set lower bit for Thumb code)
 // (This scheme won't work if we want to mix Thumb and normal ARM code.)
@@ -156,6 +168,5 @@ typedef long mp_off_t;
 // specifically for x86_64 using inline assembly, which makes the debug binary
 // crash with an illegal instruction
 #ifndef NDEBUG
-  #define MICROPY_NLR_SETJMP 1
+#define MICROPY_NLR_SETJMP 1
 #endif
-

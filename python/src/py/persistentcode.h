@@ -30,23 +30,22 @@
 #include "py/reader.h"
 #include "py/emitglue.h"
 
-// The current version of .mpy files
+// The current version of .mpy files. A bytecode-only .mpy file can be loaded
+// as long as MPY_VERSION matches, but a native .mpy (i.e. one with an arch
+// set) must also match MPY_SUB_VERSION. This allows 3 additional updates to
+// the native ABI per bytecode revision.
 #define MPY_VERSION 6
+#define MPY_SUB_VERSION 3
 
-// Macros to encode/decode flags to/from the feature byte
-#define MPY_FEATURE_ENCODE_FLAGS(flags) (flags)
-#define MPY_FEATURE_DECODE_FLAGS(feat) ((feat) & 3)
+// Macros to encode/decode sub-version to/from the feature byte. This replaces
+// the bits previously used to encode the flags (map caching and unicode)
+// which are no longer used starting at .mpy version 6.
+#define MPY_FEATURE_ENCODE_SUB_VERSION(version) (version)
+#define MPY_FEATURE_DECODE_SUB_VERSION(feat) ((feat) & 3)
 
 // Macros to encode/decode native architecture to/from the feature byte
 #define MPY_FEATURE_ENCODE_ARCH(arch) ((arch) << 2)
-#define MPY_FEATURE_DECODE_ARCH(feat) ((feat) >> 2)
-
-// The feature flag bits encode the compile-time config options that affect
-// the generate bytecode. Note: no longer used.
-// (formerly MICROPY_OPT_CACHE_MAP_LOOKUP_IN_BYTECODE and MICROPY_PY_BUILTINS_STR_UNICODE).
-#define MPY_FEATURE_FLAGS (0)
-// This is a version of the flags that can be configured at runtime.
-#define MPY_FEATURE_FLAGS_DYNAMIC (0)
+#define MPY_FEATURE_DECODE_ARCH(feat) (((feat) >> 2) & 0x2F)
 
 // Define the host architecture
 #if MICROPY_EMIT_X86
@@ -72,6 +71,8 @@
     #define MPY_FEATURE_ARCH (MP_NATIVE_ARCH_XTENSA)
 #elif MICROPY_EMIT_XTENSAWIN
     #define MPY_FEATURE_ARCH (MP_NATIVE_ARCH_XTENSAWIN)
+#elif MICROPY_EMIT_RV32
+    #define MPY_FEATURE_ARCH (MP_NATIVE_ARCH_RV32IMC)
 #else
     #define MPY_FEATURE_ARCH (MP_NATIVE_ARCH_NONE)
 #endif
@@ -82,7 +83,11 @@
 
 // 16-bit little-endian integer with the second and third bytes of supported .mpy files
 #define MPY_FILE_HEADER_INT (MPY_VERSION \
-    | (MPY_FEATURE_ENCODE_FLAGS(MPY_FEATURE_FLAGS) | MPY_FEATURE_ENCODE_ARCH(MPY_FEATURE_ARCH)) << 8)
+    | (MPY_FEATURE_ENCODE_SUB_VERSION(MPY_SUB_VERSION) | MPY_FEATURE_ENCODE_ARCH(MPY_FEATURE_ARCH)) << 8)
+
+// Architecture-specific flags are present in the .mpy file
+#define MPY_FEATURE_ARCH_FLAGS (0x40)
+#define MPY_FEATURE_ARCH_FLAGS_TEST(x) (((x) & MPY_FEATURE_ARCH_FLAGS) == MPY_FEATURE_ARCH_FLAGS)
 
 enum {
     MP_NATIVE_ARCH_NONE = 0,
@@ -96,6 +101,9 @@ enum {
     MP_NATIVE_ARCH_ARMV7EMDP,
     MP_NATIVE_ARCH_XTENSA,
     MP_NATIVE_ARCH_XTENSAWIN,
+    MP_NATIVE_ARCH_RV32IMC,
+    MP_NATIVE_ARCH_RV64IMC,
+    MP_NATIVE_ARCH_DEBUG, // this entry should always be last
 };
 
 enum {
@@ -112,12 +120,13 @@ enum {
     MP_PERSISTENT_OBJ_TUPLE,
 };
 
-mp_compiled_module_t mp_raw_code_load(mp_reader_t *reader, mp_module_context_t *ctx);
-mp_compiled_module_t mp_raw_code_load_mem(const byte *buf, size_t len, mp_module_context_t *ctx);
-mp_compiled_module_t mp_raw_code_load_file(const char *filename, mp_module_context_t *ctx);
+void mp_raw_code_load(mp_reader_t *reader, mp_compiled_module_t *ctx);
+void mp_raw_code_load_mem(const byte *buf, size_t len, mp_compiled_module_t *ctx);
+void mp_raw_code_load_file(qstr filename, mp_compiled_module_t *ctx);
 
 void mp_raw_code_save(mp_compiled_module_t *cm, mp_print_t *print);
-void mp_raw_code_save_file(mp_compiled_module_t *cm, const char *filename);
+void mp_raw_code_save_file(mp_compiled_module_t *cm, qstr filename);
+mp_obj_t mp_raw_code_save_fun_to_bytes(const mp_module_constants_t *consts, const uint8_t *bytecode);
 
 void mp_native_relocate(void *reloc, uint8_t *text, uintptr_t reloc_text);
 

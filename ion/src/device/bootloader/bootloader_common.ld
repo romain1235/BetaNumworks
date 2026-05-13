@@ -103,7 +103,7 @@ SECTIONS {
     _data_section_end_ram = .;
   } >SRAM AT> FLASH
 
-  .bss : {
+  .bss (NOLOAD) : {
     /* The bss section contains data for all uninitialized variables
      * So like the .data section, it will go in RAM, but unlike the data section
      * we don't care at all about an initial value.

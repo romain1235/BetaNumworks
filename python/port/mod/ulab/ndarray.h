@@ -33,11 +33,57 @@
 #define FLOAT_TYPECODE 'd'
 #endif
 
+#if MICROPY_OBJ_REPR == MICROPY_OBJ_REPR_A || MICROPY_OBJ_REPR == MICROPY_OBJ_REPR_B
+
+// For object representations A and B a Python float object is allocated as a
+// concrete object in a struct, with the first entry pointing to &mp_type_float.
+// Constant float objects are a struct in ROM and are referenced via their pointer.
+
+// Use ULAB_DEFINE_FLOAT_CONST to define a constant float object.
+// id is the name of the constant, num is its floating point value.
+// hex32 is computed as: hex(int.from_bytes(array.array('f', [num]), 'little'))
+// hex64 is computed as: hex(int.from_bytes(array.array('d', [num]), 'little'))
+
+// Use ULAB_REFERENCE_FLOAT_CONST to reference a constant float object in code.
+
+#define ULAB_DEFINE_FLOAT_CONST(id, num, hex32, hex64) \
+    const mp_obj_float_t id##_obj = {{&mp_type_float}, (num)}
+
+#define ULAB_REFERENCE_FLOAT_CONST(id) MP_ROM_PTR(&id##_obj)
+
 // this typedef is lifted from objfloat.c, because mp_obj_float_t is not exposed
 typedef struct _mp_obj_float_t {
     mp_obj_base_t base;
     mp_float_t value;
 } mp_obj_float_t;
+
+#elif MICROPY_OBJ_REPR == MICROPY_OBJ_REPR_C
+
+// For object representation C a Python float object is stored directly in the
+// mp_obj_t value.
+
+// See above for how to use ULAB_DEFINE_FLOAT_CONST and ULAB_REFERENCE_FLOAT_CONST.
+
+#define ULAB_DEFINE_FLOAT_CONST(id, num, hex32, hex64) \
+    enum { \
+        id = (((((uint32_t)hex32) & ~3) | 2) + 0x80800000) \
+    }
+
+#define ULAB_REFERENCE_FLOAT_CONST(id) ((mp_obj_t)(id))
+
+#elif MICROPY_OBJ_REPR == MICROPY_OBJ_REPR_D
+
+// For object representation D (nan-boxing) a Python float object is stored
+// directly in the mp_obj_t value.
+
+// See above for how to use ULAB_DEFINE_FLOAT_CONST and ULAB_REFERENCE_FLOAT_CONST.
+
+#define ULAB_DEFINE_FLOAT_CONST(id, num, hex32, hex64) \
+    const uint64_t id = (((uint64_t)hex64) + 0x8004000000000000ULL)
+
+#define ULAB_REFERENCE_FLOAT_CONST(id) {id}
+
+#endif
 
 #if defined(MICROPY_VERSION_MAJOR) && MICROPY_VERSION_MAJOR == 1 && MICROPY_VERSION_MINOR == 11
 typedef struct _mp_obj_slice_t {
@@ -49,20 +95,23 @@ typedef struct _mp_obj_slice_t {
 #define MP_ERROR_TEXT(x) x
 #endif
 
-#if !defined(MP_TYPE_FLAG_EXTENDED)
-#define MP_TYPE_CALL call
-#define mp_type_get_call_slot(t) t->call
+#if !defined(MP_OBJ_TYPE_GET_SLOT)
+#if defined(MP_TYPE_FLAG_EXTENDED)
+// Provide MP_OBJ_TYPE_{HAS,GET}_SLOT for CircuitPython.
+#define MP_OBJ_TYPE_HAS_SLOT(t, f) (mp_type_get_##f##_slot(t) != NULL)
+#define MP_OBJ_TYPE_GET_SLOT(t, f) mp_type_get_##f##_slot(t)
+#else
+// Provide MP_OBJ_TYPE_{HAS,GET}_SLOT for older revisions of MicroPython.
+#define MP_OBJ_TYPE_HAS_SLOT(t, f) ((t)->f != NULL)
+#define MP_OBJ_TYPE_GET_SLOT(t, f) (t)->f
+
+// Also allow CiruitPython-style mp_obj_type_t definitions.
 #define MP_TYPE_FLAG_EXTENDED (0)
 #define MP_TYPE_EXTENDED_FIELDS(...) __VA_ARGS__
 #endif
-
-#if !CIRCUITPY
-#define translate(x) MP_ERROR_TEXT(x)
-#define ndarray_set_value(a, b, c, d) mp_binary_set_val_array(a, b, c, d)
-#else
-void ndarray_set_value(char , void *, size_t , mp_obj_t );
 #endif
 
+#define ndarray_set_value(a, b, c, d) mp_binary_set_val_array(a, b, c, d)
 void ndarray_set_complex_value(void *, size_t , mp_obj_t );
 
 #define NDARRAY_NUMERIC   0
@@ -139,7 +188,7 @@ int32_t *ndarray_contract_strides(ndarray_obj_t *, uint8_t );
 ndarray_obj_t *ndarray_from_iterable(mp_obj_t , uint8_t );
 ndarray_obj_t *ndarray_new_dense_ndarray(uint8_t , size_t *, uint8_t );
 ndarray_obj_t *ndarray_new_ndarray_from_tuple(mp_obj_tuple_t *, uint8_t );
-ndarray_obj_t *ndarray_new_ndarray(uint8_t , size_t *, int32_t *, uint8_t );
+ndarray_obj_t *ndarray_new_ndarray(uint8_t , size_t *, int32_t *, uint8_t , uint8_t *);
 ndarray_obj_t *ndarray_new_linear_array(size_t , uint8_t );
 ndarray_obj_t *ndarray_new_view(ndarray_obj_t *, uint8_t , size_t *, int32_t *, int32_t );
 bool ndarray_is_dense(ndarray_obj_t *);
@@ -175,11 +224,29 @@ mp_obj_t ndarray_flatten(size_t , const mp_obj_t *, mp_map_t *);
 MP_DECLARE_CONST_FUN_OBJ_KW(ndarray_flatten_obj);
 #endif
 
+#if NDARRAY_HAS_DTYPE
 mp_obj_t ndarray_dtype(mp_obj_t );
+#endif
+
+#if NDARRAY_HAS_ITEMSIZE
 mp_obj_t ndarray_itemsize(mp_obj_t );
+#endif
+
+#if NDARRAY_HAS_NDIM
+mp_obj_t ndarray_ndim(mp_obj_t );
+#endif
+
+#if NDARRAY_HAS_SIZE
 mp_obj_t ndarray_size(mp_obj_t );
+#endif
+
+#if NDARRAY_HAS_SHAPE
 mp_obj_t ndarray_shape(mp_obj_t );
+#endif
+
+#if NDARRAY_HAS_STRIDES
 mp_obj_t ndarray_strides(mp_obj_t );
+#endif
 
 #if NDARRAY_HAS_RESHAPE
 mp_obj_t ndarray_reshape_core(mp_obj_t , mp_obj_t , bool );
@@ -192,15 +259,22 @@ mp_obj_t ndarray_tobytes(mp_obj_t );
 MP_DECLARE_CONST_FUN_OBJ_1(ndarray_tobytes_obj);
 #endif
 
-#if NDARRAY_HAS_TOBYTES
+#if NDARRAY_HAS_TOLIST
 mp_obj_t ndarray_tolist(mp_obj_t );
 MP_DECLARE_CONST_FUN_OBJ_1(ndarray_tolist_obj);
 #endif
 
 #if NDARRAY_HAS_TRANSPOSE
+mp_obj_t ndarray_T(mp_obj_t );
+MP_DECLARE_CONST_FUN_OBJ_1(ndarray_T_obj);
+#if ULAB_MAX_DIMS == 1
 mp_obj_t ndarray_transpose(mp_obj_t );
 MP_DECLARE_CONST_FUN_OBJ_1(ndarray_transpose_obj);
-#endif
+#else
+mp_obj_t ndarray_transpose(size_t , const mp_obj_t *, mp_map_t *);
+MP_DECLARE_CONST_FUN_OBJ_KW(ndarray_transpose_obj);
+#endif /* ULAB_MAX_DIMS == 1 */
+#endif /* NDARRAY_HAS_TRANSPOSE */
 
 #if ULAB_NUMPY_HAS_NDINFO
 mp_obj_t ndarray_info(mp_obj_t );
@@ -645,5 +719,90 @@ ndarray_obj_t *ndarray_from_mp_obj(mp_obj_t , uint8_t );
 
 #endif /* ULAB_MAX_DIMS == 4 */
 #endif /* ULAB_HAS_FUNCTION_ITERATOR */
+
+
+// iterator macro for traversing arrays over all dimensions
+#if ULAB_MAX_DIMS == 1
+#define ITERATOR_HEAD()\
+    size_t _l_ = 0;\
+    do {
+
+#define ITERATOR_TAIL(_source_, _source_array_)\
+    (_source_array_) += (_source_)->strides[ULAB_MAX_DIMS - 1];\
+    _l_++;\
+    } while(_l_ < (_source_)->shape[ULAB_MAX_DIMS - 1]);
+
+#endif /* ULAB_MAX_DIMS == 1 */
+
+#if ULAB_MAX_DIMS == 2
+#define ITERATOR_HEAD()\
+    size_t _k_ = 0;\
+    do {\
+        size_t _l_ = 0;\
+        do {
+
+#define ITERATOR_TAIL(_source_, _source_array_)\
+            (_source_array_) += (_source_)->strides[ULAB_MAX_DIMS - 1];\
+            _l_++;\
+        } while(_l_ < (_source_)->shape[ULAB_MAX_DIMS - 1]);\
+        (_source_array_) -= (_source_)->strides[ULAB_MAX_DIMS - 1] * (_source_)->shape[ULAB_MAX_DIMS - 1];\
+        (_source_array_) += (_source_)->strides[ULAB_MAX_DIMS - 2];\
+        _k_++;\
+    } while(_k_ < (_source_)->shape[ULAB_MAX_DIMS - 2]);
+#endif /* ULAB_MAX_DIMS == 2 */
+
+#if ULAB_MAX_DIMS == 3
+#define ITERATOR_HEAD()\
+    size_t _j_ = 0;\
+    do {\
+        size_t _k_ = 0;\
+        do {\
+            size_t _l_ = 0;\
+            do {
+
+#define ITERATOR_TAIL(_source_, _source_array_)\
+                (_source_array_) += (_source_)->strides[ULAB_MAX_DIMS - 1];\
+                _l_++;\
+            } while(_l_ < (_source_)->shape[ULAB_MAX_DIMS - 1]);\
+            (_source_array_) -= (_source_)->strides[ULAB_MAX_DIMS - 1] * (_source_)->shape[ULAB_MAX_DIMS - 1];\
+            (_source_array_) += (_source_)->strides[ULAB_MAX_DIMS - 2];\
+            _k_++;\
+        } while(_k_ < (_source_)->shape[ULAB_MAX_DIMS - 2]);\
+        (_source_array_) -= (_source_)->strides[ULAB_MAX_DIMS - 2] * (_source_)->shape[ULAB_MAX_DIMS - 2];\
+        (_source_array_) += (_source_)->strides[ULAB_MAX_DIMS - 3];\
+        _j_++;\
+    } while(_j_ < (_source_)->shape[ULAB_MAX_DIMS - 3]);
+
+#endif /* ULAB_MAX_DIMS == 3 */
+
+#if ULAB_MAX_DIMS == 4
+#define ITERATOR_HEAD()\
+    size_t _i_ = 0;\
+    do {\
+        size_t _j_ = 0;\
+        do {\
+            size_t _k_ = 0;\
+            do {\
+                size_t _l_ = 0;\
+                do {
+
+#define ITERATOR_TAIL(_source_, _source_array_)\
+                    (_source_array_) += (_source_)->strides[ULAB_MAX_DIMS - 1];\
+                    _l_++;\
+                } while(_l_ < (_source_)->shape[ULAB_MAX_DIMS - 1]);\
+                (_source_array_) -= (_source_)->strides[ULAB_MAX_DIMS - 1] * (_source_)->shape[ULAB_MAX_DIMS - 1];\
+                (_source_array_) += (_source_)->strides[ULAB_MAX_DIMS - 2];\
+                _k_++;\
+            } while(_k_ < (_source_)->shape[ULAB_MAX_DIMS - 2]);\
+            (_source_array_) -= (_source_)->strides[ULAB_MAX_DIMS - 2] * (_source_)->shape[ULAB_MAX_DIMS - 2];\
+            (_source_array_) += (_source_)->strides[ULAB_MAX_DIMS - 3];\
+            _j_++;\
+        } while(_j_ < (_source_)->shape[ULAB_MAX_DIMS - 3]);\
+        (_source_array_) -= (_source_)->strides[ULAB_MAX_DIMS - 3] * (_source_)->shape[ULAB_MAX_DIMS - 3];\
+        (_source_array_) += (_source_)->strides[ULAB_MAX_DIMS - 4];\
+        _i_++;\
+    } while(_i_ < (_source_)->shape[ULAB_MAX_DIMS - 4]);
+#endif /* ULAB_MAX_DIMS == 4 */
+
 
 #endif

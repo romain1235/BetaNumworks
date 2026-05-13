@@ -47,6 +47,8 @@ QUIZ_CASE(python_matplotlib_pyplot_arrow) {
 QUIZ_CASE(python_matplotlib_pyplot_axis) {
   TestExecutionEnvironment env = init_environnement();
   assert_command_execution_succeeds(env, "from matplotlib.pyplot import *");
+  assert_command_execution_succeeds(env, "axis(False)");
+  assert_command_execution_succeeds(env, "axis(True)");
   assert_command_execution_succeeds(env, "axis((2,3,4,5))");
   assert_command_execution_succeeds(env, "axis([2,3,4,5])");
   assert_command_execution_succeeds(env, "axis()","(2.0, 3.0, 4.0, 5.0)\n");

@@ -50,23 +50,23 @@ static mp_obj_t solve_triangular(size_t n_args, const mp_obj_t *pos_args, mp_map
     size_t i, j;
 
     static const mp_arg_t allowed_args[] = {
-        { MP_QSTR_, MP_ARG_REQUIRED | MP_ARG_OBJ, { .u_rom_obj = mp_const_none} } ,
-        { MP_QSTR_, MP_ARG_REQUIRED | MP_ARG_OBJ, { .u_rom_obj = mp_const_none} } ,
-        { MP_QSTR_lower, MP_ARG_OBJ, { .u_rom_obj = mp_const_false } },
+        { MP_QSTR_, MP_ARG_REQUIRED | MP_ARG_OBJ, { .u_rom_obj = MP_ROM_NONE} } ,
+        { MP_QSTR_, MP_ARG_REQUIRED | MP_ARG_OBJ, { .u_rom_obj = MP_ROM_NONE} } ,
+        { MP_QSTR_lower, MP_ARG_OBJ, { .u_rom_obj = MP_ROM_TRUE } },
     };
 
     mp_arg_val_t args[MP_ARRAY_SIZE(allowed_args)];
     mp_arg_parse_all(n_args, pos_args, kw_args, MP_ARRAY_SIZE(allowed_args), allowed_args, args);
 
     if(!mp_obj_is_type(args[0].u_obj, &ulab_ndarray_type) || !mp_obj_is_type(args[1].u_obj, &ulab_ndarray_type)) {
-        mp_raise_TypeError(translate("first two arguments must be ndarrays"));
+        mp_raise_TypeError(MP_ERROR_TEXT("first two arguments must be ndarrays"));
     }
 
     ndarray_obj_t *A = MP_OBJ_TO_PTR(args[0].u_obj);
     ndarray_obj_t *b = MP_OBJ_TO_PTR(args[1].u_obj);
 
     if(!ndarray_is_dense(A) || !ndarray_is_dense(b)) {
-        mp_raise_TypeError(translate("input must be a dense ndarray"));
+        mp_raise_TypeError(MP_ERROR_TEXT("input must be a dense ndarray"));
     }
 
     size_t A_rows = A->shape[ULAB_MAX_DIMS - 2];
@@ -83,7 +83,7 @@ static mp_obj_t solve_triangular(size_t n_args, const mp_obj_t *pos_args, mp_map
     // check if input matrix A is singular
     for (i = 0; i < A_rows; i++) {
         if (MICROPY_FLOAT_C_FUN(fabs)(get_A_ele(A_arr)) < LINALG_EPSILON)
-            mp_raise_ValueError(translate("input matrix is singular"));
+            mp_raise_ValueError(MP_ERROR_TEXT("input matrix is singular"));
         A_arr += A->strides[ULAB_MAX_DIMS - 2];
         A_arr += A->strides[ULAB_MAX_DIMS - 1];
     }
@@ -161,14 +161,14 @@ MP_DEFINE_CONST_FUN_OBJ_KW(linalg_solve_triangular_obj, 2, solve_triangular);
 static mp_obj_t cho_solve(mp_obj_t _L, mp_obj_t _b) {
 
     if(!mp_obj_is_type(_L, &ulab_ndarray_type) || !mp_obj_is_type(_b, &ulab_ndarray_type)) {
-        mp_raise_TypeError(translate("first two arguments must be ndarrays"));
+        mp_raise_TypeError(MP_ERROR_TEXT("first two arguments must be ndarrays"));
     }
 
     ndarray_obj_t *L = MP_OBJ_TO_PTR(_L);
     ndarray_obj_t *b = MP_OBJ_TO_PTR(_b);
 
     if(!ndarray_is_dense(L) || !ndarray_is_dense(b)) {
-        mp_raise_TypeError(translate("input must be a dense ndarray"));
+        mp_raise_TypeError(MP_ERROR_TEXT("input must be a dense ndarray"));
     }
 
     mp_float_t (*get_L_ele)(void *) = ndarray_get_float_function(L->dtype);
@@ -258,22 +258,24 @@ MP_DEFINE_CONST_FUN_OBJ_2(linalg_cho_solve_obj, cho_solve);
 #endif
 
 static const mp_rom_map_elem_t ulab_scipy_linalg_globals_table[] = {
-    { MP_OBJ_NEW_QSTR(MP_QSTR___name__), MP_OBJ_NEW_QSTR(MP_QSTR_linalg) },
+    { MP_ROM_QSTR(MP_QSTR___name__), MP_ROM_QSTR(MP_QSTR_linalg) },
     #if ULAB_MAX_DIMS > 1
         #if ULAB_SCIPY_LINALG_HAS_SOLVE_TRIANGULAR
-        { MP_ROM_QSTR(MP_QSTR_solve_triangular), (mp_obj_t)&linalg_solve_triangular_obj },
+        { MP_ROM_QSTR(MP_QSTR_solve_triangular), MP_ROM_PTR(&linalg_solve_triangular_obj) },
         #endif
         #if ULAB_SCIPY_LINALG_HAS_CHO_SOLVE
-        { MP_ROM_QSTR(MP_QSTR_cho_solve), (mp_obj_t)&linalg_cho_solve_obj },
+        { MP_ROM_QSTR(MP_QSTR_cho_solve), MP_ROM_PTR(&linalg_cho_solve_obj) },
         #endif
     #endif
 };
 
 static MP_DEFINE_CONST_DICT(mp_module_ulab_scipy_linalg_globals, ulab_scipy_linalg_globals_table);
 
-mp_obj_module_t ulab_scipy_linalg_module = {
+const mp_obj_module_t ulab_scipy_linalg_module = {
     .base = { &mp_type_module },
     .globals = (mp_obj_dict_t*)&mp_module_ulab_scipy_linalg_globals,
 };
-
+#if CIRCUITPY_ULAB
+MP_REGISTER_MODULE(MP_QSTR_ulab_dot_scipy_dot_linalg, ulab_scipy_linalg_module);
+#endif
 #endif

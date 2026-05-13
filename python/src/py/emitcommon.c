@@ -25,6 +25,7 @@
  */
 
 #include <assert.h>
+#include <math.h>
 
 #include "py/emit.h"
 #include "py/nativeglue.h"
@@ -72,7 +73,21 @@ static bool strictly_equal(mp_obj_t a, mp_obj_t b) {
         }
         return true;
     } else {
-        return mp_obj_equal(a, b);
+        if (!mp_obj_equal(a, b)) {
+            return false;
+        }
+        #if MICROPY_PY_BUILTINS_FLOAT && MICROPY_COMP_CONST_FLOAT
+        if (a_type == &mp_type_float) {
+            mp_float_t a_val = mp_obj_float_get(a);
+            if (a_val == (mp_float_t)0.0) {
+                // Although 0.0 == -0.0, they are not strictly_equal and
+                // must be stored as two different constants in .mpy files
+                mp_float_t b_val = mp_obj_float_get(b);
+                return signbit(a_val) == signbit(b_val);
+            }
+        }
+        #endif
+        return true;
     }
 }
 
@@ -86,7 +101,7 @@ size_t mp_emit_common_use_const_obj(mp_emit_common_t *emit, mp_obj_t const_obj) 
     return emit->const_obj_list.len - 1;
 }
 
-void mp_emit_common_get_id_for_modification(scope_t *scope, qstr qst) {
+id_info_t *mp_emit_common_get_id_for_modification(scope_t *scope, qstr qst) {
     // name adding/lookup
     id_info_t *id = scope_find_or_add_id(scope, qst, ID_INFO_KIND_GLOBAL_IMPLICIT);
     if (id->kind == ID_INFO_KIND_GLOBAL_IMPLICIT) {
@@ -98,6 +113,7 @@ void mp_emit_common_get_id_for_modification(scope_t *scope, qstr qst) {
             id->kind = ID_INFO_KIND_GLOBAL_IMPLICIT_ASSIGNED;
         }
     }
+    return id;
 }
 
 void mp_emit_common_id_op(emit_t *emit, const mp_emit_method_table_id_ops_t *emit_method_table, scope_t *scope, qstr qst) {

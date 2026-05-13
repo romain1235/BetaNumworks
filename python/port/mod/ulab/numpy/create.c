@@ -6,7 +6,7 @@
  * The MIT License (MIT)
  *
  * Copyright (c) 2020 Jeff Epler for Adafruit Industries
- *               2019-2021 Zoltán Vörös
+ *               2019-2024 Zoltán Vörös
  *               2020 Taku Fukada
 */
 
@@ -24,7 +24,7 @@
 #if ULAB_NUMPY_HAS_ONES | ULAB_NUMPY_HAS_ZEROS | ULAB_NUMPY_HAS_FULL | ULAB_NUMPY_HAS_EMPTY
 static mp_obj_t create_zeros_ones_full(mp_obj_t oshape, uint8_t dtype, mp_obj_t value) {
     if(!mp_obj_is_int(oshape) && !mp_obj_is_type(oshape, &mp_type_tuple) && !mp_obj_is_type(oshape, &mp_type_list)) {
-        mp_raise_TypeError(translate("input argument must be an integer, a tuple, or a list"));
+        mp_raise_TypeError(MP_ERROR_TEXT("input argument must be an integer, a tuple, or a list"));
     }
     ndarray_obj_t *ndarray = NULL;
     if(mp_obj_is_int(oshape)) {
@@ -33,7 +33,7 @@ static mp_obj_t create_zeros_ones_full(mp_obj_t oshape, uint8_t dtype, mp_obj_t 
     } else if(mp_obj_is_type(oshape, &mp_type_tuple) || mp_obj_is_type(oshape, &mp_type_list)) {
         uint8_t len = (uint8_t)mp_obj_get_int(mp_obj_len_maybe(oshape));
         if(len > ULAB_MAX_DIMS) {
-            mp_raise_TypeError(translate("too many dimensions"));
+            mp_raise_TypeError(MP_ERROR_TEXT("too many dimensions"));
         }
         size_t *shape = m_new0(size_t, ULAB_MAX_DIMS);
 
@@ -118,10 +118,10 @@ static ndarray_obj_t *create_linspace_arange(mp_float_t start, mp_float_t step, 
 
 mp_obj_t create_arange(size_t n_args, const mp_obj_t *pos_args, mp_map_t *kw_args) {
     static const mp_arg_t allowed_args[] = {
-        { MP_QSTR_, MP_ARG_REQUIRED | MP_ARG_OBJ, { .u_rom_obj = mp_const_none } },
-        { MP_QSTR_, MP_ARG_OBJ, { .u_rom_obj = mp_const_none } },
-        { MP_QSTR_, MP_ARG_OBJ, { .u_rom_obj = mp_const_none } },
-        { MP_QSTR_dtype, MP_ARG_KW_ONLY | MP_ARG_OBJ, { .u_rom_obj = mp_const_none } },
+        { MP_QSTR_, MP_ARG_REQUIRED | MP_ARG_OBJ, { .u_rom_obj = MP_ROM_NONE } },
+        { MP_QSTR_, MP_ARG_OBJ, { .u_rom_obj = MP_ROM_NONE } },
+        { MP_QSTR_, MP_ARG_OBJ, { .u_rom_obj = MP_ROM_NONE } },
+        { MP_QSTR_dtype, MP_ARG_KW_ONLY | MP_ARG_OBJ, { .u_rom_obj = MP_ROM_NONE } },
     };
 
     mp_arg_val_t args[MP_ARRAY_SIZE(allowed_args)];
@@ -144,7 +144,7 @@ mp_obj_t create_arange(size_t n_args, const mp_obj_t *pos_args, mp_map_t *kw_arg
         step = mp_obj_get_float(args[2].u_obj);
         if(mp_obj_is_int(args[0].u_obj) && mp_obj_is_int(args[1].u_obj) && mp_obj_is_int(args[2].u_obj)) dtype = NDARRAY_INT16;
     } else {
-        mp_raise_TypeError(translate("wrong number of arguments"));
+        mp_raise_TypeError(MP_ERROR_TEXT("wrong number of arguments"));
     }
     if((MICROPY_FLOAT_C_FUN(fabs)(stop) > 32768) || (MICROPY_FLOAT_C_FUN(fabs)(start) > 32768) || (MICROPY_FLOAT_C_FUN(fabs)(step) > 32768)) {
         dtype = NDARRAY_FLOAT;
@@ -152,8 +152,18 @@ mp_obj_t create_arange(size_t n_args, const mp_obj_t *pos_args, mp_map_t *kw_arg
     if(args[3].u_obj != mp_const_none) {
         dtype = (uint8_t)mp_obj_get_int(args[3].u_obj);
     }
+
+    // bail out, if the range cannot be constructed
+    if(step == MICROPY_FLOAT_CONST(0.0)) {
+        mp_raise_msg(&mp_type_ZeroDivisionError, MP_ERROR_TEXT("divide by zero"));
+    }
+
+    if(!isfinite(start) || !isfinite(stop) || !isfinite(step)) {
+        mp_raise_ValueError(MP_ERROR_TEXT("arange: cannot compute length"));
+    }
+
     ndarray_obj_t *ndarray;
-    if((stop - start)/step < 0) {
+    if((stop - start)/step <= 0) {
         ndarray = ndarray_new_linear_array(0, dtype);
     } else {
         size_t len = (size_t)(MICROPY_FLOAT_C_FUN(ceil)((stop - start) / step));
@@ -170,8 +180,8 @@ MP_DEFINE_CONST_FUN_OBJ_KW(create_arange_obj, 1, create_arange);
 #if ULAB_NUMPY_HAS_ASARRAY
 mp_obj_t create_asarray(size_t n_args, const mp_obj_t *pos_args, mp_map_t *kw_args) {
     static const mp_arg_t allowed_args[] = {
-        { MP_QSTR_, MP_ARG_REQUIRED | MP_ARG_OBJ, { .u_rom_obj = mp_const_none } },
-        { MP_QSTR_dtype, MP_ARG_KW_ONLY | MP_ARG_OBJ, { .u_obj = mp_const_none } },
+        { MP_QSTR_, MP_ARG_REQUIRED | MP_ARG_OBJ, { .u_rom_obj = MP_ROM_NONE } },
+        { MP_QSTR_dtype, MP_ARG_KW_ONLY | MP_ARG_OBJ, { .u_rom_obj = MP_ROM_NONE } },
     };
 
     mp_arg_val_t args[MP_ARRAY_SIZE(allowed_args)];
@@ -212,7 +222,7 @@ mp_obj_t create_asarray(size_t n_args, const mp_obj_t *pos_args, mp_map_t *kw_ar
         }
         return MP_OBJ_FROM_PTR(ndarray_from_iterable(args[0].u_obj, _dtype));
     } else {
-        mp_raise_TypeError(translate("wrong input type"));
+        mp_raise_TypeError(MP_ERROR_TEXT("wrong input type"));
     }
     return mp_const_none; // this should never happen
 }
@@ -234,7 +244,7 @@ MP_DEFINE_CONST_FUN_OBJ_KW(create_asarray_obj, 1, create_asarray);
 
 mp_obj_t create_concatenate(size_t n_args, const mp_obj_t *pos_args, mp_map_t *kw_args) {
     static const mp_arg_t allowed_args[] = {
-        { MP_QSTR_, MP_ARG_REQUIRED | MP_ARG_OBJ, { .u_rom_obj = mp_const_none } },
+        { MP_QSTR_, MP_ARG_REQUIRED | MP_ARG_OBJ, { .u_rom_obj = MP_ROM_NONE } },
         { MP_QSTR_axis, MP_ARG_KW_ONLY | MP_ARG_INT, { .u_int = 0 } },
     };
 
@@ -242,11 +252,17 @@ mp_obj_t create_concatenate(size_t n_args, const mp_obj_t *pos_args, mp_map_t *k
     mp_arg_parse_all(n_args, pos_args, kw_args, MP_ARRAY_SIZE(allowed_args), allowed_args, args);
 
     if(!mp_obj_is_type(args[0].u_obj, &mp_type_tuple)) {
-        mp_raise_TypeError(translate("first argument must be a tuple of ndarrays"));
+        mp_raise_TypeError(MP_ERROR_TEXT("first argument must be a tuple of ndarrays"));
     }
     int8_t axis = (int8_t)args[1].u_int;
     size_t *shape = m_new0(size_t, ULAB_MAX_DIMS);
     mp_obj_tuple_t *ndarrays = MP_OBJ_TO_PTR(args[0].u_obj);
+
+    for(uint8_t i = 0; i < ndarrays->len; i++) {
+        if(!mp_obj_is_type(ndarrays->items[i], &ulab_ndarray_type)) {
+            mp_raise_ValueError(MP_ERROR_TEXT("only ndarrays can be concatenated"));
+        }
+    }
 
     // first check, whether the arrays are compatible
     ndarray_obj_t *_ndarray = MP_OBJ_TO_PTR(ndarrays->items[0]);
@@ -256,7 +272,7 @@ mp_obj_t create_concatenate(size_t n_args, const mp_obj_t *pos_args, mp_map_t *k
         axis += ndim;
     }
     if((axis < 0) || (axis >= ndim)) {
-        mp_raise_ValueError(translate("wrong axis specified"));
+        mp_raise_ValueError(MP_ERROR_TEXT("wrong axis specified"));
     }
     // shift axis
     axis = ULAB_MAX_DIMS - ndim + axis;
@@ -268,14 +284,14 @@ mp_obj_t create_concatenate(size_t n_args, const mp_obj_t *pos_args, mp_map_t *k
         _ndarray = MP_OBJ_TO_PTR(ndarrays->items[i]);
         // check, whether the arrays are compatible
         if((dtype != _ndarray->dtype) || (ndim != _ndarray->ndim)) {
-            mp_raise_ValueError(translate("input arrays are not compatible"));
+            mp_raise_ValueError(MP_ERROR_TEXT("input arrays are not compatible"));
         }
         for(uint8_t j=0; j < ULAB_MAX_DIMS; j++) {
             if(j == axis) {
                 shape[j] += _ndarray->shape[j];
             } else {
                 if(shape[j] != _ndarray->shape[j]) {
-                    mp_raise_ValueError(translate("input arrays are not compatible"));
+                    mp_raise_ValueError(MP_ERROR_TEXT("input arrays are not compatible"));
                 }
             }
         }
@@ -359,7 +375,7 @@ MP_DEFINE_CONST_FUN_OBJ_KW(create_concatenate_obj, 1, create_concatenate);
 
 mp_obj_t create_diag(size_t n_args, const mp_obj_t *pos_args, mp_map_t *kw_args) {
     static const mp_arg_t allowed_args[] = {
-        { MP_QSTR_, MP_ARG_REQUIRED | MP_ARG_OBJ, { .u_rom_obj = mp_const_none } },
+        { MP_QSTR_, MP_ARG_REQUIRED | MP_ARG_OBJ, { .u_rom_obj = MP_ROM_NONE } },
         { MP_QSTR_k, MP_ARG_KW_ONLY | MP_ARG_INT, { .u_int = 0 } },
     };
 
@@ -415,7 +431,7 @@ mp_obj_t create_diag(size_t n_args, const mp_obj_t *pos_args, mp_map_t *kw_args)
     }
     #if ULAB_MAX_DIMS > 2
     else {
-        mp_raise_ValueError(translate("input must be 1- or 2-d"));
+        mp_raise_ValueError(MP_ERROR_TEXT("input must be 1- or 2-d"));
     }
     #endif
 
@@ -450,7 +466,7 @@ MP_DEFINE_CONST_FUN_OBJ_KW(create_diag_obj, 1, create_diag);
 mp_obj_t create_eye(size_t n_args, const mp_obj_t *pos_args, mp_map_t *kw_args) {
     static const mp_arg_t allowed_args[] = {
         { MP_QSTR_, MP_ARG_REQUIRED | MP_ARG_INT, { .u_int = 0 } },
-        { MP_QSTR_M, MP_ARG_KW_ONLY | MP_ARG_OBJ, { .u_rom_obj = mp_const_none } },
+        { MP_QSTR_M, MP_ARG_KW_ONLY | MP_ARG_OBJ, { .u_rom_obj = MP_ROM_NONE } },
         { MP_QSTR_k, MP_ARG_KW_ONLY | MP_ARG_INT, { .u_int = 0 } },
         { MP_QSTR_dtype, MP_ARG_KW_ONLY | MP_ARG_INT, { .u_int = NDARRAY_FLOAT } },
     };
@@ -461,10 +477,10 @@ mp_obj_t create_eye(size_t n_args, const mp_obj_t *pos_args, mp_map_t *kw_args) 
     size_t n = args[0].u_int, m;
     size_t k = args[2].u_int > 0 ? (size_t)args[2].u_int : (size_t)(-args[2].u_int);
     uint8_t dtype = args[3].u_int;
-    if(args[1].u_rom_obj == mp_const_none) {
+    if(args[1].u_obj == mp_const_none) {
         m = n;
     } else {
-        m = mp_obj_get_int(args[1].u_rom_obj);
+        m = mp_obj_get_int(args[1].u_obj);
     }
     ndarray_obj_t *ndarray = ndarray_new_dense_ndarray(2, ndarray_shape_vector(0, 0, n, m), dtype);
     if(dtype == NDARRAY_BOOL) {
@@ -557,11 +573,11 @@ MP_DEFINE_CONST_FUN_OBJ_KW(create_full_obj, 0, create_full);
 
 mp_obj_t create_linspace(size_t n_args, const mp_obj_t *pos_args, mp_map_t *kw_args) {
     static const mp_arg_t allowed_args[] = {
-        { MP_QSTR_, MP_ARG_REQUIRED | MP_ARG_OBJ, { .u_rom_obj = mp_const_none } },
-        { MP_QSTR_, MP_ARG_REQUIRED | MP_ARG_OBJ, { .u_rom_obj = mp_const_none } },
+        { MP_QSTR_, MP_ARG_REQUIRED | MP_ARG_OBJ, { .u_rom_obj = MP_ROM_NONE } },
+        { MP_QSTR_, MP_ARG_REQUIRED | MP_ARG_OBJ, { .u_rom_obj = MP_ROM_NONE } },
         { MP_QSTR_num, MP_ARG_INT, { .u_int = 50 } },
-        { MP_QSTR_endpoint, MP_ARG_KW_ONLY | MP_ARG_OBJ, { .u_rom_obj = mp_const_true } },
-        { MP_QSTR_retstep, MP_ARG_KW_ONLY | MP_ARG_OBJ, { .u_rom_obj = mp_const_false } },
+        { MP_QSTR_endpoint, MP_ARG_KW_ONLY | MP_ARG_OBJ, { .u_rom_obj = MP_ROM_TRUE } },
+        { MP_QSTR_retstep, MP_ARG_KW_ONLY | MP_ARG_OBJ, { .u_rom_obj = MP_ROM_FALSE } },
         { MP_QSTR_dtype, MP_ARG_KW_ONLY | MP_ARG_INT, { .u_int = NDARRAY_FLOAT } },
     };
 
@@ -569,7 +585,7 @@ mp_obj_t create_linspace(size_t n_args, const mp_obj_t *pos_args, mp_map_t *kw_a
     mp_arg_parse_all(n_args, pos_args, kw_args, MP_ARRAY_SIZE(allowed_args), allowed_args, args);
 
     if(args[2].u_int < 2) {
-        mp_raise_ValueError(translate("number of points must be at least 2"));
+        mp_raise_ValueError(MP_ERROR_TEXT("number of points must be at least 2"));
     }
     size_t len = (size_t)args[2].u_int;
     mp_float_t start, step, stop;
@@ -626,7 +642,7 @@ mp_obj_t create_linspace(size_t n_args, const mp_obj_t *pos_args, mp_map_t *kw_a
         return MP_OBJ_FROM_PTR(ndarray);
     } else {
         mp_obj_t tuple[2];
-        tuple[0] = ndarray;
+        tuple[0] = MP_OBJ_FROM_PTR(ndarray);
         #if ULAB_SUPPORTS_COMPLEX
         if(complex_out) {
             tuple[1] = mp_obj_new_complex(step_real, step_imag);
@@ -676,15 +692,15 @@ MP_DEFINE_CONST_FUN_OBJ_KW(create_linspace_obj, 2, create_linspace);
 //|     ...
 //|
 
-const mp_obj_float_t create_float_const_ten = {{&mp_type_float}, MICROPY_FLOAT_CONST(10.0)};
+ULAB_DEFINE_FLOAT_CONST(const_ten, MICROPY_FLOAT_CONST(10.0), 0x41200000UL, 0x4024000000000000ULL);
 
 mp_obj_t create_logspace(size_t n_args, const mp_obj_t *pos_args, mp_map_t *kw_args) {
     static const mp_arg_t allowed_args[] = {
-        { MP_QSTR_, MP_ARG_REQUIRED | MP_ARG_OBJ, { .u_rom_obj = mp_const_none } },
-        { MP_QSTR_, MP_ARG_REQUIRED | MP_ARG_OBJ, { .u_rom_obj = mp_const_none } },
+        { MP_QSTR_, MP_ARG_REQUIRED | MP_ARG_OBJ, { .u_rom_obj = MP_ROM_NONE } },
+        { MP_QSTR_, MP_ARG_REQUIRED | MP_ARG_OBJ, { .u_rom_obj = MP_ROM_NONE } },
         { MP_QSTR_num, MP_ARG_INT, { .u_int = 50 } },
-        { MP_QSTR_base, MP_ARG_KW_ONLY | MP_ARG_OBJ, { .u_rom_obj = MP_ROM_PTR(&create_float_const_ten) } },
-        { MP_QSTR_endpoint, MP_ARG_KW_ONLY | MP_ARG_OBJ, { .u_rom_obj = mp_const_true } },
+        { MP_QSTR_base, MP_ARG_KW_ONLY | MP_ARG_OBJ, { .u_rom_obj = ULAB_REFERENCE_FLOAT_CONST(const_ten) } },
+        { MP_QSTR_endpoint, MP_ARG_KW_ONLY | MP_ARG_OBJ, { .u_rom_obj = MP_ROM_TRUE } },
         { MP_QSTR_dtype, MP_ARG_KW_ONLY | MP_ARG_INT, { .u_int = NDARRAY_FLOAT } },
     };
 
@@ -692,7 +708,7 @@ mp_obj_t create_logspace(size_t n_args, const mp_obj_t *pos_args, mp_map_t *kw_a
     mp_arg_parse_all(n_args, pos_args, kw_args, MP_ARRAY_SIZE(allowed_args), allowed_args, args);
 
     if(args[2].u_int < 2) {
-        mp_raise_ValueError(translate("number of points must be at least 2"));
+        mp_raise_ValueError(MP_ERROR_TEXT("number of points must be at least 2"));
     }
     size_t len = (size_t)args[2].u_int;
     mp_float_t start, step, quotient;
@@ -731,6 +747,143 @@ mp_obj_t create_logspace(size_t n_args, const mp_obj_t *pos_args, mp_map_t *kw_a
 MP_DEFINE_CONST_FUN_OBJ_KW(create_logspace_obj, 2, create_logspace);
 #endif
 
+#if ULAB_NUMPY_HAS_MESHGRID
+//| def meshgrid(*xi, indexing="xy"):
+//|     """
+//|     .. param: xi
+//|        1-D arrays representing the coordinates of a grid
+//|     .. param: indexing
+//|        "xy" (Cartesian) or "ij" (matrix) indexing of output
+//| 
+//|     Return a tuple of coordinate matrices from coordinate vectors.
+//|     Implements the NumPy equivalent with copy=True and sparse=False."""
+//|     ...
+
+mp_obj_t create_meshgrid(size_t n_args, const mp_obj_t *pos_args, mp_map_t *kw_args) {
+    static const mp_arg_t allowed_args[] = {
+        { MP_QSTR_indexing, MP_ARG_KW_ONLY | MP_ARG_OBJ, { .u_rom_obj = MP_ROM_QSTR(MP_QSTR_xy) } },
+    };
+
+    mp_arg_val_t args[MP_ARRAY_SIZE(allowed_args)];
+    mp_arg_parse_all(0, pos_args, kw_args, MP_ARRAY_SIZE(allowed_args), allowed_args, args);
+
+    if(!mp_obj_is_str(args[0].u_obj)) {
+        mp_raise_TypeError(MP_ERROR_TEXT("indexing should be 'xy' or 'ij'"));
+    }
+    bool cartesian = true;
+    const char *_indexing = mp_obj_str_get_str(args[0].u_obj);
+    if(strcmp(_indexing, "ij") == 0) {
+        cartesian = false;
+    } else if (strcmp(_indexing, "xy") != 0) {
+        mp_raise_ValueError(MP_ERROR_TEXT("indexing must be 'xy' or 'ij'"));
+    }
+
+    if(n_args == 0) {
+        return mp_const_empty_tuple;
+    }
+    if(n_args > ULAB_MAX_DIMS) {
+        mp_raise_ValueError(MP_ERROR_TEXT("too many input arrays"));
+    }
+    
+    size_t *shape = m_new0(size_t, ULAB_MAX_DIMS);
+    size_t shape_offset = ULAB_MAX_DIMS - n_args;
+    for(size_t i = 0; i < n_args; i++) {
+        if(!mp_obj_is_type(pos_args[i], &ulab_ndarray_type)) {
+            mp_raise_TypeError(MP_ERROR_TEXT("arguments must be ndarrays"));
+        }
+        ndarray_obj_t *in = MP_OBJ_TO_PTR(pos_args[i]);
+        if(in->ndim != 1) {
+            mp_raise_ValueError(MP_ERROR_TEXT("arguments must be 1D arrays"));
+        }
+        shape[shape_offset + i] = in->shape[ULAB_MAX_DIMS - 1];
+    }
+    if(cartesian && n_args >= 2) {
+        SWAP(size_t, shape[shape_offset], shape[shape_offset + 1]);
+    }
+
+    mp_obj_tuple_t *tuple = MP_OBJ_TO_PTR(mp_obj_new_tuple(n_args, NULL));
+    for(size_t p = 0; p < n_args; p++) {
+        ndarray_obj_t *source = MP_OBJ_TO_PTR(pos_args[p]);
+        ndarray_obj_t *target = ndarray_new_dense_ndarray(n_args, shape, source->dtype);
+        uint8_t *tarray = (uint8_t *)target->array;
+        uint8_t *sarray = (uint8_t *)source->array;
+        size_t itemsize = source->itemsize;
+        int32_t source_stride = source->strides[ULAB_MAX_DIMS - 1];
+
+        size_t active_axis_index = p;
+        if(cartesian && n_args >= 2) {
+            if(p == 0) {
+                active_axis_index = 1;
+            } else if(p == 1) {
+                active_axis_index = 0;
+            }
+        }
+        size_t active_dim_ulab = shape_offset + active_axis_index;
+
+        #if ULAB_MAX_DIMS > 3
+        size_t i = 0;
+        do {
+        #endif
+            #if ULAB_MAX_DIMS > 2
+            size_t j = 0;
+            do {
+            #endif
+                #if ULAB_MAX_DIMS > 1
+                size_t k = 0;
+                do {
+                #endif
+                    size_t l = 0;
+                    do {
+                        // Determine the index in the source array based on
+                        // which loop corresponds to the active dimension
+                        size_t source_index = 0;
+                        #if ULAB_MAX_DIMS > 3
+                        if(active_dim_ulab == ULAB_MAX_DIMS - 4) {
+                            source_index = i;
+                        }
+                        #endif
+                        #if ULAB_MAX_DIMS > 2
+                        if(active_dim_ulab == ULAB_MAX_DIMS - 3) {
+                            source_index = j;
+                        }
+                        #endif
+                        #if ULAB_MAX_DIMS > 1
+                        if(active_dim_ulab == ULAB_MAX_DIMS - 2) {
+                            source_index = k;
+                        }
+                        #endif
+                        if(active_dim_ulab == ULAB_MAX_DIMS - 1) {
+                            source_index = l;
+                        }
+
+                        memcpy(tarray, sarray + (source_index * source_stride), itemsize);
+                        tarray += itemsize;
+                        
+                        l++;
+                    } while(l < target->shape[ULAB_MAX_DIMS - 1]);
+                #if ULAB_MAX_DIMS > 1
+                    k++;
+                } while(k < target->shape[ULAB_MAX_DIMS - 2]);
+                #endif
+            #if ULAB_MAX_DIMS > 2
+                j++;
+            } while(j < target->shape[ULAB_MAX_DIMS - 3]);
+            #endif
+        #if ULAB_MAX_DIMS > 3
+            i++;
+        } while(i < target->shape[ULAB_MAX_DIMS - 4]);
+        #endif
+
+        tuple->items[p] = MP_OBJ_FROM_PTR(target);
+    }
+
+    m_del(size_t, shape, ULAB_MAX_DIMS);
+    return MP_OBJ_FROM_PTR(tuple);
+}
+
+MP_DEFINE_CONST_FUN_OBJ_KW(create_meshgrid_obj, 0, create_meshgrid);
+#endif
+
 #if ULAB_NUMPY_HAS_ONES
 //| def ones(shape: Union[int, Tuple[int, ...]], *, dtype: _DType = ulab.numpy.float) -> ulab.numpy.ndarray:
 //|    """
@@ -759,6 +912,235 @@ mp_obj_t create_ones(size_t n_args, const mp_obj_t *pos_args, mp_map_t *kw_args)
 
 MP_DEFINE_CONST_FUN_OBJ_KW(create_ones_obj, 0, create_ones);
 #endif
+
+#if ULAB_NUMPY_HAS_TAKE
+//| def take(
+//|    a: ulab.numpy.ndarray,
+//|    indices: _ArrayLike,
+//|    axis: Optional[int] = None,
+//|    out: Optional[ulab.numpy.ndarray] = None,
+//|    mode: Optional[str] = None) -> ulab.numpy.ndarray:
+//|    """
+//|    .. param: a
+//|       The source array.
+//|    .. param: indices
+//|       The indices of the values to extract.
+//|    .. param: axis
+//|       The axis over which to select values. By default, the flattened input array is used.
+//|    .. param: out
+//|       If provided, the result will be placed in this array. It should be of the appropriate shape and dtype.
+//|    .. param: mode
+//|       Specifies how out-of-bounds indices will behave.
+//|       - `raise`: raise an error (default)
+//|       - `wrap`: wrap around
+//|       - `clip`: clip to the range
+//|       `clip` mode means that all indices that are too large are replaced by the 
+//|       index that addresses the last element along that axis. Note that this disables 
+//|       indexing with negative numbers.
+//|    
+//|    Return a new array."""
+//|    ...
+//|
+
+enum CREATE_TAKE_MODE {
+    CREATE_TAKE_RAISE,
+    CREATE_TAKE_WRAP,
+    CREATE_TAKE_CLIP,
+};
+
+mp_obj_t create_take(size_t n_args, const mp_obj_t *pos_args, mp_map_t *kw_args) {
+    static const mp_arg_t allowed_args[] = {
+        { MP_QSTR_, MP_ARG_REQUIRED | MP_ARG_OBJ, { .u_obj = MP_OBJ_NULL } },
+        { MP_QSTR_, MP_ARG_REQUIRED | MP_ARG_OBJ, { .u_obj = MP_OBJ_NULL } },
+        { MP_QSTR_axis, MP_ARG_KW_ONLY | MP_ARG_OBJ, { .u_rom_obj = MP_ROM_NONE } },
+        { MP_QSTR_out, MP_ARG_KW_ONLY | MP_ARG_OBJ, { .u_rom_obj = MP_ROM_NONE } },
+        { MP_QSTR_mode, MP_ARG_KW_ONLY | MP_ARG_OBJ, { .u_rom_obj = MP_ROM_NONE } },
+    };
+
+    mp_arg_val_t args[MP_ARRAY_SIZE(allowed_args)];
+    mp_arg_parse_all(n_args, pos_args, kw_args, MP_ARRAY_SIZE(allowed_args), allowed_args, args);
+
+    if(!mp_obj_is_type(args[0].u_obj, &ulab_ndarray_type)) {
+        mp_raise_TypeError(MP_ERROR_TEXT("input is not an array"));
+    }
+
+    ndarray_obj_t *a = MP_OBJ_TO_PTR(args[0].u_obj);
+    int8_t axis = 0;
+    int8_t axis_index = 0;
+    int32_t axis_len;
+    uint8_t mode = CREATE_TAKE_RAISE;
+    uint8_t ndim;
+
+    // axis keyword argument
+    if(args[2].u_obj == mp_const_none) {
+        // work with the flattened array
+        axis_len = a->len;
+        ndim = 1;
+    } else { // i.e., axis is an integer
+        // TODO: this pops up at quite a few places, write it as a function
+        axis = mp_obj_get_int(args[2].u_obj);
+        ndim = a->ndim;
+        if(axis < 0) axis += a->ndim;
+        if((axis < 0) || (axis > a->ndim - 1)) {
+            mp_raise_ValueError(MP_ERROR_TEXT("index out of range"));
+        }
+        axis_index = ULAB_MAX_DIMS - a->ndim + axis;
+        axis_len = (int32_t)a->shape[axis_index];
+    }
+
+    size_t _len;
+    // mode keyword argument
+    if(mp_obj_is_str(args[4].u_obj)) {
+        const char *_mode = mp_obj_str_get_data(args[4].u_obj, &_len);
+        if(memcmp(_mode, "raise", 5) == 0) {
+            mode = CREATE_TAKE_RAISE;
+        } else if(memcmp(_mode, "wrap", 4) == 0) {
+            mode = CREATE_TAKE_WRAP;
+        } else if(memcmp(_mode, "clip", 4) == 0) {
+            mode = CREATE_TAKE_CLIP;
+        } else {
+            mp_raise_ValueError(MP_ERROR_TEXT("mode should be raise, wrap or clip"));
+        }
+    }
+
+    size_t indices_len = (size_t)mp_obj_get_int(mp_obj_len_maybe(args[1].u_obj));
+
+    size_t *indices = m_new(size_t, indices_len);
+
+    mp_obj_iter_buf_t buf;
+    mp_obj_t item, iterable = mp_getiter(args[1].u_obj, &buf);
+
+    size_t z = 0;
+    while((item = mp_iternext(iterable)) != MP_OBJ_STOP_ITERATION) {
+        int32_t index = mp_obj_get_int(item);
+        if(mode == CREATE_TAKE_RAISE) {
+            if(index < 0) {
+                index += axis_len;
+            }
+            if((index < 0) || (index > axis_len - 1)) {
+                m_del(size_t, indices, indices_len);
+                mp_raise_ValueError(MP_ERROR_TEXT("index out of range"));
+            }
+        } else if(mode == CREATE_TAKE_WRAP) {
+            index %= axis_len;
+        } else { // mode == CREATE_TAKE_CLIP
+            if(index < 0) {
+                m_del(size_t, indices, indices_len);
+                mp_raise_ValueError(MP_ERROR_TEXT("index must not be negative"));
+            }
+            if(index > axis_len - 1) {
+                index = axis_len - 1;
+            }
+        }
+        indices[z++] = (size_t)index;
+    }
+
+    size_t *shape = m_new0(size_t, ULAB_MAX_DIMS);
+    if(args[2].u_obj == mp_const_none) { // flattened array
+        shape[ULAB_MAX_DIMS - 1] = indices_len;
+    } else {
+        for(uint8_t i = 0; i < ULAB_MAX_DIMS; i++) {
+            shape[i] = a->shape[i];
+            if(i == axis_index) {
+                shape[i] = indices_len;
+            }
+        }
+    }
+
+    ndarray_obj_t *out = NULL;
+    if(args[3].u_obj == mp_const_none) {
+        // no output was supplied
+        out = ndarray_new_dense_ndarray(ndim, shape, a->dtype);
+    } else {
+        // TODO: deal with last argument being false!
+        out = ulab_tools_inspect_out(args[3].u_obj, a->dtype, ndim, shape, true);
+    }
+
+    #if ULAB_MAX_DIMS > 1 // we can save the hassle, if there is only one possible dimension
+    if((args[2].u_obj == mp_const_none) || (a->ndim == 1)) { // flattened array
+    #endif
+        uint8_t *out_array = (uint8_t *)out->array;
+        for(size_t x = 0; x < indices_len; x++) {
+            uint8_t *a_array = (uint8_t *)a->array;
+            size_t remainder = indices[x];
+            uint8_t q = ULAB_MAX_DIMS - 1;
+            do {
+                size_t div = (remainder / a->shape[q]);
+                a_array += remainder * a->strides[q];
+                remainder -= div * a->shape[q];
+                q--;
+            } while(q > ULAB_MAX_DIMS - a->ndim);
+            // NOTE: for floats and complexes, this might be 
+            // better with memcpy(out_array, a_array, a->itemsize)
+            for(uint8_t p = 0; p < a->itemsize; p++) {
+                out_array[p] = a_array[p];
+            }
+            out_array += a->itemsize;
+        }
+    #if ULAB_MAX_DIMS > 1
+    } else {     
+        // move the axis shape/stride to the leftmost position:
+        SWAP(size_t, a->shape[0], a->shape[axis_index]);
+        SWAP(size_t, out->shape[0], out->shape[axis_index]);
+        SWAP(int32_t, a->strides[0], a->strides[axis_index]);
+        SWAP(int32_t, out->strides[0], out->strides[axis_index]);
+
+        for(size_t x = 0; x < indices_len; x++) {
+            uint8_t *a_array = (uint8_t *)a->array;
+            uint8_t *out_array = (uint8_t *)out->array;
+            a_array += indices[x] * a->strides[0];
+            out_array += x * out->strides[0];
+
+            #if ULAB_MAX_DIMS > 3
+            size_t j = 0;
+            do {
+            #endif
+                #if ULAB_MAX_DIMS > 2
+                size_t k = 0;
+                do {
+                #endif
+                    size_t l = 0;
+                    do {
+                        // NOTE: for floats and complexes, this might be 
+                        // better with memcpy(out_array, a_array, a->itemsize)
+                        for(uint8_t p = 0; p < a->itemsize; p++) {
+                            out_array[p] = a_array[p];
+                        }
+                        out_array += out->strides[ULAB_MAX_DIMS - 1];
+                        a_array += a->strides[ULAB_MAX_DIMS - 1];
+                        l++;
+                    } while(l < a->shape[ULAB_MAX_DIMS - 1]);
+                #if ULAB_MAX_DIMS > 2
+                    out_array -= out->strides[ULAB_MAX_DIMS - 1] * out->shape[ULAB_MAX_DIMS - 1];
+                    out_array += out->strides[ULAB_MAX_DIMS - 2];
+                    a_array -= a->strides[ULAB_MAX_DIMS - 1] * a->shape[ULAB_MAX_DIMS - 1];
+                    a_array += a->strides[ULAB_MAX_DIMS - 2];
+                    k++;
+                } while(k < a->shape[ULAB_MAX_DIMS - 2]);
+                #endif
+            #if ULAB_MAX_DIMS > 3
+                out_array -= out->strides[ULAB_MAX_DIMS - 2] * out->shape[ULAB_MAX_DIMS - 2];
+                out_array += out->strides[ULAB_MAX_DIMS - 3];
+                a_array -= a->strides[ULAB_MAX_DIMS - 2] * a->shape[ULAB_MAX_DIMS - 2];
+                a_array += a->strides[ULAB_MAX_DIMS - 3];
+                j++;
+            } while(j < a->shape[ULAB_MAX_DIMS - 3]);
+            #endif
+        }
+
+        // revert back to the original order
+        SWAP(size_t, a->shape[0], a->shape[axis_index]);
+        SWAP(size_t, out->shape[0], out->shape[axis_index]);
+        SWAP(int32_t, a->strides[0], a->strides[axis_index]);
+        SWAP(int32_t, out->strides[0], out->strides[axis_index]);
+    }
+    #endif /* ULAB_MAX_DIMS > 1 */
+    m_del(size_t, indices, indices_len);
+    return MP_OBJ_FROM_PTR(out);
+}
+
+MP_DEFINE_CONST_FUN_OBJ_KW(create_take_obj, 2, create_take);
+#endif /* ULAB_NUMPY_HAS_TAKE */
 
 #if ULAB_NUMPY_HAS_ZEROS
 //| def zeros(shape: Union[int, Tuple[int, ...]], *, dtype: _DType = ulab.numpy.float) -> ulab.numpy.ndarray:
@@ -791,7 +1173,7 @@ MP_DEFINE_CONST_FUN_OBJ_KW(create_zeros_obj, 0, create_zeros);
 #if ULAB_NUMPY_HAS_FROMBUFFER
 mp_obj_t create_frombuffer(size_t n_args, const mp_obj_t *pos_args, mp_map_t *kw_args) {
     static const mp_arg_t allowed_args[] = {
-        { MP_QSTR_, MP_ARG_REQUIRED | MP_ARG_OBJ, { .u_rom_obj = mp_const_none } },
+        { MP_QSTR_, MP_ARG_REQUIRED | MP_ARG_OBJ, { .u_rom_obj = MP_ROM_NONE } },
         { MP_QSTR_dtype, MP_ARG_KW_ONLY | MP_ARG_OBJ, { .u_rom_obj = MP_ROM_INT(NDARRAY_FLOAT) } },
         { MP_QSTR_count, MP_ARG_KW_ONLY | MP_ARG_OBJ, { .u_rom_obj = MP_ROM_INT(-1) } },
         { MP_QSTR_offset, MP_ARG_KW_ONLY | MP_ARG_OBJ, { .u_rom_obj = MP_ROM_INT(0) } },
@@ -808,33 +1190,24 @@ mp_obj_t create_frombuffer(size_t n_args, const mp_obj_t *pos_args, mp_map_t *kw
         size_t sz = ulab_binary_get_size(dtype);
 
         if(bufinfo.len < offset) {
-            mp_raise_ValueError(translate("offset must be non-negative and no greater than buffer length"));
+            mp_raise_ValueError(MP_ERROR_TEXT("offset must be non-negative and no greater than buffer length"));
         }
         size_t len = (bufinfo.len - offset) / sz;
         if((len * sz) != (bufinfo.len - offset)) {
-            mp_raise_ValueError(translate("buffer size must be a multiple of element size"));
+            mp_raise_ValueError(MP_ERROR_TEXT("buffer size must be a multiple of element size"));
         }
         if(mp_obj_get_int(args[2].u_obj) > 0) {
             size_t count = mp_obj_get_int(args[2].u_obj);
             if(len < count) {
-                mp_raise_ValueError(translate("buffer is smaller than requested size"));
+                mp_raise_ValueError(MP_ERROR_TEXT("buffer is smaller than requested size"));
             } else {
                 len = count;
             }
         }
-        ndarray_obj_t *ndarray = m_new_obj(ndarray_obj_t);
-        ndarray->base.type = &ulab_ndarray_type;
-        ndarray->dtype = dtype == NDARRAY_BOOL ? NDARRAY_UINT8 : dtype;
-        ndarray->boolean = dtype == NDARRAY_BOOL ? NDARRAY_BOOLEAN : NDARRAY_NUMERIC;
-        ndarray->ndim = 1;
-        ndarray->len = len;
-        ndarray->itemsize = sz;
-        ndarray->shape[ULAB_MAX_DIMS - 1] = len;
-        ndarray->strides[ULAB_MAX_DIMS - 1] = sz;
 
+        size_t *shape = ndarray_shape_vector(0, 0, 0, len);
         uint8_t *buffer = bufinfo.buf;
-        ndarray->array = buffer + offset;
-        return MP_OBJ_FROM_PTR(ndarray);
+        return ndarray_new_ndarray(1, shape, NULL, dtype, buffer + offset);
     }
     return mp_const_none;
 }

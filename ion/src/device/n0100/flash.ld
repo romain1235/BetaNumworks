@@ -88,7 +88,7 @@ SECTIONS {
     _data_section_end_ram = .;
   } >SRAM AT> FLASH
 
-  .bss : {
+  .bss (NOLOAD) : {
     /* The bss section contains data for all uninitialized variables
      * So like the .data section, it will go in RAM, but unlike the data section
      * we don't care at all about an initial value.
@@ -97,6 +97,9 @@ SECTIONS {
      * need pointers to the beginning and end of this section. */
     . = ALIGN(4);
     _bss_section_start_ram = .;
+    _static_storage_start = .;
+    KEEP (*(.static_storage))
+    _static_storage_end = .;
     *(.bss)
     *(.bss.*)
     /* The compiler may choose to allocate uninitialized global variables as

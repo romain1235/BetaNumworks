@@ -42,35 +42,24 @@ typedef struct _mp_obj_complex_t {
     mp_float_t imag;
 } mp_obj_complex_t;
 
-STATIC void complex_print(const mp_print_t *print, mp_obj_t o_in, mp_print_kind_t kind) {
+static void complex_print(const mp_print_t *print, mp_obj_t o_in, mp_print_kind_t kind) {
     (void)kind;
     mp_obj_complex_t *o = MP_OBJ_TO_PTR(o_in);
-    #if MICROPY_FLOAT_IMPL == MICROPY_FLOAT_IMPL_FLOAT
-    char buf[16];
-    #if MICROPY_OBJ_REPR == MICROPY_OBJ_REPR_C
-    const int precision = 6;
-    #else
-    const int precision = 7;
-    #endif
-    #else
-    char buf[32];
-    const int precision = 16;
-    #endif
-    if (o->real == 0) {
-        mp_format_float(o->imag, buf, sizeof(buf), 'g', precision, '\0');
-        mp_printf(print, "%sj", buf);
+    const char *suffix;
+    int flags = 0;
+    if (o->real != 0) {
+        mp_print_str(print, "(");
+        mp_print_float(print, o->real, 'g', 0, '\0', -1, MP_FLOAT_REPR_PREC);
+        flags = PF_FLAG_SHOW_SIGN;
+        suffix = "j)";
     } else {
-        mp_format_float(o->real, buf, sizeof(buf), 'g', precision, '\0');
-        mp_printf(print, "(%s", buf);
-        if (o->imag >= 0 || isnan(o->imag)) {
-            mp_print_str(print, "+");
-        }
-        mp_format_float(o->imag, buf, sizeof(buf), 'g', precision, '\0');
-        mp_printf(print, "%sj)", buf);
+        suffix = "j";
     }
+    mp_print_float(print, o->imag, 'g', flags, '\0', -1, MP_FLOAT_REPR_PREC);
+    mp_print_str(print, suffix);
 }
 
-STATIC mp_obj_t complex_make_new(const mp_obj_type_t *type_in, size_t n_args, size_t n_kw, const mp_obj_t *args) {
+static mp_obj_t complex_make_new(const mp_obj_type_t *type_in, size_t n_args, size_t n_kw, const mp_obj_t *args) {
     (void)type_in;
     mp_arg_check_num(n_args, n_kw, 0, 2, false);
 
@@ -83,13 +72,14 @@ STATIC mp_obj_t complex_make_new(const mp_obj_type_t *type_in, size_t n_args, si
                 // a string, parse it
                 size_t l;
                 const char *s = mp_obj_str_get_data(args[0], &l);
-                return mp_parse_num_decimal(s, l, true, true, NULL);
+                return mp_parse_num_complex(s, l, NULL);
             } else if (mp_obj_is_type(args[0], &mp_type_complex)) {
                 // a complex, just return it
                 return args[0];
             } else {
-                // something else, try to cast it to a complex
-                return mp_obj_new_complex(mp_obj_get_float(args[0]), 0);
+                mp_float_t real, imag;
+                mp_obj_get_complex(args[0], &real, &imag);
+                return mp_obj_new_complex(real, imag);
             }
 
         case 2:
@@ -114,7 +104,7 @@ STATIC mp_obj_t complex_make_new(const mp_obj_type_t *type_in, size_t n_args, si
     }
 }
 
-STATIC mp_obj_t complex_unary_op(mp_unary_op_t op, mp_obj_t o_in) {
+static mp_obj_t complex_unary_op(mp_unary_op_t op, mp_obj_t o_in) {
     mp_obj_complex_t *o = MP_OBJ_TO_PTR(o_in);
     switch (op) {
         case MP_UNARY_OP_BOOL:
@@ -132,12 +122,12 @@ STATIC mp_obj_t complex_unary_op(mp_unary_op_t op, mp_obj_t o_in) {
     }
 }
 
-STATIC mp_obj_t complex_binary_op(mp_binary_op_t op, mp_obj_t lhs_in, mp_obj_t rhs_in) {
+static mp_obj_t complex_binary_op(mp_binary_op_t op, mp_obj_t lhs_in, mp_obj_t rhs_in) {
     mp_obj_complex_t *lhs = MP_OBJ_TO_PTR(lhs_in);
     return mp_obj_complex_binary_op(op, lhs->real, lhs->imag, rhs_in);
 }
 
-STATIC void complex_attr(mp_obj_t self_in, qstr attr, mp_obj_t *dest) {
+static void complex_attr(mp_obj_t self_in, qstr attr, mp_obj_t *dest) {
     if (dest[0] != MP_OBJ_NULL) {
         // not load attribute
         return;
@@ -150,16 +140,14 @@ STATIC void complex_attr(mp_obj_t self_in, qstr attr, mp_obj_t *dest) {
     }
 }
 
-const mp_obj_type_t mp_type_complex = {
-    { &mp_type_type },
-    .flags = MP_TYPE_FLAG_EQ_NOT_REFLEXIVE | MP_TYPE_FLAG_EQ_CHECKS_OTHER_TYPE,
-    .name = MP_QSTR_complex,
-    .print = complex_print,
-    .make_new = complex_make_new,
-    .unary_op = complex_unary_op,
-    .binary_op = complex_binary_op,
-    .attr = complex_attr,
-};
+MP_DEFINE_CONST_OBJ_TYPE(
+    mp_type_complex, MP_QSTR_complex, MP_TYPE_FLAG_EQ_NOT_REFLEXIVE | MP_TYPE_FLAG_EQ_CHECKS_OTHER_TYPE,
+    make_new, complex_make_new,
+    print, complex_print,
+    unary_op, complex_unary_op,
+    binary_op, complex_binary_op,
+    attr, complex_attr
+    );
 
 mp_obj_t mp_obj_new_complex(mp_float_t real, mp_float_t imag) {
     mp_obj_complex_t *o = mp_obj_malloc(mp_obj_complex_t, &mp_type_complex);

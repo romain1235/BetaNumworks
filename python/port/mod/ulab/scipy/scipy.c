@@ -1,4 +1,3 @@
-
 /*
  * This file is part of the micropython-ulab project,
  *
@@ -20,6 +19,8 @@
 #include "signal/signal.h"
 #include "special/special.h"
 #include "linalg/linalg.h"
+#include "integrate/integrate.h"
+
 
 #if ULAB_HAS_SCIPY
 
@@ -27,7 +28,10 @@
 //|
 
 static const mp_rom_map_elem_t ulab_scipy_globals_table[] = {
-    { MP_OBJ_NEW_QSTR(MP_QSTR___name__), MP_OBJ_NEW_QSTR(MP_QSTR_scipy) },
+    { MP_ROM_QSTR(MP_QSTR___name__), MP_ROM_QSTR(MP_QSTR_scipy) },
+    #if ULAB_SCIPY_HAS_INTEGRATE_MODULE
+        { MP_ROM_QSTR(MP_QSTR_integrate), MP_ROM_PTR(&ulab_scipy_integrate_module) },
+    #endif
     #if ULAB_SCIPY_HAS_LINALG_MODULE
         { MP_ROM_QSTR(MP_QSTR_linalg), MP_ROM_PTR(&ulab_scipy_linalg_module) },
     #endif
@@ -44,8 +48,11 @@ static const mp_rom_map_elem_t ulab_scipy_globals_table[] = {
 
 static MP_DEFINE_CONST_DICT(mp_module_ulab_scipy_globals, ulab_scipy_globals_table);
 
-mp_obj_module_t ulab_scipy_module = {
+const mp_obj_module_t ulab_scipy_module = {
     .base = { &mp_type_module },
     .globals = (mp_obj_dict_t*)&mp_module_ulab_scipy_globals,
 };
+#if CIRCUITPY_ULAB
+MP_REGISTER_MODULE(MP_QSTR_ulab_dot_scipy, ulab_scipy_module);
+#endif
 #endif /* ULAB_HAS_SCIPY */

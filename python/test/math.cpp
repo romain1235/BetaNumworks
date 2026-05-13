@@ -12,7 +12,7 @@ QUIZ_CASE(python_math) {
 QUIZ_CASE(python_cmath) {
   TestExecutionEnvironment env = init_environnement();
   assert_command_execution_succeeds(env, "from cmath import *");
-  assert_command_execution_succeeds(env, "cos(0)", "(1+-0j)\n");
+  assert_command_execution_succeeds(env, "cos(0)", "(1-0j)\n");
   deinit_environment();
 }
 

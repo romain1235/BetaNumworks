@@ -47,7 +47,7 @@ const char mp_help_default_text[] =
     "For further help on a specific object, type help(obj)\n"
 ;
 
-STATIC void mp_help_print_info_about_object(mp_obj_t name_o, mp_obj_t value) {
+static void mp_help_print_info_about_object(mp_obj_t name_o, mp_obj_t value) {
     mp_print_str(MP_PYTHON_PRINTER, "  ");
     mp_obj_print(name_o, PRINT_STR);
     mp_print_str(MP_PYTHON_PRINTER, " -- ");
@@ -56,7 +56,7 @@ STATIC void mp_help_print_info_about_object(mp_obj_t name_o, mp_obj_t value) {
 }
 
 #if MICROPY_PY_BUILTINS_HELP_MODULES
-STATIC void mp_help_add_from_map(mp_obj_t list, const mp_map_t *map) {
+static void mp_help_add_from_map(mp_obj_t list, const mp_map_t *map) {
     for (size_t i = 0; i < map->alloc; i++) {
         if (mp_map_slot_is_filled(map, i)) {
             mp_obj_list_append(list, map->table[i].key);
@@ -65,7 +65,7 @@ STATIC void mp_help_add_from_map(mp_obj_t list, const mp_map_t *map) {
 }
 
 #if MICROPY_MODULE_FROZEN
-STATIC void mp_help_add_from_names(mp_obj_t list, const char *name) {
+static void mp_help_add_from_names(mp_obj_t list, const char *name) {
     while (*name) {
         size_t len = strlen(name);
         // name should end in '.py' and we strip it off
@@ -75,10 +75,13 @@ STATIC void mp_help_add_from_names(mp_obj_t list, const char *name) {
 }
 #endif
 
-STATIC void mp_help_print_modules(void) {
+static void mp_help_print_modules(void) {
     mp_obj_t list = mp_obj_new_list(0, NULL);
 
     mp_help_add_from_map(list, &mp_builtin_module_map);
+    #if MICROPY_HAVE_REGISTERED_EXTENSIBLE_MODULES
+    mp_help_add_from_map(list, &mp_builtin_extensible_module_map);
+    #endif
 
     #if MICROPY_MODULE_FROZEN
     extern const char mp_frozen_names[];
@@ -121,7 +124,7 @@ STATIC void mp_help_print_modules(void) {
 }
 #endif
 
-STATIC void mp_help_print_obj(const mp_obj_t obj) {
+static void mp_help_print_obj(const mp_obj_t obj) {
     #if MICROPY_PY_BUILTINS_HELP_MODULES
     if (obj == MP_OBJ_NEW_QSTR(MP_QSTR_modules)) {
         mp_help_print_modules();
@@ -134,7 +137,7 @@ STATIC void mp_help_print_obj(const mp_obj_t obj) {
     // try to print something sensible about the given object
     mp_print_str(MP_PYTHON_PRINTER, "object ");
     mp_obj_print(obj, PRINT_STR);
-    mp_printf(MP_PYTHON_PRINTER, " is of type %q\n", type->name);
+    mp_printf(MP_PYTHON_PRINTER, " is of type %q\n", (qstr)type->name);
 
     mp_map_t *map = NULL;
     if (type == &mp_type_module) {
@@ -143,20 +146,20 @@ STATIC void mp_help_print_obj(const mp_obj_t obj) {
         if (type == &mp_type_type) {
             type = MP_OBJ_TO_PTR(obj);
         }
-        if (type->locals_dict != NULL) {
-            map = &type->locals_dict->map;
+        if (MP_OBJ_TYPE_HAS_SLOT(type, locals_dict)) {
+            map = &MP_OBJ_TYPE_GET_SLOT(type, locals_dict)->map;
         }
     }
     if (map != NULL) {
         for (uint i = 0; i < map->alloc; i++) {
-            if (map->table[i].key != MP_OBJ_NULL) {
+            if (mp_map_slot_is_filled(map, i)) {
                 mp_help_print_info_about_object(map->table[i].key, map->table[i].value);
             }
         }
     }
 }
 
-STATIC mp_obj_t mp_builtin_help(size_t n_args, const mp_obj_t *args) {
+static mp_obj_t mp_builtin_help(size_t n_args, const mp_obj_t *args) {
     if (n_args == 0) {
         // print a general help message
         mp_print_str(MP_PYTHON_PRINTER, MICROPY_PY_BUILTINS_HELP_TEXT);

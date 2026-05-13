@@ -149,7 +149,7 @@ mp_obj_t modpyplot_axis(size_t n_args, const mp_obj_t *args) {
  * exist just yet. */
 #error Use mp_obj_is_bool instead of mp_obj_is_type
 #endif
-    } else if (mp_obj_is_type(arg, &mp_type_bool)) {
+    } else if (mp_obj_is_bool(arg)) {
       sPlotStore->setAxesRequested(mp_obj_is_true(arg));
     } else if (mp_obj_is_type(arg, &mp_type_tuple) || mp_obj_is_type(arg, &mp_type_list)) {
       mp_obj_t * items;

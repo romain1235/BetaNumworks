@@ -15,8 +15,11 @@ py_src = $(addprefix python/src/py/,\
   nlrx64.c \
   nlrthumb.c \
   nlraarch64.c \
+  nlrmips.c \
   nlrpowerpc.c \
   nlrxtensa.c \
+  nlrrv32.c \
+  nlrrv64.c \
   nlrsetjmp.c \
   malloc.c \
   gc.c \
@@ -47,6 +50,10 @@ py_src = $(addprefix python/src/py/,\
   emitnxtensa.c \
   emitinlinextensa.c \
   emitnxtensawin.c \
+  asmrv32.c \
+  emitnrv32.c \
+  emitinlinerv32.c \
+  emitndebug.c \
   formatfloat.c \
   parsenumbase.c \
   parsenum.c \
@@ -58,6 +65,7 @@ py_src = $(addprefix python/src/py/,\
   nativeglue.c \
   pairheap.c \
   ringbuf.c \
+  cstack.c \
   stackctrl.c \
   argcheck.c \
   warning.c \
@@ -70,6 +78,7 @@ py_src = $(addprefix python/src/py/,\
   objboundmeth.c \
   objcell.c \
   objclosure.c \
+  objcode.c \
   objcomplex.c \
   objdeque.c \
   objdict.c \
@@ -93,6 +102,7 @@ py_src = $(addprefix python/src/py/,\
   objnamedtuple.c \
   objrange.c \
   objreversed.c \
+  objringio.c \
   objset.c \
   objsingleton.c \
   objslice.c \
@@ -119,7 +129,7 @@ py_src = $(addprefix python/src/py/,\
   modmicropython.c \
   modstruct.c \
   modsys.c \
-  moduerrno.c \
+  moderrno.c \
   modthread.c \
   vm.c \
   bc.c \
@@ -130,7 +140,7 @@ py_src = $(addprefix python/src/py/,\
 )
 
 extmod_src += $(addprefix python/src/extmod/,\
-  modurandom.c \
+  modrandom.c \
 )
 
 port_src += $(addprefix python/port/,\
@@ -166,6 +176,7 @@ port_src += $(addprefix python/port/,\
 
 ifeq ($(INCLUDE_ULAB), 1)
 port_src += $(addprefix python/port/,\
+  mod/ulab/scipy/integrate/integrate.c \
   mod/ulab/scipy/linalg/linalg.c \
   mod/ulab/scipy/optimize/optimize.c \
   mod/ulab/scipy/signal/signal.c \
@@ -175,8 +186,9 @@ port_src += $(addprefix python/port/,\
   mod/ulab/ndarray.c \
   mod/ulab/ndarray_properties.c \
   mod/ulab/numpy/approx.c \
+  mod/ulab/numpy/bitwise.c \
   mod/ulab/numpy/compare.c \
-  mod/ulab/ulab_create.c \
+  mod/ulab/numpy/create.c \
   mod/ulab/numpy/fft/fft.c \
   mod/ulab/numpy/fft/fft_tools.c \
   mod/ulab/numpy/filter.c \
@@ -185,6 +197,7 @@ port_src += $(addprefix python/port/,\
   mod/ulab/numpy/ndarray/ndarray_iter.c \
   mod/ulab/numpy/numerical.c \
   mod/ulab/numpy/poly.c \
+  mod/ulab/numpy/random/random.c \
   mod/ulab/numpy/stats.c \
   mod/ulab/numpy/transform.c \
   mod/ulab/numpy/vector.c \
@@ -197,13 +210,6 @@ port_src += $(addprefix python/port/,\
 endif
 
 # Workarounds
-
-# Rename urandom to random
-# In order to change the name of the micropython module 'urandom' to 'random'
-# (without altering micropython files), we redefined the macro MP_QSTR_urandom
-# by DMP_QSTR_random.
-$(call object_for,python/src/py/objmodule.c): SFLAGS += -DMP_QSTR_urandom="MP_QSTR_random"
-$(call object_for,python/src/extmod/modurandom.c): SFLAGS += -DMP_QSTR_urandom="MP_QSTR_random"
 
 # Rename usys to sys
 # In order to change the name of the micropython module 'usys' to 'sys'

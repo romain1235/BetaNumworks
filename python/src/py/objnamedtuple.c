@@ -44,7 +44,7 @@ size_t mp_obj_namedtuple_find_field(const mp_obj_namedtuple_type_t *type, qstr n
 }
 
 #if MICROPY_PY_COLLECTIONS_NAMEDTUPLE__ASDICT
-STATIC mp_obj_t namedtuple_asdict(mp_obj_t self_in) {
+static mp_obj_t namedtuple_asdict(mp_obj_t self_in) {
     mp_obj_namedtuple_t *self = MP_OBJ_TO_PTR(self_in);
     const qstr *fields = ((mp_obj_namedtuple_type_t *)self->tuple.base.type)->fields;
     mp_obj_t dict = mp_obj_new_dict(self->tuple.len);
@@ -60,15 +60,15 @@ STATIC mp_obj_t namedtuple_asdict(mp_obj_t self_in) {
 MP_DEFINE_CONST_FUN_OBJ_1(namedtuple_asdict_obj, namedtuple_asdict);
 #endif
 
-STATIC void namedtuple_print(const mp_print_t *print, mp_obj_t o_in, mp_print_kind_t kind) {
+static void namedtuple_print(const mp_print_t *print, mp_obj_t o_in, mp_print_kind_t kind) {
     (void)kind;
     mp_obj_namedtuple_t *o = MP_OBJ_TO_PTR(o_in);
-    mp_printf(print, "%q", o->tuple.base.type->name);
+    mp_printf(print, "%q", (qstr)o->tuple.base.type->name);
     const qstr *fields = ((mp_obj_namedtuple_type_t *)o->tuple.base.type)->fields;
     mp_obj_attrtuple_print_helper(print, fields, &o->tuple);
 }
 
-STATIC void namedtuple_attr(mp_obj_t self_in, qstr attr, mp_obj_t *dest) {
+static void namedtuple_attr(mp_obj_t self_in, qstr attr, mp_obj_t *dest) {
     if (dest[0] == MP_OBJ_NULL) {
         // load attribute
         mp_obj_namedtuple_t *self = MP_OBJ_TO_PTR(self_in);
@@ -91,7 +91,7 @@ STATIC void namedtuple_attr(mp_obj_t self_in, qstr attr, mp_obj_t *dest) {
     }
 }
 
-STATIC mp_obj_t namedtuple_make_new(const mp_obj_type_t *type_in, size_t n_args, size_t n_kw, const mp_obj_t *args) {
+static mp_obj_t namedtuple_make_new(const mp_obj_type_t *type_in, size_t n_args, size_t n_kw, const mp_obj_t *args) {
     const mp_obj_namedtuple_type_t *type = (const mp_obj_namedtuple_type_t *)type_in;
     size_t num_fields = type->n_fields;
     if (n_args + n_kw != num_fields) {
@@ -104,13 +104,14 @@ STATIC mp_obj_t namedtuple_make_new(const mp_obj_type_t *type_in, size_t n_args,
         #elif MICROPY_ERROR_REPORTING == MICROPY_ERROR_REPORTING_DETAILED
         mp_raise_msg_varg(&mp_type_TypeError,
             MP_ERROR_TEXT("%q() takes %d positional arguments but %d were given"),
-            type->base.name, num_fields, n_args + n_kw);
+            ((mp_obj_type_t *)&type->base)->name, num_fields, n_args + n_kw);
         #endif
     }
 
-    // Create a tuple and set the type to this namedtuple
-    mp_obj_tuple_t *tuple = MP_OBJ_TO_PTR(mp_obj_new_tuple(num_fields, NULL));
-    tuple->base.type = type_in;
+    // Create a namedtuple with explicit malloc. Calling mp_obj_new_tuple
+    // with num_fields=0 returns a read-only object.
+    mp_obj_tuple_t *tuple = mp_obj_malloc_var(mp_obj_tuple_t, items, mp_obj_t, num_fields, type_in);
+    tuple->len = num_fields;
 
     // Copy the positional args into the first slots of the namedtuple
     memcpy(&tuple->items[0], args, sizeof(mp_obj_t) * n_args);
@@ -142,8 +143,7 @@ STATIC mp_obj_t namedtuple_make_new(const mp_obj_type_t *type_in, size_t n_args,
 }
 
 mp_obj_namedtuple_type_t *mp_obj_new_namedtuple_base(size_t n_fields, mp_obj_t *fields) {
-    mp_obj_namedtuple_type_t *o = m_new_obj_var(mp_obj_namedtuple_type_t, qstr, n_fields);
-    memset(&o->base, 0, sizeof(o->base));
+    mp_obj_namedtuple_type_t *o = m_new_obj_var0(mp_obj_namedtuple_type_t, fields, qstr, n_fields);
     o->n_fields = n_fields;
     for (size_t i = 0; i < n_fields; i++) {
         o->fields[i] = mp_obj_str_get_qstr(fields[i]);
@@ -151,23 +151,24 @@ mp_obj_namedtuple_type_t *mp_obj_new_namedtuple_base(size_t n_fields, mp_obj_t *
     return o;
 }
 
-STATIC mp_obj_t mp_obj_new_namedtuple_type(qstr name, size_t n_fields, mp_obj_t *fields) {
+static mp_obj_t mp_obj_new_namedtuple_type(qstr name, size_t n_fields, mp_obj_t *fields) {
     mp_obj_namedtuple_type_t *o = mp_obj_new_namedtuple_base(n_fields, fields);
-    o->base.base.type = &mp_type_type;
-    o->base.flags = MP_TYPE_FLAG_EQ_CHECKS_OTHER_TYPE; // can match tuple
-    o->base.name = name;
-    o->base.print = namedtuple_print;
-    o->base.make_new = namedtuple_make_new;
-    o->base.unary_op = mp_obj_tuple_unary_op;
-    o->base.binary_op = mp_obj_tuple_binary_op;
-    o->base.attr = namedtuple_attr;
-    o->base.subscr = mp_obj_tuple_subscr;
-    o->base.getiter = mp_obj_tuple_getiter;
-    o->base.parent = &mp_type_tuple;
+    mp_obj_type_t *type = (mp_obj_type_t *)&o->base;
+    type->base.type = &mp_type_type;
+    type->flags = MP_TYPE_FLAG_EQ_CHECKS_OTHER_TYPE; // can match tuple
+    type->name = name;
+    MP_OBJ_TYPE_SET_SLOT(type, make_new, namedtuple_make_new, 0);
+    MP_OBJ_TYPE_SET_SLOT(type, print, namedtuple_print, 1);
+    MP_OBJ_TYPE_SET_SLOT(type, unary_op, mp_obj_tuple_unary_op, 2);
+    MP_OBJ_TYPE_SET_SLOT(type, binary_op, mp_obj_tuple_binary_op, 3);
+    MP_OBJ_TYPE_SET_SLOT(type, attr, namedtuple_attr, 4);
+    MP_OBJ_TYPE_SET_SLOT(type, subscr, mp_obj_tuple_subscr, 5);
+    MP_OBJ_TYPE_SET_SLOT(type, iter, mp_obj_tuple_getiter, 6);
+    MP_OBJ_TYPE_SET_SLOT(type, parent, &mp_type_tuple, 7);
     return MP_OBJ_FROM_PTR(o);
 }
 
-STATIC mp_obj_t new_namedtuple_type(mp_obj_t name_in, mp_obj_t fields_in) {
+static mp_obj_t new_namedtuple_type(mp_obj_t name_in, mp_obj_t fields_in) {
     qstr name = mp_obj_str_get_qstr(name_in);
     size_t n_fields;
     mp_obj_t *fields;
