@@ -4,6 +4,8 @@
 #include "app.h"
 #include <escher/metric.h>
 #include <ion.h>
+#include <string.h>
+#include <stdint.h>
 #include "../global_preferences.h"
 #include <apps/apps_container.h>
 
@@ -65,10 +67,68 @@ void EditorController::didBecomeFirstResponder() {
 void EditorController::viewWillAppear() {
   ViewController::viewWillAppear();
   m_editorView.loadSyntaxHighlighter();
+  // Try to restore saved cursor position from a companion storage record
+  // named "<basename>.cursor". If not present or invalid, fall back to
+  // placing the cursor at the end of the text.
+  if (!m_script.isNull()) {
+    const char * scriptFullName = m_script.fullName();
+    if (scriptFullName != nullptr) {
+      const char * dot = strchr(scriptFullName, '.');
+      size_t baseLen = dot ? (size_t)(dot - scriptFullName) : strlen(scriptFullName);
+      char cursorFullName[Script::k_defaultScriptNameMaxSize + 1 + 6 + 1];
+      memcpy(cursorFullName, scriptFullName, baseLen);
+      cursorFullName[baseLen] = '.';
+      memcpy(cursorFullName + baseLen + 1, "cursor", sizeof("cursor"));
+
+      Ion::Storage::Record cursorRecord = Ion::Storage::sharedStorage()->recordNamed(cursorFullName);
+      if (!cursorRecord.isNull()) {
+        Ion::Storage::Record::Data d = cursorRecord.value();
+        if (d.size >= sizeof(uint16_t)) {
+          const uint8_t * buf = static_cast<const uint8_t *>(d.buffer);
+          uint16_t pos = (uint16_t)(buf[0] | (buf[1] << 8));
+          size_t textLen = strlen(m_editorView.text());
+          if (pos > textLen) {
+            pos = (uint16_t)textLen;
+          }
+          m_editorView.setCursorLocation(m_editorView.text() + pos);
+          return;
+        }
+      }
+    }
+  }
+  // Fallback: cursor at end of text
   m_editorView.setCursorLocation(m_editorView.text() + strlen(m_editorView.text()));
 }
 
 void EditorController::viewDidDisappear() {
+  // Persist cursor position in a companion storage record named
+  // "<basename>.cursor". The record contains a 2-byte little-endian
+  // uint16_t offset (bytes) from the start of the script content.
+  if (!m_script.isNull()) {
+    const char * scriptFullName = m_script.fullName();
+    if (scriptFullName != nullptr) {
+      const char * dot = strchr(scriptFullName, '.');
+      size_t baseLen = dot ? (size_t)(dot - scriptFullName) : strlen(scriptFullName);
+      char cursorFullName[Script::k_defaultScriptNameMaxSize + 1 + 6 + 1];
+      memcpy(cursorFullName, scriptFullName, baseLen);
+      cursorFullName[baseLen] = '.';
+      memcpy(cursorFullName + baseLen + 1, "cursor", sizeof("cursor"));
+
+      const char * text = m_editorView.text();
+      const char * cursor = m_editorView.cursorLocation();
+      uint16_t pos = 0;
+      if (text != nullptr && cursor != nullptr && cursor >= text) {
+        size_t offset = (size_t)(cursor - text);
+        pos = offset > UINT16_MAX ? UINT16_MAX : (uint16_t)offset;
+      }
+      Ion::Storage::Record::ErrorStatus status = Ion::Storage::sharedStorage()->createRecordWithFullName(cursorFullName, &pos, sizeof(pos));
+      if (status == Ion::Storage::Record::ErrorStatus::NameTaken) {
+        Ion::Storage::Record r = Ion::Storage::sharedStorage()->recordNamed(cursorFullName);
+        Ion::Storage::Record::Data data{ &pos, sizeof(pos) };
+        r.setValue(data);
+      }
+    }
+  }
   m_editorView.resetSelection();
   m_menuController->scriptContentEditionDidFinish();
 }
