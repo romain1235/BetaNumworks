@@ -10,6 +10,9 @@ extern "C" {
 #include "py/nlr.h"
 #include "py/lexer.h"
 }
+#ifndef MP_TOKEN_FSTRING_RAW
+#define MP_TOKEN_FSTRING_RAW MP_TOKEN_STRING
+#endif
 #include <stdlib.h>
 #include <algorithm>
 #include <string.h>

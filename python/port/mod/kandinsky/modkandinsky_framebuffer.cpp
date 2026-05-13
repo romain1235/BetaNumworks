@@ -1146,20 +1146,12 @@ STATIC const mp_rom_map_elem_t framebuffer_locals_table[] = {
 
 STATIC MP_DEFINE_CONST_DICT(framebuffer_locals_dict, framebuffer_locals_table);
 
-extern const mp_obj_type_t kandinsky_framebuffer_type = {
-  { &mp_type_type },
-  0,
+MP_DEFINE_CONST_OBJ_TYPE(
+  kandinsky_framebuffer_type,
   MP_QSTR_framebuffer,
-  framebuffer_print,
-  framebuffer_make_new,
-  nullptr,
-  nullptr,
-  nullptr,
-  framebuffer_attr,
-  nullptr,
-  nullptr,
-  nullptr,
-  nullptr,
-  nullptr,
-  (mp_obj_dict_t*)&framebuffer_locals_dict
-};
+  0,
+  make_new, (const void *)framebuffer_make_new,
+  print, (const void *)framebuffer_print,
+  attr, (const void *)framebuffer_attr,
+  locals_dict, &framebuffer_locals_dict
+);

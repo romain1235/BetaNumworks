@@ -26,6 +26,10 @@
 #ifndef MICROPY_INCLUDED_PY_RUNTIME_H
 #define MICROPY_INCLUDED_PY_RUNTIME_H
 
+#ifndef STATIC
+#define STATIC static
+#endif
+
 #include "py/mpstate.h"
 #include "py/pystack.h"
 #include "py/cstack.h"

@@ -20,7 +20,7 @@ extern "C" const mp_rom_map_elem_t modescher_module_globals_table[] = {
   { MP_ROM_QSTR(MP_QSTR_set_clipboard), MP_ROM_PTR(&modescher_set_clipboard_obj) },
 };
 
-STATIC MP_DEFINE_CONST_DICT(modescher_module_globals, modescher_module_globals_table);
+static MP_DEFINE_CONST_DICT(modescher_module_globals, modescher_module_globals_table);
 
 extern "C" const mp_obj_module_t modescher_module = {
   { &mp_type_module },
