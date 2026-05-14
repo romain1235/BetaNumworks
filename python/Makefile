@@ -1,7 +1,6 @@
 SFLAGS += -Ipython/src
 SFLAGS += -Ipython/port
 SFLAGS += -I$(BUILD_DIR)/python/port
-SFLAGS += -DEPSILON_VERSION="$(EPSILON_VERSION)" -DOMEGA_VERSION="$(OMEGA_VERSION)" -DUPSILON_VERSION="$(UPSILON_VERSION)"
 
 # How to maintain this Makefile
 # - Copy PY_CORE_O_BASENAME from py.mk into py_src
@@ -236,6 +235,11 @@ $(call object_for,$(py_src)): SFLAGS := $(subst -Os,-O0,$(SFLAGS))
 endif
 
 python_src = $(py_src) $(extmod_src) $(port_src)
+
+# Ensure version macros are only defined for Python compilation units to avoid
+# redefining them for other targets (they are passed as initializer lists to
+# platform_info via ion/Makefile).
+$(call object_for,$(python_src)): SFLAGS += -DEPSILON_VERSION="$(EPSILON_VERSION)" -DOMEGA_VERSION="$(OMEGA_VERSION)" -DUPSILON_VERSION="$(UPSILON_VERSION)" -DBETA_VERSION="$(BETA_VERSION)"
 
 # QSTR generation
 

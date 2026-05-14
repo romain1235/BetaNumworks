@@ -65,6 +65,15 @@ bool AboutController::handleEvent(Ion::Events::Event event) {
         }
         return true;
       }
+      if (childLabel == I18n::Message::BetaVersion) {
+        MessageTableCellWithBuffer * myCell = (MessageTableCellWithBuffer *)m_selectableTableView.selectedCell();
+        if (strcmp(myCell->accessoryText(), Ion::betaVersion()) == 0) {
+          myCell->setAccessoryText(MP_STRINGIFY(OMEGA_STATE)); //Change for public/dev
+          return true;
+        }
+        myCell->setAccessoryText(Ion::betaVersion());
+        return true;
+      }
       if (childLabel == I18n::Message::UpsilonVersion) {
         MessageTableCellWithBuffer * myCell = (MessageTableCellWithBuffer *)m_selectableTableView.selectedCell();
         if (strcmp(myCell->accessoryText(), Ion::upsilonVersion()) == 0) {
@@ -207,6 +216,7 @@ void AboutController::willDisplayCellForIndex(HighlightCell * cell, int index) {
 
     static const char * messages[] = {
       (const char*) Ion::username(),
+      Ion::betaVersion(),
       Ion::upsilonVersion(),
       Ion::omegaVersion(),
       Ion::softwareVersion(),

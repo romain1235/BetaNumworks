@@ -55,6 +55,9 @@ bool about_submenu() {
 const char * Bootloader::HomeMenu::getSlotOsText(Slot slot) {
   if (Slot::isFullyValid(slot)) {
     if (slot.userlandHeader()->isOmega() && slot.userlandHeader()->isUpsilon()) {
+      if (slot.userlandHeader()->isBeta()) {
+        return Messages::betaSlot;
+      }
       return Messages::upsilonSlot;
     } else if (slot.userlandHeader()->isOmega() && slot.kernelHeader()->patchLevel()[0] != '\0') {
       return Messages::omegaSlot;
@@ -85,7 +88,7 @@ const char * Bootloader::HomeMenu::getKernelText(Slot slot) {
 }
 
 const char * Bootloader::HomeMenu::getVersionText(Slot slot) {
-  return Slot::isFullyValid(slot) ? slot.userlandHeader()->isOmega() && slot.userlandHeader()->isUpsilon() ? slot.userlandHeader()->upsilonVersion() : slot.userlandHeader()->isOmega() ? slot.userlandHeader()->omegaVersion() : slot.kernelHeader()->version() : nullptr;
+  return Slot::isFullyValid(slot) ? (slot.userlandHeader()->isOmega() && slot.userlandHeader()->isUpsilon() ? (slot.userlandHeader()->isBeta() ? slot.userlandHeader()->betaVersion() : slot.userlandHeader()->upsilonVersion()) : slot.userlandHeader()->isOmega() ? slot.userlandHeader()->omegaVersion() : slot.kernelHeader()->version()) : nullptr;
 }
 
 void Bootloader::HomeMenu::setup() {

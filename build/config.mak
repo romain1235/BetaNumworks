@@ -7,6 +7,7 @@ HOME_DISPLAY_EXTERNALS ?= 1
 EPSILON_VERSION ?= 15.5.0
 OMEGA_VERSION ?= 2.0.2
 UPSILON_VERSION ?= 1.1.2
+BETA_VERSION ?= 1.0.0
 # OMEGA_USERNAME ?= N/A
 OMEGA_STATE ?= dev
 EPSILON_APPS ?= calculation graph rpn code statistics probability solver atomic sequence regression reader files  settings external

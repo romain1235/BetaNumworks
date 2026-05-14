@@ -12,6 +12,7 @@ public:
 
   // Slots OS Type
   constexpr static const char * upsilonSlot = "-- Upsilon ";
+  constexpr static const char * betaSlot = "-- Beta ";
   constexpr static const char * khiSlot = "-- Khi ";
   constexpr static const char * omegaSlot = "-- Omega ";
   constexpr static const char * epsilonSlot = "-- Epsilon ";

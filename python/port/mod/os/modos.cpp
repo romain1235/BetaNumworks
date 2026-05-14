@@ -23,10 +23,14 @@ extern "C" {
 #error This file expects UPSILON_VERSION to be defined
 #endif
 
+#ifndef BETA_VERSION
+#error This file expects BETA_VERSION to be defined
+#endif
+
 static const MP_DEFINE_STR_OBJ(modos_uname_info_sysname_obj, "NumWorks");
 static const MP_DEFINE_STR_OBJ(modos_uname_info_nodename_obj, "");
 
-static const MP_DEFINE_STR_OBJ(modos_uname_info_release_obj, "O" MP_STRINGIFY(OMEGA_VERSION) "E-" MP_STRINGIFY(EPSILON_VERSION) "U-" MP_STRINGIFY(UPSILON_VERSION));
+static const MP_DEFINE_STR_OBJ(modos_uname_info_release_obj, "O" MP_STRINGIFY(OMEGA_VERSION) "E-" MP_STRINGIFY(EPSILON_VERSION) "U-" MP_STRINGIFY(UPSILON_VERSION) "B-" MP_STRINGIFY(BETA_VERSION));
 static const MP_DEFINE_STR_OBJ(modos_uname_info_version_obj, MICROPY_VERSION_STRING);
 
 #if defined(DEVICE_N0110)

@@ -48,6 +48,14 @@ const uint32_t UserlandHeader::getExtraVersion() const {
   return m_extraVersion;
 }
 
+const bool UserlandHeader::isBeta() const {
+  return hasUpsilonExtras() && m_extraVersion >= 2 && m_betaVersion[0] != '\0';
+}
+
+const char * UserlandHeader::betaVersion() const {
+  return m_betaVersion;
+}
+
 const void (*UserlandHeader::upsilonRecoveryBootFunction() const)() {
   return m_recoveryAddress;
 }

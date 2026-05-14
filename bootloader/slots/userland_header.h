@@ -15,6 +15,8 @@ public:
   const char * omegaVersion() const;
   const bool isUpsilon() const;
   const char * upsilonVersion() const;
+  const bool isBeta() const;
+  const char * betaVersion() const;
   const void * storageAddress() const;
   const size_t storageSize() const;
   const bool hasUpsilonExtras() const;
@@ -50,6 +52,7 @@ private:
   uint32_t m_upsilonExtraMagicHeader;
   const void (*m_recoveryAddress)();
   uint32_t m_extraVersion;
+  const char m_betaVersion[16];
   uint32_t m_upsilonExtraMagicFooter;
 };
 

@@ -85,7 +85,8 @@ public:
     // probably due to the cast preventing LD to just copy the address:
     // m_recoveryAddress((uint32_t)recovery_start + 1),
     m_recoveryAddress(recoveryStartPointer),
-    m_extraVersion(1),
+    m_extraVersion(2),
+    m_betaVersion{BETA_VERSION},
     m_upsilonExtraMagicFooter(UpsilonExtraMagic) { }
 
   const char * omegaVersion() const {
@@ -105,6 +106,15 @@ public:
     assert(m_omegaMagicHeader == OmegaMagic);
     assert(m_omegaMagicFooter == OmegaMagic);
     return m_UpsilonVersion;
+  }
+  const char * betaVersion() const {
+    assert(m_storageAddressRAM != nullptr);
+    assert(m_storageSizeRAM != 0);
+    assert(m_header == Magic);
+    assert(m_footer == Magic);
+    assert(m_omegaMagicHeader == OmegaMagic);
+    assert(m_omegaMagicFooter == OmegaMagic);
+    return m_betaVersion;
   }
   const volatile char * username() const volatile {
     assert(m_storageAddressRAM != nullptr);
@@ -146,6 +156,7 @@ private:
   uint32_t m_upsilonExtraMagicHeader;
   recoveryStartPointerType m_recoveryAddress;
   uint32_t m_extraVersion;
+  const char m_betaVersion[16];
   uint32_t m_upsilonExtraMagicFooter;
 };
 
@@ -179,6 +190,10 @@ const char * Ion::omegaVersion() {
 
 const char * Ion::upsilonVersion() {
   return k_userlandHeader.upsilonVersion();
+}
+
+const char * Ion::betaVersion() {
+  return k_userlandHeader.betaVersion();
 }
 
 const volatile char * Ion::username() {

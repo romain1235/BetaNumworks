@@ -45,6 +45,7 @@ public:
     m_omegaMagicFooter(OmegaMagic),
     m_upsilonMagicHeader(UpsilonMagic),
     m_upsilonVersion{UPSILON_VERSION},
+    m_betaVersion{BETA_VERSION},
     m_osType(OSType),
     m_upsilonMagicFooter(UpsilonMagic) { }
   const char * version() const {
@@ -66,6 +67,17 @@ public:
     assert(m_upsilonMagicHeader == UpsilonMagic);
     assert(m_upsilonMagicFooter == UpsilonMagic);
     return m_upsilonVersion;
+  }
+  const char * betaVersion() const {
+    assert(m_storageAddress != nullptr);
+    assert(m_storageSize != 0);
+    assert(m_header == Magic);
+    assert(m_footer == Magic);
+    assert(m_omegaMagicHeader == OmegaMagic);
+    assert(m_omegaMagicFooter == OmegaMagic);
+    assert(m_upsilonMagicHeader == UpsilonMagic);
+    assert(m_upsilonMagicFooter == UpsilonMagic);
+    return m_betaVersion;
   }
   const char * omegaVersion() const {
     assert(m_storageAddress != nullptr);
@@ -114,6 +126,7 @@ private:
   uint32_t m_omegaMagicFooter;
   uint32_t m_upsilonMagicHeader;
   const char m_upsilonVersion[16];
+  const char m_betaVersion[16];
   uint32_t m_osType;
   uint32_t m_upsilonMagicFooter;
 
@@ -127,6 +140,10 @@ const char * Ion::softwareVersion() {
 
 const char * Ion::upsilonVersion() {
   return platform_infos.upsilonVersion();
+}
+
+const char * Ion::betaVersion() {
+  return platform_infos.betaVersion();
 }
 
 const char * Ion::omegaVersion() {

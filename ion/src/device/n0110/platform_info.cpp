@@ -131,6 +131,10 @@ const char * Ion::omegaVersion() {
   return platform_infos.omegaVersion();
 }
 
+const char * Ion::betaVersion() {
+  return platform_infos.betaVersion();
+}
+
 const volatile char * Ion::username() {
   return platform_infos.username();
 }

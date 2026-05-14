@@ -8,7 +8,7 @@ PLS_IGNORE := $(shell >&2 printf "\e[38;2;255;212;0m  / __ \ \e[38;2;69;173;168m
 PLS_IGNORE := $(shell >&2 printf "\e[38;2;255;212;0m / /_/ /\e[38;2;69;173;168m/ /___ \e[38;2;255;212;0m  / / \e[38;2;69;173;168m / ___  |\n")
 PLS_IGNORE := $(shell >&2 printf "\e[38;2;255;212;0m/_____/\e[38;2;69;173;168m/_____/ \e[38;2;255;212;0m /_/ \e[38;2;69;173;168m /_/   |_|\n")
 PLS_IGNORE := $(shell >&2 printf "\n")
-PLS_IGNORE := $(shell >&2 printf "\e[32mBuilding U$(UPSILON_VERSION)-E$(EPSILON_VERSION)\n")
+PLS_IGNORE := $(shell >&2 printf "\e[32mBuilding U$(UPSILON_VERSION)-B$(BETA_VERSION)-E$(EPSILON_VERSION)\n")
 
 ifeq (${PLATFORM},device)
   DISPLAY_TARGET = Numworks $(MODEL)

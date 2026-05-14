@@ -36,6 +36,7 @@ const char * serialNumber();
 const volatile char * username();
 const char * softwareVersion();
 const char * upsilonVersion();
+const char * betaVersion();
 const char * omegaVersion();
 const char * patchLevel();
 const char * fccId();
