@@ -10,9 +10,6 @@ extern "C" {
 #include "py/nlr.h"
 #include "py/lexer.h"
 }
-#ifndef MP_TOKEN_FSTRING_RAW
-#define MP_TOKEN_FSTRING_RAW MP_TOKEN_STRING
-#endif
 #include <stdlib.h>
 #include <algorithm>
 #include <string.h>
@@ -480,7 +477,11 @@ int PythonTextArea::ContentView::estimateInvalidDeltaForInsertion(const char * p
     mp_lexer_t * lex = mp_lexer_new_from_str_len(0, buf, len, 0);
     const char * lineStart = buf;
     int currentLine = 1;
+  #if defined(MICROPY_PY_FSTRINGS) && defined(MP_TOKEN_FSTRING_RAW)
     while (lex->tok_kind != MP_TOKEN_END && lex->tok_kind != MP_TOKEN_FSTRING_RAW) {
+  #else
+    while (lex->tok_kind != MP_TOKEN_END) {
+  #endif
       while (currentLine < lex->tok_line) {
         const char * nextLine = UTF8Helper::CodePointSearch(lineStart, '\n');
         if (UTF8Helper::CodePointIs(nextLine, UCodePointNull)) break;
@@ -580,7 +581,11 @@ int PythonTextArea::ContentView::estimateInvalidDeltaForDeletion(const char * po
     mp_lexer_t * lex = mp_lexer_new_from_str_len(0, buf, len, 0);
     const char * lineStart = buf;
     int currentLine = 1;
+  #if defined(MICROPY_PY_FSTRINGS) && defined(MP_TOKEN_FSTRING_RAW)
     while (lex->tok_kind != MP_TOKEN_END && lex->tok_kind != MP_TOKEN_FSTRING_RAW) {
+  #else
+    while (lex->tok_kind != MP_TOKEN_END) {
+  #endif
       while (currentLine < lex->tok_line) {
         const char * nextLine = UTF8Helper::CodePointSearch(lineStart, '\n');
         if (UTF8Helper::CodePointIs(nextLine, UCodePointNull)) break;
@@ -633,7 +638,11 @@ void PythonTextArea::ContentView::updateDelimiterColoringCache() const {
   int currentLine = 1;
 
   mp_lexer_t * lex = mp_lexer_new_from_str_len(0, fullText, strlen(fullText), 0);
+#if defined(MICROPY_PY_FSTRINGS) && defined(MP_TOKEN_FSTRING_RAW)
   while (lex->tok_kind != MP_TOKEN_END && lex->tok_kind != MP_TOKEN_FSTRING_RAW) {
+#else
+  while (lex->tok_kind != MP_TOKEN_END) {
+#endif
     while (currentLine < lex->tok_line && !UTF8Helper::CodePointIs(lineStart, UCodePointNull)) {
       const char * nextLine = UTF8Helper::CodePointSearch(lineStart, '\n');
       if (UTF8Helper::CodePointIs(nextLine, UCodePointNull)) {
@@ -700,7 +709,11 @@ void PythonTextArea::ContentView::updateDelimiterColoringCache() const {
   currentLine = 1;
 
   lex = mp_lexer_new_from_str_len(0, fullText, strlen(fullText), 0);
+#if defined(MICROPY_PY_FSTRINGS) && defined(MP_TOKEN_FSTRING_RAW)
   while (lex->tok_kind != MP_TOKEN_END && lex->tok_kind != MP_TOKEN_FSTRING_RAW) {
+#else
+  while (lex->tok_kind != MP_TOKEN_END) {
+#endif
     while (currentLine < lex->tok_line && !UTF8Helper::CodePointIs(lineStart, UCodePointNull)) {
       const char * nextLine = UTF8Helper::CodePointSearch(lineStart, '\n');
       if (UTF8Helper::CodePointIs(nextLine, UCodePointNull)) {
