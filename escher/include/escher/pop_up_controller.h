@@ -2,6 +2,7 @@
 #define ESCHER_POP_UP_CONTROLLER_H
 
 #include <escher/invocation.h>
+#include <escher/palette.h>
 #include <apps/i18n.h>
 
 
@@ -21,7 +22,7 @@ protected:
   class ContentView : public View, public Responder {
   public:
     ContentView(Responder * parentResponder, int numberOfLines, Invocation okInvocation);
-    void drawRect(KDContext * ctx, KDRect rect) const override { ctx->fillRect(bounds(), KDColorBlack); }
+    void drawRect(KDContext * ctx, KDRect rect) const override { ctx->fillRect(bounds(), Palette::BackgroundHard); }
     void setSelectedButton(int selectedButton);
     int selectedButton();
     void setMessage(int index, I18n::Message message);

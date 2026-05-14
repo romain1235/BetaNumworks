@@ -5,7 +5,7 @@
 
 PointerTextTableCell::PointerTextTableCell(const char * text, const KDFont * font, Layout layout) :
   TableCell(layout),
-  m_pointerTextView(font, text, 0, 0.5, KDColorBlack, KDColorWhite)
+  m_pointerTextView(font, text, 0, 0.5, Palette::PrimaryText, Palette::ListCellBackground)
 {
 }
 
