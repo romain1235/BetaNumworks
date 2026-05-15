@@ -11,3 +11,4 @@ epsilon.map
 .cache/
 compile_commands.json
 venv/
+*.theme

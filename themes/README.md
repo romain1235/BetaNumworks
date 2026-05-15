@@ -51,6 +51,10 @@ single theme file.
 Usage:
 
 ```bash
+python3 themes/theme_builder.py <theme_name>
+```
+or if you want to specify the output file:
+```bash
 python3 themes/theme_builder.py <theme_name> <output.theme>
 ```
 
@@ -58,7 +62,7 @@ Examples:
 
 ```bash
 # Build `beta_dark.theme` from local theme data
-python3 themes/theme_builder.py beta_dark output/beta_dark.theme
+python3 themes/theme_builder.py beta_dark
 
 # List available local themes
 python3 themes/theme_builder.py --list
