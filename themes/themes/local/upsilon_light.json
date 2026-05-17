@@ -157,5 +157,16 @@
             "Highlight": "000000",
             "Background": "d9d9d9"
         }
+        ,
+        "AtomProperty": {
+            "Num": "fbfbb0",
+            "NumHighlighted": "0a0301",
+            "Neutrons": "b4f7af",
+            "NeutronsHighlighted": "000000",
+            "Mass": "b4e3ff",
+            "MassHighlighted": "0d0007",
+            "Electroneg": "efb0e0",
+            "ElectronegHighlighted": "000f0d"
+        }
     }
 }
