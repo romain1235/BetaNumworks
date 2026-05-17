@@ -31,6 +31,8 @@ public:
   void setSelectedSubviewPosition(SubviewPosition subviewPosition) {
     contentCell()->setSelectedSubviewPosition(subviewPosition);
   }
+  KDCoordinate centeredExpressionMinimalWidth() const { return constContentCell()->centeredExpressionView()->minimalSizeForOptimalDisplay().width(); }
+  KDCoordinate rightExpressionMinimalWidth() const { return constContentCell()->rightExpressionView()->minimalSizeForOptimalDisplay().width(); }
   bool displayCenter() const { return constContentCell()->displayCenter(); }
   void setDisplayCenter(bool display);
   void setDisplayableCenter(bool displayable) { contentCell()->setDisplayableCenter(displayable); }
@@ -50,12 +52,10 @@ protected:
     KDSize minimalSizeForOptimalDisplay() const override;
     KDSize minimalSizeForOptimalDisplayFullSize() const;
     virtual ExpressionView * leftExpressionView() const { return nullptr; }
-    ExpressionView * rightExpressionView() {
-      return &m_rightExpressionView;
-    }
-    ExpressionView * centeredExpressionView() {
-      return &m_centeredExpressionView;
-    }
+    ExpressionView * rightExpressionView() { return &m_rightExpressionView; }
+    const ExpressionView * rightExpressionView() const { return &m_rightExpressionView; }
+    ExpressionView * centeredExpressionView() { return &m_centeredExpressionView; }
+    const ExpressionView * centeredExpressionView() const { return &m_centeredExpressionView; }
     MessageTextView * approximateSign() {
       return &m_approximateSign;
     }

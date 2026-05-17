@@ -109,11 +109,22 @@ void HistoryViewCell::reloadOutputSelection(HistoryViewCellDataSource::SubviewTy
   /* Select the right output according to the calculation display output. This
    * will reload the scroll to display the selected output. */
   if (m_calculationDisplayOutput == Calculation::DisplayOutput::ExactAndApproximate) {
-    m_scrollableOutputView.setSelectedSubviewPosition(
-        previousType == HistoryViewCellDataSource::SubviewType::Ellipsis ?
-          Shared::ScrollableTwoExpressionsView::SubviewPosition::Right :
-          Shared::ScrollableTwoExpressionsView::SubviewPosition::Center
-        );
+    /* Default to center, but if the exact (center) expression is too large to
+     * be usefully displayed alongside the approximation, prefer selecting the
+     * right (approximate) subview so the approximate result is visible. */
+    Shared::ScrollableTwoExpressionsView::SubviewPosition pos =
+      previousType == HistoryViewCellDataSource::SubviewType::Ellipsis ?
+        Shared::ScrollableTwoExpressionsView::SubviewPosition::Right :
+        Shared::ScrollableTwoExpressionsView::SubviewPosition::Center;
+    if (pos == Shared::ScrollableTwoExpressionsView::SubviewPosition::Center) {
+      KDCoordinate outputViewWidth = m_scrollableOutputView.bounds().width();
+      KDCoordinate rightWidth = m_scrollableOutputView.rightExpressionMinimalWidth();
+      KDCoordinate centerAvailable = outputViewWidth - rightWidth - Shared::AbstractScrollableMultipleExpressionsView::StandardApproximateViewAndMarginsSize();
+      if (centerAvailable <= 0 || m_scrollableOutputView.centeredExpressionMinimalWidth() > centerAvailable) {
+        pos = Shared::ScrollableTwoExpressionsView::SubviewPosition::Right;
+      }
+    }
+    m_scrollableOutputView.setSelectedSubviewPosition(pos);
   } else {
     assert((m_calculationDisplayOutput == Calculation::DisplayOutput::ApproximateOnly)
         || (m_calculationDisplayOutput == Calculation::DisplayOutput::ExactAndApproximateToggle)
@@ -304,6 +315,25 @@ void HistoryViewCell::setCalculation(Calculation * calculation, bool expanded, b
   m_scrollableOutputView.setLayouts(Poincare::Layout(), exactOutputLayout, approximateOutputLayout);
   I18n::Message equalMessage = calculation->exactAndApproximateDisplayedOutputsAreEqual(context) == Calculation::EqualSign::Equal ? I18n::Message::Equal : I18n::Message::AlmostEqual;
   m_scrollableOutputView.setEqualMessage(equalMessage);
+
+  /* Automatically prefer showing the approximate (right) expression when the
+   * exact (center) expression is too large to be usefully displayed alongside
+   * it. We compute the expected output frame using the display width so that
+   * the decision is made before the user moves the cursor into the output. */
+  if (m_calculationDisplayOutput == Calculation::DisplayOutput::ExactAndApproximate) {
+    KDRect ellipsisFrame = KDRectZero;
+    KDRect inputFrame = KDRectZero;
+    KDRect outputFrame = KDRectZero;
+    computeSubviewFrames(Ion::Display::Width, KDCOORDINATE_MAX, &ellipsisFrame, &inputFrame, &outputFrame);
+    KDCoordinate outputViewWidth = outputFrame.width();
+    KDCoordinate rightWidth = m_scrollableOutputView.rightExpressionMinimalWidth();
+    KDCoordinate centerAvailable = outputViewWidth - rightWidth - Shared::AbstractScrollableMultipleExpressionsView::StandardApproximateViewAndMarginsSize();
+    Shared::ScrollableTwoExpressionsView::SubviewPosition pos = Shared::ScrollableTwoExpressionsView::SubviewPosition::Center;
+    if (centerAvailable <= 0 || m_scrollableOutputView.centeredExpressionMinimalWidth() > centerAvailable) {
+      pos = Shared::ScrollableTwoExpressionsView::SubviewPosition::Right;
+    }
+    m_scrollableOutputView.setSelectedSubviewPosition(pos);
+  }
 
   /* The displayed input and outputs have changed. We need to re-layout the cell
    * and re-initialize the scroll. */
