@@ -86,7 +86,7 @@ PythonCommandGetPixel = "get_pixel(x,y)"
 PythonCommandGetPixels = "get_pixels(x,y,w,h)"
 PythonCommandWaitVBlank = "wait_vblank()"
 PythonFrameBufferMenu = "framebuffer"
-PythonCommandFrameBufferCreate = "framebuffer(w,h[,bits][,palette=False])  // bits: 1/6/8/16, palette: True to force palette mode"
+PythonCommandFrameBufferCreate = "framebuffer(w,h[,bits][,palette=False])
 PythonCommandFrameBufferChangeColor = "change_color(i,color)"
 PythonCommandFrameBufferDraw = "draw(x,y,pixel_size)  // respects kandinsky fullscreen and clipping"
 PythonCommandFrameBufferDrawOnBuffer = "draw_on_buffer(buf,x,y,pixel_size)"
