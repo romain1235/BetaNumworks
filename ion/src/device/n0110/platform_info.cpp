@@ -17,6 +17,10 @@
 #error This file expects UPSILON_VERSION to be defined
 #endif
 
+#ifndef BETA_VERSION
+#error This file expects BETA_VERSION to be defined
+#endif
+
 #ifndef HEADER_SECTION
 #define HEADER_SECTION
 #endif
@@ -45,6 +49,7 @@ public:
     m_omegaMagicFooter(OmegaMagic),
     m_upsilonMagicHeader(UpsilonMagic),
     m_UpsilonVersion{UPSILON_VERSION},
+    m_BetaVersion{BETA_VERSION},
     m_osType(OSType),
     m_upsilonMagicFooter(UpsilonMagic) { }
   const char * version() const {
@@ -64,6 +69,17 @@ public:
     assert(m_omegaMagicHeader == OmegaMagic);
     assert(m_omegaMagicFooter == OmegaMagic);
     return m_UpsilonVersion;
+  }
+  const char * betaVersion() const {
+    assert(m_storageAddress != nullptr);
+    assert(m_storageSize != 0);
+    assert(m_header == Magic);
+    assert(m_footer == Magic);
+    assert(m_omegaMagicHeader == OmegaMagic);
+    assert(m_omegaMagicFooter == OmegaMagic);
+    assert(m_upsilonMagicHeader == UpsilonMagic);
+    assert(m_upsilonMagicFooter == UpsilonMagic);
+    return m_BetaVersion;
   }
   const char * omegaVersion() const {
     assert(m_storageAddress != nullptr);
@@ -112,6 +128,7 @@ private:
   uint32_t m_omegaMagicFooter;
   uint32_t m_upsilonMagicHeader;
   const char m_UpsilonVersion[16];
+  const char m_BetaVersion[16];
   uint32_t m_osType;
   uint32_t m_upsilonMagicFooter;
 
