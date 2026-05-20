@@ -156,8 +156,7 @@
             "TableLines": "cdcacd",
             "Highlight": "000000",
             "Background": "d9d9d9"
-        }
-        ,
+        },
         "AtomProperty": {
             "Num": "4f4f04",
             "NumHighlighted": "fdf6f4",
@@ -166,7 +165,17 @@
             "Mass": "002f4a",
             "MassHighlighted": "fff2fa",
             "Electroneg": "4f0f40",
-            "ElectronegHighlighted": "f0fffd"
+            "ElectronegHighlighted": "f0fffd",
+            "AtomicRadius": "0f4f0f",
+            "AtomicRadiusHighlighted": "ffffff",
+            "ElectronAffinity": "0f0440",
+            "ElectronAffinityHighlighted": "f2f4ff",
+            "MeltingPoint": "88640f",
+            "MeltingPointHighlighted": "fff6af",
+            "BoilingPoint": "640f0f",
+            "BoilingPointHighlighted": "ffdfd2",
+            "Density": "04204f",
+            "DensityHighlighted": "8fdfff"
         }
     }
 }

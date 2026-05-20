@@ -130,7 +130,7 @@
             "CellTextExternalActive": "6fe6df"
         },
         "Atom": {
-             "Text": "ffffff",
+            "Text": "ffffff",
             "Unknown": "e6e6e6",
             "AlkaliMetal": "f8e6bb",
             "AlkaliEarthMetal": "e0fcf6",
@@ -153,9 +153,29 @@
             "HalogenHighlighted": "38473a",
             "ReactiveNonmetalHighlighted": "9d2315",
             "NobleGasHighlighted": "40317d",
-            "TableLines": "cdcacd",            
+            "TableLines": "cdcacd",
             "Highlight": "000000",
             "Background": "d9d9d9"
+        },
+        "AtomProperty": {
+            "Num": "fbfbb0",
+            "NumHighlighted": "0a0301",
+            "Neutrons": "b4f7af",
+            "NeutronsHighlighted": "000000",
+            "Mass": "b4e3ff",
+            "MassHighlighted": "0d0007",
+            "Electroneg": "efb0e0",
+            "ElectronegHighlighted": "000f0d",
+            "AtomicRadius": "b0f0b0",
+            "AtomicRadiusHighlighted": "000000",
+            "ElectronAffinity": "bfbafc",
+            "ElectronAffinityHighlighted": "000b0d",
+            "MeltingPoint": "f0cb76",
+            "MeltingPointHighlighted": "503900",
+            "BoilingPoint": "f0b0b0",
+            "BoilingPointHighlighted": "2d0000",
+            "Density": "b0d4fb",
+            "DensityHighlighted": "001f70"
         }
     }
 }
