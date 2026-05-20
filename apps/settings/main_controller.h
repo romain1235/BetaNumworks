@@ -28,7 +28,7 @@ extern const Shared::SettingsMessageTree s_modelMathOptionsChildren[6];
 extern const Shared::SettingsMessageTree s_modelFontChildren[2];
 extern const Shared::SettingsMessageTree s_codeChildren[5];
 extern const Shared::SettingsMessageTree s_modelDateTimeChildren[3];
-extern const Shared::SettingsMessageTree s_accessibilityChildren[6];
+extern const Shared::SettingsMessageTree s_accessibilityChildren[7];
 extern const Shared::SettingsMessageTree s_contributorsChildren[19];
 extern const Shared::SettingsMessageTree s_modelAboutChildren[11];
 extern const Shared::SettingsMessageTree s_usbProtectionChildren[2];

@@ -16,7 +16,7 @@ public:
   int typeAtLocation(int i, int j) override;
 private:
   constexpr static int k_totalNumberOfSwitchCells = 3;
-  constexpr static int k_totalNumberOfGaugeCells = 3;
+  constexpr static int k_totalNumberOfGaugeCells = 4;
   MessageTableCellWithGauge m_gaugeCells[k_totalNumberOfGaugeCells];
   MessageTableCellWithSwitch m_switchCells[k_totalNumberOfSwitchCells];
 };

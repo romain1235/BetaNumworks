@@ -45,6 +45,9 @@ public:
   const KDFont * font() const { return m_font; }
   void setFont(const KDFont * font) { m_font = font; }
   constexpr static int NumberOfBrightnessStates = 15;
+  constexpr static int NumberOfKeyRepeatStates = 6;
+  int keyRepeatSpeed() const { return m_keyRepeatSpeed; }
+  void setKeyRepeatSpeed(int speed);
   int idleBeforeSuspendSeconds() const { return m_idleBeforeSuspendSeconds; }
   void setIdleBeforeSuspendSeconds(int m_idleBeforeSuspendSeconds);
   int idleBeforeDimmingSeconds() const { return m_idleBeforeDimmingSeconds; }
@@ -73,6 +76,7 @@ private:
     m_idleBeforeSuspendSeconds(55),
     m_idleBeforeDimmingSeconds(45),
     m_brightnessShortcut(4),
+    m_keyRepeatSpeed(NumberOfKeyRepeatStates - 1),
     m_externalAppWritePermission(false),
     m_externalAppShown(true),
     m_font(KDFont::SmallFont) {}
@@ -92,6 +96,7 @@ private:
   int m_idleBeforeSuspendSeconds;
   int m_idleBeforeDimmingSeconds;
   int m_brightnessShortcut;
+  int8_t m_keyRepeatSpeed;
   bool m_externalAppWritePermission;
   bool m_externalAppShown;
   const KDFont * m_font;

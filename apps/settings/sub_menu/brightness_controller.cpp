@@ -50,7 +50,7 @@ int BrightnessController::reusableCellCount(int type) {
 }
 
 void BrightnessController::willDisplayCellForIndex(HighlightCell * cell, int index) {
-  if(index == 0){
+  if (index == 0) {
     MessageTableCellWithGauge * myGaugeCell = (MessageTableCellWithGauge *)cell;
     GaugeView * myGauge = (GaugeView *)myGaugeCell->accessoryView();
     int delta = Ion::Backlight::MaxBrightness/GlobalPreferences::NumberOfBrightnessStates;

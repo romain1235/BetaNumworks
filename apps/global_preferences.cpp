@@ -1,5 +1,6 @@
 #include "global_preferences.h"
 #include <ion/backlight.h>
+#include <ion/events.h>
 
 GlobalPreferences * GlobalPreferences::sharedGlobalPreferences() {
   static GlobalPreferences globalPreferences;
@@ -64,4 +65,11 @@ void GlobalPreferences::setIdleBeforeDimmingSeconds(int idleBeforeDimmingSeconds
 
 void GlobalPreferences::setBrightnessShortcut(int brightnessShortcut){
   m_brightnessShortcut = brightnessShortcut;
+}
+
+void GlobalPreferences::setKeyRepeatSpeed(int speed) {
+  if (speed < 0) speed = 0;
+  if (speed > NumberOfKeyRepeatStates - 1) speed = NumberOfKeyRepeatStates - 1;
+  m_keyRepeatSpeed = speed;
+  Ion::Events::setKeyRepeatDelay(25 + speed * 5);
 }

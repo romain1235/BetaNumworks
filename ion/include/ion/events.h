@@ -73,6 +73,7 @@ bool isAlphaActive();
 bool isLockActive();
 void setLongRepetition(int longRepetition);
 int repetitionFactor();
+void setKeyRepeatDelay(int ms);
 void updateModifiersFromEvent(Event e);
 void didPressNewKey();
 

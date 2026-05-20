@@ -19,6 +19,14 @@ AccessibilityController::AccessibilityController(Responder * parentResponder) :
 }
 
 bool AccessibilityController::handleEvent(Ion::Events::Event event) {
+  if (selectedRow() == 6 && (event == Ion::Events::Right || event == Ion::Events::Left || event == Ion::Events::Plus || event == Ion::Events::Minus)) {
+    int direction = (event == Ion::Events::Right || event == Ion::Events::Plus) ? -1 : 1;
+    GlobalPreferences::sharedGlobalPreferences()->setKeyRepeatSpeed(
+      GlobalPreferences::sharedGlobalPreferences()->keyRepeatSpeed() + direction
+    );
+    m_selectableTableView.reloadCellAtLocation(m_selectableTableView.selectedColumn(), m_selectableTableView.selectedRow());
+    return true;
+  }
   bool invertEnabled = KDIonContext::sharedContext()->invertEnabled;
   bool zoomEnabled = KDIonContext::sharedContext()->zoomEnabled;
   bool gammaEnabled = KDIonContext::sharedContext()->gammaEnabled;
@@ -112,6 +120,10 @@ void AccessibilityController::willDisplayCellForIndex(HighlightCell * cell, int 
     MessageTableCellWithGauge * myGaugeCell = (MessageTableCellWithGauge *)cell;
     GaugeView * myGauge = (GaugeView *)myGaugeCell->accessoryView();
 
+    if (index == 6) {
+      myGauge->setLevel(1.0f - (float)GlobalPreferences::sharedGlobalPreferences()->keyRepeatSpeed() / (float)(GlobalPreferences::NumberOfKeyRepeatStates - 1));
+      return;
+    }
     float redGamma, greenGamma, blueGamma, level;
     KDIonContext::sharedContext()->gamma.gamma(redGamma, greenGamma, blueGamma);
     if (index == 3) {

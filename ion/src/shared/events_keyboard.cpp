@@ -25,7 +25,7 @@ bool sLastEventAlpha;
 bool sEventIsRepeating = 0;
 int sEventRepetitionCount = 0;
 constexpr int delayBeforeRepeat = 200;
-constexpr int delayBetweenRepeat = 50;
+static int s_delayBetweenRepeat = 50;
 
 static bool canRepeatEvent(Event e) {
   return e == Events::Left
@@ -51,9 +51,13 @@ void resetLongRepetition() {
   ComputeAndSetRepetitionFactor(sEventRepetitionCount);
 }
 
+void setKeyRepeatDelay(int ms) {
+  s_delayBetweenRepeat = ms;
+}
+
 static inline Event innerGetEvent(int * timeout) {
   assert(*timeout > delayBeforeRepeat);
-  assert(*timeout > delayBetweenRepeat);
+  assert(*timeout > s_delayBetweenRepeat);
   int time = 0;
   uint64_t keysSeenUp = 0;
   uint64_t keysSeenTransitioningFromUpToDown = 0;
@@ -128,7 +132,7 @@ static inline Event innerGetEvent(int * timeout) {
         && sLastEventShift == state.keyDown(Keyboard::Key::Shift)
         && sLastEventAlpha == (state.keyDown(Keyboard::Key::Alpha) || lock))
     {
-      int delay = (sEventIsRepeating ? delayBetweenRepeat : delayBeforeRepeat);
+      int delay = (sEventIsRepeating ? s_delayBetweenRepeat : delayBeforeRepeat);
       if (time >= delay) {
         sEventIsRepeating = true;
         sEventRepetitionCount++;
