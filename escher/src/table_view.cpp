@@ -111,6 +111,11 @@ int TableView::ContentView::typeOfSubviewAtIndex(int index) const {
 }
 
 int TableView::ContentView::typeIndexFromSubviewIndex(int index, int type) const {
+  // Fast path: when all cells are the same type, typeIndex == index.
+  if (m_dataSource->hasUniformType()) {
+    assert(index < m_dataSource->reusableCellCount(type));
+    return index;
+  }
   int typeIndex = 0;
   for (int k = 0; k < index; k++) {
     if (typeOfSubviewAtIndex(k) == type) {

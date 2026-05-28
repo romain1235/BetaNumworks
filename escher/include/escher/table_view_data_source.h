@@ -24,6 +24,9 @@ public:
   virtual HighlightCell * reusableCell(int index, int type) = 0;
   virtual int reusableCellCount(int type) = 0;
   virtual int typeAtLocation(int i, int j) = 0;
+  // Returns true if typeAtLocation always returns 0 for all positions.
+  // Allows O(1) subview index computation instead of O(n).
+  virtual bool hasUniformType() const { return false; }
 };
 
 #endif

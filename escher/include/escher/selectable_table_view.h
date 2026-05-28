@@ -26,6 +26,7 @@ public:
   void selectRow(int j);
   void selectColumn(int i);
   void reloadData(bool setFirstResponder = true);
+  void forceRedraw() { markRectAsDirty(bounds()); }
   bool handleEvent(Ion::Events::Event event) override;
   void didEnterResponderChain(Responder * previousFirstResponder) override;
   void willExitResponderChain(Responder * nextFirstResponder) override;

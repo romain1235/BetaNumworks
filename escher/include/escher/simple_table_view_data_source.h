@@ -19,6 +19,7 @@ public:
   HighlightCell * reusableCell(int index, int type) override;
   int reusableCellCount(int type) override;
   int typeAtLocation(int i, int j) override;
+  bool hasUniformType() const override { return true; }
 };
 
 #endif
