@@ -16,7 +16,7 @@ buildscript {
     google()
   }
   dependencies {
-    classpath 'com.android.tools.build:gradle:8.13.0'
+    classpath 'com.android.tools.build:gradle:9.2.0'
   }
 }
 
@@ -32,12 +32,11 @@ apply plugin: 'com.android.application'
 
 android {
   namespace = "io.github.upsilon.simulator"
-  compileSdkVersion 36
+  compileSdkVersion 37
   defaultConfig {
     applicationId "io.github.upsilon.simulator"
-    minSdkVersion 16
+    minSdkVersion 21
     targetSdkVersion 33
-    def d=new Date()
     versionCode Instant.now().getEpochSecond().toInteger()
     versionName LocalDate.now().format("yyyyMMdd")+'-'+System.getenv('UPSILON_VERSION')
   }
@@ -52,7 +51,7 @@ android {
   buildTypes {
     release {
       minifyEnabled false
-      proguardFiles getDefaultProguardFile('proguard-android.txt')
+      //proguardFiles getDefaultProguardFile('proguard-android.txt')
       if (projectVariable('SIGNING_STORE_FILE')) {
         signingConfig = signingConfigs.environment
       } else {
@@ -73,12 +72,15 @@ android {
     abortOnError = false
     checkReleaseBuilds = false
   }
+  compileOptions { // currently Kotlin JVM doesn't support target 25
+    sourceCompatibility JavaVersion.VERSION_24
+    targetCompatibility JavaVersion.VERSION_24
+  }
 }
 
 dependencies {
   implementation fileTree(include: ['*.jar'], dir: 'libs')
-  implementation "androidx.appcompat:appcompat:1.6.0"
-  implementation(platform("org.jetbrains.kotlin:kotlin-bom:2.2.21"))
+  implementation "androidx.appcompat:appcompat:1.7.1"
 }
 
 java{toolchain{languageVersion=JavaLanguageVersion.of(25)}}
