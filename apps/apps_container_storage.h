@@ -29,6 +29,9 @@ private:
     USB::App m_usbApp;
   };
   Apps m_apps;
+  // static_assert(sizeof(Apps) != 1); // Uncomment this line to log the Apps union size
+  static_assert(sizeof(Apps) != sizeof(Home::App) + 4, "Home App is using too much memory (biggest app), it means memory is wasted during normal runtime for external apps. Increase the Python heap to fix");
+  // TODO: Assert code app is almost the same size as Home app
   APPS_CONTAINER_SNAPSHOT_DECLARATIONS
 };
 
