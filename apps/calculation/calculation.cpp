@@ -199,7 +199,8 @@ bool Calculation::shouldOnlyDisplayExactOutput() {
    * result. This prevents x->f(x) from displaying x = undef. */
   Expression i = input();
   return (i.type() == ExpressionNode::Type::Store && i.childAtIndex(1).type() == ExpressionNode::Type::Function)
-    || strcmp(approximateOutputText(NumberOfSignificantDigits::Maximal), Undefined::Name()) == 0;
+    || strcmp(approximateOutputText(NumberOfSignificantDigits::Maximal), Undefined::Name()) == 0
+    || exactOutput().type() == ExpressionNode::Type::Boolean;
 }
 
 Calculation::EqualSign Calculation::exactAndApproximateDisplayedOutputsAreEqual(Poincare::Context * context) {

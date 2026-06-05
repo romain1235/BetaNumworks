@@ -82,6 +82,20 @@ const ToolboxMessageTree vectorsChildren[] = {
   ToolboxMessageTree::Leaf(I18n::Message::NormVectorCommandWithArg, I18n::Message::NormVector)
 };
 
+const ToolboxMessageTree booleanLogicChildren[] = {
+  ToolboxMessageTree::Leaf(I18n::Message::BooleanTrue, I18n::Message::BooleanTrue),
+  ToolboxMessageTree::Leaf(I18n::Message::BooleanFalse, I18n::Message::BooleanFalse),
+  ToolboxMessageTree::Leaf(I18n::Message::BooleanComparisonEqual, I18n::Message::BooleanComparisonEqual, false, I18n::Message::BooleanComparisonEqualInsert),
+  ToolboxMessageTree::Leaf(I18n::Message::BooleanComparisonNotEqual, I18n::Message::BooleanComparisonNotEqual, false, I18n::Message::BooleanComparisonNotEqualInsert),
+  ToolboxMessageTree::Leaf(I18n::Message::BooleanComparisonLess, I18n::Message::BooleanComparisonLess, false, I18n::Message::BooleanComparisonLessInsert),
+  ToolboxMessageTree::Leaf(I18n::Message::BooleanComparisonGreater, I18n::Message::BooleanComparisonGreater, false, I18n::Message::BooleanComparisonGreaterInsert),
+  ToolboxMessageTree::Leaf(I18n::Message::BooleanComparisonLessEqual, I18n::Message::BooleanComparisonLessEqual, false, I18n::Message::BooleanComparisonLessEqualInsert),
+  ToolboxMessageTree::Leaf(I18n::Message::BooleanComparisonGreaterEqual, I18n::Message::BooleanComparisonGreaterEqual, false, I18n::Message::BooleanComparisonGreaterEqualInsert),
+  ToolboxMessageTree::Leaf(I18n::Message::BooleanAnd, I18n::Message::BooleanAnd, false, I18n::Message::BooleanAndInsert),
+  ToolboxMessageTree::Leaf(I18n::Message::BooleanOr, I18n::Message::BooleanOr, false, I18n::Message::BooleanOrInsert),
+  ToolboxMessageTree::Leaf(I18n::Message::BooleanXor, I18n::Message::BooleanXor, false, I18n::Message::BooleanXorInsert),
+};
+
 const ToolboxMessageTree logicExplicitChildren[] = {
   ToolboxMessageTree::Leaf(I18n::Message::LogicalNotExplicitCommandWithArg, I18n::Message::LogicalNot),
   ToolboxMessageTree::Leaf(I18n::Message::LogicalShiftRightArithmeticExplicitCommandWithArg, I18n::Message::LogicalShiftRightArithmetic),
@@ -107,6 +121,11 @@ const ToolboxMessageTree logicChildren[] = {
   ToolboxMessageTree::Leaf(I18n::Message::LogicalBitsClearCommandWithArg, I18n::Message::LogicalBitsClear),
   ToolboxMessageTree::Leaf(I18n::Message::TwosComplementToBitsCommandWithArg, I18n::Message::TwosComplementToBits),
   ToolboxMessageTree::Leaf(I18n::Message::CeilingLog2CommandWithArg, I18n::Message::CeilingLog2)
+};
+
+const ToolboxMessageTree logicMenuChildren[] = {
+  ToolboxMessageTree::Node(I18n::Message::BooleanLogic, booleanLogicChildren),
+  ToolboxMessageTree::Node(I18n::Message::BitwiseLogic, logicChildren),
 };
 
 const ToolboxMessageTree matricesAndVectorsChildren[] = {
@@ -907,7 +926,7 @@ const ToolboxMessageTree menu[] = {
   ToolboxMessageTree::Node(I18n::Message::Fluctuation, predictionChildren),
   ToolboxMessageTree::Node(I18n::Message::Chemistry, chemistry),
   ToolboxMessageTree::Node(I18n::Message::Physics, Physics),
-  ToolboxMessageTree::Node(I18n::Message::Logic, logicChildren),
+  ToolboxMessageTree::Node(I18n::Message::Logic, logicMenuChildren),
   };
 
 const ToolboxMessageTree toolboxModel = ToolboxMessageTree::Node(I18n::Message::Toolbox, menu);
@@ -924,11 +943,9 @@ MathToolbox::MathToolbox() :
 bool MathToolbox::selectLeaf(int selectedRow, bool quitToolbox) {
   ToolboxMessageTree * messageTree = (ToolboxMessageTree *)m_messageTreeModel->childAtIndex(selectedRow);
 
-  // Translate the message
   const char * text = I18n::translate(messageTree->insertedText());
   char textToInsert[k_maxMessageSize]; // Has to be in the same scope as handleEventWithText
-  if (messageTree->label() == messageTree->insertedText()) {
-  //  Remove the arguments if we kept one message for both inserted and displayed message
+  if (messageTree->stripInsertedText()) {
     int maxTextToInsertLength = strlen(text) + 1;
     assert(maxTextToInsertLength <= k_maxMessageSize);
     Shared::ToolboxHelpers::TextToInsertForCommandText(text, -1, textToInsert, maxTextToInsertLength, true);

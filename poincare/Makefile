@@ -51,6 +51,9 @@ poincare_src += $(addprefix poincare/src/,\
   arithmetic.cpp \
   based_integer.cpp \
   binary_operation.cpp \
+  boolean.cpp \
+  comparison.cpp \
+  comparison_order.cpp \
   binom_cdf.cpp \
   binomial_coefficient.cpp \
   binomial_distribution_function.cpp \

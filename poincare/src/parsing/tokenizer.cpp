@@ -2,6 +2,7 @@
 #include <poincare/based_integer.h>
 #include <poincare/number.h>
 #include <ion/unicode/utf8_decoder.h>
+#include <string.h>
 
 namespace Poincare {
 
@@ -169,8 +170,18 @@ Token Tokenizer::popToken() {
       c.isGreekCapitalLetter() ||
       c.isGreekSmallLetter()) // Greek small letter pi is matched earlier
   {
+    size_t length = UTF8Decoder::CharSizeOfCodePoint(c) + popIdentifier('_'); // We already popped 1 code point
+    if (length == 3 && strncmp(start, "and", 3) == 0) {
+      return Token(Token::BooleanAnd);
+    }
+    if (length == 2 && strncmp(start, "or", 2) == 0) {
+      return Token(Token::BooleanOr);
+    }
+    if (length == 3 && strncmp(start, "xor", 3) == 0) {
+      return Token(Token::BooleanXor);
+    }
     Token result(Token::Identifier);
-    result.setString(start, UTF8Decoder::CharSizeOfCodePoint(c) + popIdentifier('_')); // We already popped 1 code point
+    result.setString(start, length);
     return result;
   }
   if ('(' <= c && c <= '/') {
@@ -210,10 +221,25 @@ Token Tokenizer::popToken() {
     return Token(Token::SingleQuote);
   }
   if (c == '!') {
+    if (canPopCodePoint('=')) {
+      return Token(Token::ComparisonNotEqual);
+    }
     return Token(Token::Bang);
   }
+  if (c == '<') {
+    if (canPopCodePoint('=')) {
+      return Token(Token::ComparisonLessEqual);
+    }
+    return Token(Token::ComparisonLess);
+  }
+  if (c == '>') {
+    if (canPopCodePoint('=')) {
+      return Token(Token::ComparisonGreaterEqual);
+    }
+    return Token(Token::ComparisonGreater);
+  }
   if (c == '=') {
-    return Token(Token::Equal);
+    return Token(Token::ComparisonEqual);
   }
   if (c == '[') {
     return Token(Token::LeftBracket);

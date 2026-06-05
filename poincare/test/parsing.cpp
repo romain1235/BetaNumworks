@@ -185,7 +185,10 @@ QUIZ_CASE(poincare_parsing_parse) {
   assert_parsed_expression_is("(1/2/3)", Parenthesis::Builder(Division::Builder(Division::Builder(BasedInteger::Builder(1),BasedInteger::Builder(2)),BasedInteger::Builder(3))));
   assert_parsed_expression_is("1^2", Power::Builder(BasedInteger::Builder(1),BasedInteger::Builder(2)));
   assert_parsed_expression_is("1^2^3", Power::Builder(BasedInteger::Builder(1),Power::Builder(BasedInteger::Builder(2),BasedInteger::Builder(3))));
-  assert_parsed_expression_is("1=2", Equal::Builder(BasedInteger::Builder(1),BasedInteger::Builder(2)));
+  assert_parsed_expression_is("1=2", Comparison::Builder(ComparisonNode::Operator::Equal, BasedInteger::Builder(1),BasedInteger::Builder(2)));
+  assert_parsed_expression_is("5=3 or 5>3", Or::Builder(
+    Comparison::Builder(ComparisonNode::Operator::Equal, BasedInteger::Builder(5), BasedInteger::Builder(3)),
+    Comparison::Builder(ComparisonNode::Operator::Greater, BasedInteger::Builder(5), BasedInteger::Builder(3))));
   assert_text_not_parsable("=5");
   assert_text_not_parsable("1=2=3");
   assert_parsed_expression_is("-1", Opposite::Builder(BasedInteger::Builder(1)));

@@ -50,7 +50,6 @@ Expression Equal::standardEquation(Context * context, Preferences::ComplexFormat
 }
 
 Expression Equal::shallowReduce(ExpressionNode::ReductionContext reductionContext) {
-  
   Expression e = Equal::Builder(Subtraction::Builder(childAtIndex(0).clone(), childAtIndex(1).clone()).shallowReduce(reductionContext), Rational::Builder(0));
   
   Expression leftSide = e.childAtIndex(0);

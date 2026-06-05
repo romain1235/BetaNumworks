@@ -51,7 +51,9 @@ bool Parser::IsSpecialIdentifierName(const char * name, size_t nameLength) {
     Token::CompareNonNullTerminatedName(name, nameLength, Unreal::Name())    == 0 ||
     Token::CompareNonNullTerminatedName(name, nameLength, "u")               == 0 ||
     Token::CompareNonNullTerminatedName(name, nameLength, "v")               == 0 ||
-    Token::CompareNonNullTerminatedName(name, nameLength, "w")               == 0
+    Token::CompareNonNullTerminatedName(name, nameLength, "w")               == 0 ||
+    Token::CompareNonNullTerminatedName(name, nameLength, Boolean::TrueName())  == 0 ||
+    Token::CompareNonNullTerminatedName(name, nameLength, Boolean::FalseName()) == 0
   );
 }
 
@@ -66,6 +68,15 @@ Expression Parser::parseUntil(Token::Type stoppingType) {
     &Parser::parseUnexpected,      // Token::RightParenthesis
     &Parser::parseUnexpected,      // Token::RightBrace
     &Parser::parseUnexpected,      // Token::Comma
+    &Parser::parseBooleanOr,       // Token::BooleanOr
+    &Parser::parseBooleanXor,      // Token::BooleanXor
+    &Parser::parseBooleanAnd,      // Token::BooleanAnd
+    &Parser::parseComparisonNotEqual, // Token::ComparisonNotEqual
+    &Parser::parseComparisonLess,  // Token::ComparisonLess
+    &Parser::parseComparisonGreater, // Token::ComparisonGreater
+    &Parser::parseComparisonLessEqual, // Token::ComparisonLessEqual
+    &Parser::parseComparisonGreaterEqual, // Token::ComparisonGreaterEqual
+    &Parser::parseComparisonEqual, // Token::ComparisonEqual
     &Parser::parsePlus,            // Token::Plus
     &Parser::parseMinus,           // Token::Minus
     &Parser::parseTimes,           // Token::Times
@@ -258,21 +269,96 @@ void Parser::parseCaretWithParenthesis(Expression & leftHandSide, Token::Type st
   isThereImplicitMultiplication();
 }
 
-void Parser::parseEqual(Expression & leftHandSide, Token::Type stoppingType) {
+void Parser::parseComparison(Expression & leftHandSide, Token::Type stoppingType, ComparisonNode::Operator op, Token::Type selfType) {
   if (leftHandSide.isUninitialized()) {
-    m_status = Status::Error; // Equal must have a left operand
+    m_status = Status::Error;
     return;
   }
   Expression rightHandSide;
-  if (parseBinaryOperator(leftHandSide, rightHandSide, Token::Equal)) {
-    /* We parse until finding a token of lesser precedence than Equal. The next
-     * token is thus either EndOfStream or RightwardsArrow. */
-    leftHandSide = Equal::Builder(leftHandSide, rightHandSide);
+  if (parseBinaryOperator(leftHandSide, rightHandSide, selfType)) {
+    leftHandSide = Comparison::Builder(op, leftHandSide, rightHandSide);
   }
-  if (!m_nextToken.is(Token::EndOfStream)) {
-    m_status = Status::Error; // Equal should be top-most expression in Tree
+}
+
+void Parser::parseComparisonNotEqual(Expression & leftHandSide, Token::Type stoppingType) {
+  parseComparison(leftHandSide, stoppingType, ComparisonNode::Operator::NotEqual, Token::ComparisonNotEqual);
+}
+
+void Parser::parseComparisonLess(Expression & leftHandSide, Token::Type stoppingType) {
+  parseComparison(leftHandSide, stoppingType, ComparisonNode::Operator::Less, Token::ComparisonLess);
+}
+
+void Parser::parseComparisonGreater(Expression & leftHandSide, Token::Type stoppingType) {
+  parseComparison(leftHandSide, stoppingType, ComparisonNode::Operator::Greater, Token::ComparisonGreater);
+}
+
+void Parser::parseComparisonLessEqual(Expression & leftHandSide, Token::Type stoppingType) {
+  parseComparison(leftHandSide, stoppingType, ComparisonNode::Operator::LessEqual, Token::ComparisonLessEqual);
+}
+
+void Parser::parseComparisonGreaterEqual(Expression & leftHandSide, Token::Type stoppingType) {
+  parseComparison(leftHandSide, stoppingType, ComparisonNode::Operator::GreaterEqual, Token::ComparisonGreaterEqual);
+}
+
+void Parser::parseComparisonEqual(Expression & leftHandSide, Token::Type stoppingType) {
+  parseComparison(leftHandSide, stoppingType, ComparisonNode::Operator::Equal, Token::ComparisonEqual);
+}
+
+void Parser::parseBooleanAnd(Expression & leftHandSide, Token::Type stoppingType) {
+  if (leftHandSide.isUninitialized()) {
+    const Expression::FunctionHelper * const * functionHelper = GetReservedFunction("and", 3);
+    if (functionHelper == nullptr) {
+      m_status = Status::Error;
+      return;
+    }
+    parseReservedFunction(leftHandSide, functionHelper);
+    isThereImplicitMultiplication();
     return;
   }
+  Expression rightHandSide;
+  if (parseBinaryOperator(leftHandSide, rightHandSide, Token::BooleanAnd)) {
+    leftHandSide = And::BooleanInfixBuilder(leftHandSide, rightHandSide);
+  }
+}
+
+void Parser::parseBooleanOr(Expression & leftHandSide, Token::Type stoppingType) {
+  if (leftHandSide.isUninitialized()) {
+    const Expression::FunctionHelper * const * functionHelper = GetReservedFunction("or", 2);
+    if (functionHelper == nullptr) {
+      m_status = Status::Error;
+      return;
+    }
+    parseReservedFunction(leftHandSide, functionHelper);
+    isThereImplicitMultiplication();
+    return;
+  }
+  Expression rightHandSide;
+  if (parseBinaryOperator(leftHandSide, rightHandSide, Token::BooleanOr)) {
+    leftHandSide = Or::BooleanInfixBuilder(leftHandSide, rightHandSide);
+  }
+}
+
+void Parser::parseBooleanXor(Expression & leftHandSide, Token::Type stoppingType) {
+  if (leftHandSide.isUninitialized()) {
+    const Expression::FunctionHelper * const * functionHelper = GetReservedFunction("xor", 3);
+    if (functionHelper == nullptr) {
+      m_status = Status::Error;
+      return;
+    }
+    parseReservedFunction(leftHandSide, functionHelper);
+    isThereImplicitMultiplication();
+    return;
+  }
+  Expression rightHandSide;
+  if (parseBinaryOperator(leftHandSide, rightHandSide, Token::BooleanXor)) {
+    leftHandSide = Xor::BooleanInfixBuilder(leftHandSide, rightHandSide);
+  }
+}
+
+void Parser::parseEqual(Expression & leftHandSide, Token::Type stoppingType) {
+  /* Token::Equal is kept for precedence ordering with RightwardsArrow but '=' is
+   * tokenized as ComparisonEqual. */
+  m_status = Status::Error;
 }
 
 void Parser::parseRightwardsArrow(Expression & leftHandSide, Token::Type stoppingType) {
@@ -437,7 +523,11 @@ void Parser::parseSequence(Expression & leftHandSide, const char * name, Token::
 }
 
 void Parser::parseSpecialIdentifier(Expression & leftHandSide) {
-  if (m_currentToken.compareTo(Symbol::k_ans) == 0) {
+  if (m_currentToken.compareTo(Boolean::TrueName()) == 0) {
+    leftHandSide = Boolean::Builder(true);
+  } else if (m_currentToken.compareTo(Boolean::FalseName()) == 0) {
+    leftHandSide = Boolean::Builder(false);
+  } else if (m_currentToken.compareTo(Symbol::k_ans) == 0) {
     leftHandSide = Symbol::Ans();
   } else if (m_currentToken.compareTo(Infinity::Name()) == 0 ||
              m_currentToken.compareTo("inf")            == 0 ||

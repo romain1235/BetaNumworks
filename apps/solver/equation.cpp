@@ -3,6 +3,7 @@
 #include <apps/shared/poincare_helpers.h>
 #include <poincare/constant.h>
 #include <poincare/empty_context.h>
+#include <poincare/comparison.h>
 #include <poincare/equal.h>
 #include <poincare/undefined.h>
 #include <poincare/unreal.h>
@@ -49,6 +50,9 @@ Expression Equation::Model::standardForm(const Storage::Record * record, Context
   } else if (expressionRed.type() == ExpressionNode::Type::Equal) {
     Preferences * preferences = Preferences::sharedPreferences();
     returnedExpression = static_cast<const Equal&>(expressionRed).standardEquation(contextToUse, Expression::UpdatedComplexFormatWithExpressionInput(preferences->complexFormat(), expressionInputWithoutFunctions, contextToUse), preferences->angleUnit(),  GlobalPreferences::sharedGlobalPreferences()->unitFormat(), reductionTarget);
+  } else if (expressionRed.type() == ExpressionNode::Type::Comparison && static_cast<const Comparison&>(expressionRed).op() == ComparisonNode::Operator::Equal) {
+    Preferences * preferences = Preferences::sharedPreferences();
+    returnedExpression = Equal::Builder(expressionRed.childAtIndex(0), expressionRed.childAtIndex(1)).standardEquation(contextToUse, Expression::UpdatedComplexFormatWithExpressionInput(preferences->complexFormat(), expressionInputWithoutFunctions, contextToUse), preferences->angleUnit(),  GlobalPreferences::sharedGlobalPreferences()->unitFormat(), reductionTarget);
   } else {
     assert(expressionRed.type() == ExpressionNode::Type::Rational && static_cast<const Rational&>(expressionRed).isOne());
     // The equality was reduced which means the equality was always true.

@@ -638,6 +638,14 @@ Expression Multiplication::privateShallowReduce(ExpressionNode::ReductionContext
     }
   }
 
+  if (numberOfChildren() == 2
+      && childAtIndex(0).type() == ExpressionNode::Type::Not
+      && childAtIndex(1).type() == ExpressionNode::Type::Not) {
+    Expression result = Undefined::Builder();
+    replaceWithInPlace(result);
+    return result;
+  }
+
   /* Step 1: MultiplicationNode is associative, so let's start by merging children
    * which also are multiplications themselves.
    * TODO If the parent Expression is a Multiplication, one should perhaps

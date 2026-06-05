@@ -8,6 +8,8 @@
 #include <poincare/arc_tangent.h>
 #include <poincare/based_integer.h>
 #include <poincare/binary_operation.h>
+#include <poincare/boolean.h>
+#include <poincare/comparison.h>
 #include <poincare/binom_cdf.h>
 #include <poincare/binomial_coefficient.h>
 #include <poincare/binom_pdf.h>

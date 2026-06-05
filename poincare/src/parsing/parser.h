@@ -66,6 +66,16 @@ private:
   void parseCaret(Expression & leftHandSide, Token::Type stoppingType = (Token::Type)0);
   void parseCaretWithParenthesis(Expression & leftHandSide, Token::Type stoppingType = (Token::Type)0);
   void parseEqual(Expression & leftHandSide, Token::Type stoppingType = (Token::Type)0);
+  void parseComparison(Expression & leftHandSide, Token::Type stoppingType, ComparisonNode::Operator op, Token::Type selfType);
+  void parseComparisonNotEqual(Expression & leftHandSide, Token::Type stoppingType = (Token::Type)0);
+  void parseComparisonLess(Expression & leftHandSide, Token::Type stoppingType = (Token::Type)0);
+  void parseComparisonGreater(Expression & leftHandSide, Token::Type stoppingType = (Token::Type)0);
+  void parseComparisonLessEqual(Expression & leftHandSide, Token::Type stoppingType = (Token::Type)0);
+  void parseComparisonGreaterEqual(Expression & leftHandSide, Token::Type stoppingType = (Token::Type)0);
+  void parseComparisonEqual(Expression & leftHandSide, Token::Type stoppingType = (Token::Type)0);
+  void parseBooleanAnd(Expression & leftHandSide, Token::Type stoppingType = (Token::Type)0);
+  void parseBooleanOr(Expression & leftHandSide, Token::Type stoppingType = (Token::Type)0);
+  void parseBooleanXor(Expression & leftHandSide, Token::Type stoppingType = (Token::Type)0);
   void parseRightwardsArrow(Expression & leftHandSide, Token::Type stoppingType = (Token::Type)0);
   void parseLeftSuperscript(Expression & leftHandSide, Token::Type stoppingType = (Token::Type)0);
 

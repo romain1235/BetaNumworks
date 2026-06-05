@@ -10,6 +10,9 @@ namespace Poincare
   template<int T>
   class BinaryOperationNode final : public ExpressionNode {
   public:
+    bool isBooleanInfix() const { return m_isBooleanInfix; }
+    void setBooleanInfix(bool value) { m_isBooleanInfix = value; }
+
     // TreeNode
     size_t size() const override { return sizeof(BinaryOperationNode); }
     int numberOfChildren() const override;
@@ -21,7 +24,7 @@ namespace Poincare
 #endif
 
     // Properties
-    Type type() const override { return Type::And; }
+    Type type() const override;
 
     // Layout
     Layout createLayout(Preferences::PrintFloatMode floatDisplayMode, int numberOfSignificantDigits) const override;
@@ -39,6 +42,9 @@ namespace Poincare
     Evaluation<U> templatedApproximate(ApproximationContext approximationContext) const {
       return Complex<U>::RealUndefined();
     }
+
+  private:
+    bool m_isBooleanInfix = false;
   };
 
   class BinaryOperation final {
@@ -49,6 +55,8 @@ namespace Poincare
   public:
     And(const BinaryOperationNode<1> *n) : Expression(n) {}
     static And Builder(Expression child1, Expression child2) { return TreeHandle::FixedArityBuilder<And, BinaryOperationNode<1> >({child1, child2}); }
+    static And BooleanInfixBuilder(Expression child1, Expression child2);
+    bool isBooleanInfix() const { return static_cast<const BinaryOperationNode<1> *>(node())->isBooleanInfix(); }
     static constexpr Expression::FunctionHelper s_functionHelper = Expression::FunctionHelper("and", 2, &UntypedBuilderTwoChildren<And>);
     Expression shallowReduce(ExpressionNode::ReductionContext reductionContext);
   };
@@ -57,6 +65,8 @@ namespace Poincare
   public:
     Or(const BinaryOperationNode<5> *n) : Expression(n) {}
     static Or Builder(Expression child1, Expression child2) { return TreeHandle::FixedArityBuilder<Or, BinaryOperationNode<5> >({child1, child2}); }
+    static Or BooleanInfixBuilder(Expression child1, Expression child2);
+    bool isBooleanInfix() const { return static_cast<const BinaryOperationNode<5> *>(node())->isBooleanInfix(); }
     static constexpr Expression::FunctionHelper s_functionHelper = Expression::FunctionHelper("or", 2, &UntypedBuilderTwoChildren<Or>);
     Expression shallowReduce(ExpressionNode::ReductionContext reductionContext);
   };
@@ -65,6 +75,8 @@ namespace Poincare
   public:
     Xor(const BinaryOperationNode<9> *n) : Expression(n) {}
     static Xor Builder(Expression child1, Expression child2) { return TreeHandle::FixedArityBuilder<Xor, BinaryOperationNode<9> >({child1, child2}); }
+    static Xor BooleanInfixBuilder(Expression child1, Expression child2);
+    bool isBooleanInfix() const { return static_cast<const BinaryOperationNode<9> *>(node())->isBooleanInfix(); }
     static constexpr Expression::FunctionHelper s_functionHelper = Expression::FunctionHelper("xor", 2, &UntypedBuilderTwoChildren<Xor>);
     Expression shallowReduce(ExpressionNode::ReductionContext reductionContext);
   };

@@ -1,4 +1,6 @@
 #include <poincare/binary_operation.h>
+#include <poincare/comparison.h>
+#include <poincare/boolean.h>
 #include <poincare/layout_helper.h>
 #include <poincare/serialization_helper.h>
 #include <poincare/undefined.h>
@@ -52,19 +54,74 @@ namespace Poincare {
   template<> int BinaryOperationNode<31>::numberOfChildren() const { return TwosComplement::s_functionHelper.numberOfChildren(); }
   template<> int BinaryOperationNode<32>::numberOfChildren() const { return CeilingLog2::s_functionHelper.numberOfChildren(); }
 
+  template<> ExpressionNode::Type BinaryOperationNode<1>::type() const { return ExpressionNode::Type::And; }
+  template<> ExpressionNode::Type BinaryOperationNode<5>::type() const { return ExpressionNode::Type::Or; }
+  template<> ExpressionNode::Type BinaryOperationNode<9>::type() const { return ExpressionNode::Type::Xor; }
+  template<> ExpressionNode::Type BinaryOperationNode<13>::type() const { return ExpressionNode::Type::Not; }
+  template<> ExpressionNode::Type BinaryOperationNode<14>::type() const { return ExpressionNode::Type::NotExplicit; }
+  template<> ExpressionNode::Type BinaryOperationNode<15>::type() const { return ExpressionNode::Type::BitClear; }
+  template<> ExpressionNode::Type BinaryOperationNode<16>::type() const { return ExpressionNode::Type::BitFlip; }
+  template<> ExpressionNode::Type BinaryOperationNode<17>::type() const { return ExpressionNode::Type::BitGet; }
+  template<> ExpressionNode::Type BinaryOperationNode<18>::type() const { return ExpressionNode::Type::BitSet; }
+  template<> ExpressionNode::Type BinaryOperationNode<19>::type() const { return ExpressionNode::Type::BitsClear; }
+  template<> ExpressionNode::Type BinaryOperationNode<20>::type() const { return ExpressionNode::Type::BitsClearExplicit; }
+  template<> ExpressionNode::Type BinaryOperationNode<21>::type() const { return ExpressionNode::Type::ShiftLogicLeft; }
+  template<> ExpressionNode::Type BinaryOperationNode<23>::type() const { return ExpressionNode::Type::ShiftLogicRight; }
+  template<> ExpressionNode::Type BinaryOperationNode<25>::type() const { return ExpressionNode::Type::ShiftArithmeticRight; }
+  template<> ExpressionNode::Type BinaryOperationNode<26>::type() const { return ExpressionNode::Type::ShiftArithmeticRightExplicit; }
+  template<> ExpressionNode::Type BinaryOperationNode<27>::type() const { return ExpressionNode::Type::RotateLeft; }
+  template<> ExpressionNode::Type BinaryOperationNode<28>::type() const { return ExpressionNode::Type::RotateLeftExplicit; }
+  template<> ExpressionNode::Type BinaryOperationNode<29>::type() const { return ExpressionNode::Type::RotateRight; }
+  template<> ExpressionNode::Type BinaryOperationNode<30>::type() const { return ExpressionNode::Type::RotateRightExplicit; }
+  template<> ExpressionNode::Type BinaryOperationNode<31>::type() const { return ExpressionNode::Type::TwosComplement; }
+  template<> ExpressionNode::Type BinaryOperationNode<32>::type() const { return ExpressionNode::Type::CeilingLog2; }
+
   template<>
   Layout BinaryOperationNode<1>::createLayout(Preferences::PrintFloatMode floatDisplayMode, int numberOfSignificantDigits) const {
+    if (isBooleanInfix()) {
+      return LayoutHelper::Infix(And(this), floatDisplayMode, numberOfSignificantDigits, " and ");
+    }
     return LayoutHelper::Prefix(this, floatDisplayMode, numberOfSignificantDigits, And::s_functionHelper.name());
   }
 
   template<>
   Layout BinaryOperationNode<5>::createLayout(Preferences::PrintFloatMode floatDisplayMode, int numberOfSignificantDigits) const {
+    if (isBooleanInfix()) {
+      return LayoutHelper::Infix(Or(this), floatDisplayMode, numberOfSignificantDigits, " or ");
+    }
     return LayoutHelper::Prefix(this, floatDisplayMode, numberOfSignificantDigits, Or::s_functionHelper.name());
   }
 
   template<>
   Layout BinaryOperationNode<9>::createLayout(Preferences::PrintFloatMode floatDisplayMode, int numberOfSignificantDigits) const {
+    if (isBooleanInfix()) {
+      return LayoutHelper::Infix(Xor(this), floatDisplayMode, numberOfSignificantDigits, " xor ");
+    }
     return LayoutHelper::Prefix(this, floatDisplayMode, numberOfSignificantDigits, Xor::s_functionHelper.name());
+  }
+
+  template<>
+  int BinaryOperationNode<1>::serialize(char * buffer, int bufferSize, Preferences::PrintFloatMode floatDisplayMode, int numberOfSignificantDigits) const {
+    if (isBooleanInfix()) {
+      return SerializationHelper::Infix(this, buffer, bufferSize, floatDisplayMode, numberOfSignificantDigits, " and ");
+    }
+    return SerializationHelper::Prefix(this, buffer, bufferSize, floatDisplayMode, numberOfSignificantDigits, And::s_functionHelper.name());
+  }
+
+  template<>
+  int BinaryOperationNode<5>::serialize(char * buffer, int bufferSize, Preferences::PrintFloatMode floatDisplayMode, int numberOfSignificantDigits) const {
+    if (isBooleanInfix()) {
+      return SerializationHelper::Infix(this, buffer, bufferSize, floatDisplayMode, numberOfSignificantDigits, " or ");
+    }
+    return SerializationHelper::Prefix(this, buffer, bufferSize, floatDisplayMode, numberOfSignificantDigits, Or::s_functionHelper.name());
+  }
+
+  template<>
+  int BinaryOperationNode<9>::serialize(char * buffer, int bufferSize, Preferences::PrintFloatMode floatDisplayMode, int numberOfSignificantDigits) const {
+    if (isBooleanInfix()) {
+      return SerializationHelper::Infix(this, buffer, bufferSize, floatDisplayMode, numberOfSignificantDigits, " xor ");
+    }
+    return SerializationHelper::Prefix(this, buffer, bufferSize, floatDisplayMode, numberOfSignificantDigits, Xor::s_functionHelper.name());
   }
 
   template<>
@@ -289,6 +346,51 @@ namespace Poincare {
     return CeilingLog2(this).shallowReduce(reductionContext);
   }
 
+  static int booleanOperandValue(Expression operand, ExpressionNode::ReductionContext reductionContext) {
+    if (operand.type() == ExpressionNode::Type::Boolean) {
+      return static_cast<const Boolean &>(operand).value() ? 1 : 0;
+    }
+    return BooleanValue(operand, reductionContext);
+  }
+
+  static Expression evaluateBooleanBinary(Expression e, bool (*combine)(bool, bool), ExpressionNode::ReductionContext reductionContext) {
+    int a = booleanOperandValue(e.childAtIndex(0), reductionContext);
+    if (a == 2) {
+      return Expression();
+    }
+    int b = booleanOperandValue(e.childAtIndex(1), reductionContext);
+    if (b == 2) {
+      return Expression();
+    }
+    return Boolean::Builder(combine(a == 1, b == 1));
+  }
+
+  static Expression evaluateBooleanNot(Expression e, ExpressionNode::ReductionContext reductionContext) {
+    int a = BooleanValue(e.childAtIndex(0), reductionContext);
+    if (a == 2) {
+      return Expression();
+    }
+    return Boolean::Builder(a != 1);
+  }
+
+  And And::BooleanInfixBuilder(Expression child0, Expression child1) {
+    And result = Builder(child0, child1);
+    static_cast<BinaryOperationNode<1> *>(result.node())->setBooleanInfix(true);
+    return result;
+  }
+
+  Or Or::BooleanInfixBuilder(Expression child0, Expression child1) {
+    Or result = Builder(child0, child1);
+    static_cast<BinaryOperationNode<5> *>(result.node())->setBooleanInfix(true);
+    return result;
+  }
+
+  Xor Xor::BooleanInfixBuilder(Expression child0, Expression child1) {
+    Xor result = Builder(child0, child1);
+    static_cast<BinaryOperationNode<9> *>(result.node())->setBooleanInfix(true);
+    return result;
+  }
+
   // Check to make sure the the expression is a positive integer
   Integer getValidInteger(Expression a) {
     if (a.type() != ExpressionNode::Type::Rational) {
@@ -315,7 +417,7 @@ namespace Poincare {
 
     if(aq.isNegative() && t != ExpressionNode::Type::TwosComplement && t != ExpressionNode::Type::CeilingLog2) {
       return Undefined::Builder();
-    } 
+    }
 
     if(t != ExpressionNode::Type::Not && t != ExpressionNode::Type::CeilingLog2) {
       bq = getValidInteger(e.childAtIndex(1));
@@ -423,20 +525,95 @@ namespace Poincare {
     return result.shallowReduce(reductionContext);
   }
 
+  static bool isBooleanLogicOperand(Expression e) {
+    switch (e.type()) {
+    case ExpressionNode::Type::Boolean:
+    case ExpressionNode::Type::Comparison:
+      return true;
+    case ExpressionNode::Type::And:
+      return static_cast<const And &>(e).isBooleanInfix();
+    case ExpressionNode::Type::Or:
+      return static_cast<const Or &>(e).isBooleanInfix();
+    case ExpressionNode::Type::Xor:
+      return static_cast<const Xor &>(e).isBooleanInfix();
+    default:
+      return false;
+    }
+  }
+
   Expression And::shallowReduce(ExpressionNode::ReductionContext reductionContext) {
+    if (static_cast<const BinaryOperationNode<1> *>(node())->isBooleanInfix()) {
+      Expression booleanResult = evaluateBooleanBinary(*this, [](bool x, bool y) { return x && y; }, reductionContext);
+      if (!booleanResult.isUninitialized()) {
+        if (parent().isUninitialized()) {
+          return booleanResult;
+        }
+        replaceWithInPlace(booleanResult);
+        return *this;
+      }
+    }
+    if (static_cast<const BinaryOperationNode<1> *>(node())->isBooleanInfix()) {
+      if (parent().isUninitialized()) {
+        return Undefined::Builder();
+      }
+      return replaceWithUndefinedInPlace();
+    }
     return BinaryOperation::shallowReduceDirect(*this, ExpressionNode::Type::And, reductionContext);
   }
 
   Expression Or::shallowReduce(ExpressionNode::ReductionContext reductionContext) {
+    if (static_cast<const BinaryOperationNode<5> *>(node())->isBooleanInfix()) {
+      Expression booleanResult = evaluateBooleanBinary(*this, [](bool x, bool y) { return x || y; }, reductionContext);
+      if (!booleanResult.isUninitialized()) {
+        if (parent().isUninitialized()) {
+          return booleanResult;
+        }
+        replaceWithInPlace(booleanResult);
+        return *this;
+      }
+    }
+    if (static_cast<const BinaryOperationNode<5> *>(node())->isBooleanInfix()) {
+      if (parent().isUninitialized()) {
+        return Undefined::Builder();
+      }
+      return replaceWithUndefinedInPlace();
+    }
     Expression e = Expression::defaultShallowReduce();
     return BinaryOperation::shallowReduceDirect(e, ExpressionNode::Type::Or, reductionContext);
   }
 
   Expression Xor::shallowReduce(ExpressionNode::ReductionContext reductionContext) {
+    if (static_cast<const BinaryOperationNode<9> *>(node())->isBooleanInfix()) {
+      Expression booleanResult = evaluateBooleanBinary(*this, [](bool x, bool y) { return x != y; }, reductionContext);
+      if (!booleanResult.isUninitialized()) {
+        if (parent().isUninitialized()) {
+          return booleanResult;
+        }
+        replaceWithInPlace(booleanResult);
+        return *this;
+      }
+    }
+    if (static_cast<const BinaryOperationNode<9> *>(node())->isBooleanInfix()) {
+      if (parent().isUninitialized()) {
+        return Undefined::Builder();
+      }
+      return replaceWithUndefinedInPlace();
+    }
     return BinaryOperation::shallowReduceDirect(*this, ExpressionNode::Type::Xor, reductionContext);
   }
 
   Expression Not::shallowReduce(ExpressionNode::ReductionContext reductionContext) {
+    Expression booleanResult;
+    if (isBooleanLogicOperand(childAtIndex(0))) {
+      booleanResult = evaluateBooleanNot(*this, reductionContext);
+    }
+    if (!booleanResult.isUninitialized()) {
+      if (parent().isUninitialized()) {
+        return booleanResult;
+      }
+      replaceWithInPlace(booleanResult);
+      return *this;
+    }
     return BinaryOperation::shallowReduceDirect(*this, ExpressionNode::Type::Not, reductionContext);
   }
 

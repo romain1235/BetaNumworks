@@ -680,6 +680,13 @@ void makePositive(Expression * e, bool * isNegative) {
 }
 
 void Expression::beautifyAndApproximateScalar(Expression * simplifiedExpression, Expression * approximateExpression, ExpressionNode::ReductionContext userReductionContext, Context * context, Preferences::ComplexFormat complexFormat, Preferences::AngleUnit angleUnit) {
+  if (type() == ExpressionNode::Type::Boolean) {
+    *simplifiedExpression = clone();
+    if (approximateExpression) {
+      *approximateExpression = clone();
+    }
+    return;
+  }
   bool hasUnits = hasUnit();
   /* Case 1: the reduced expression is ComplexCartesian or pure real, we can
    * take into account the complex format to display a+i*b or r*e^(i*th) */

@@ -1667,6 +1667,25 @@ QUIZ_CASE(poincare_hyperbolic_trigonometry) {
   assert_parsed_expression_simplify_to("atanh(tanh(-3))", "-3", User, Radian, Metric, Real);
 }
 
+QUIZ_CASE(poincare_boolean_logic) {
+  assert_parsed_expression_simplify_to("5=3", "false");
+  assert_parsed_expression_simplify_to("5>3", "true");
+  assert_parsed_expression_simplify_to("5=3 or 5>3", "true");
+  assert_parsed_expression_simplify_to("5=3 and 5>3", "false");
+  assert_parsed_expression_simplify_to("true or false", "true");
+  assert_parsed_expression_simplify_to("false and true", "false");
+  assert_parsed_expression_simplify_to("5 and 7", Undefined::Name());
+  assert_parsed_expression_simplify_to("5 or 7", Undefined::Name());
+  assert_parsed_expression_simplify_to("and(5,7)", "5");
+  assert_parsed_expression_simplify_to("or(5,7)", "7");
+  assert_parsed_expression_simplify_to("a=a", "true", User, Radian, Metric, Cartesian, DoNotReplaceAnySymbol);
+  assert_parsed_expression_simplify_to("a+2=a", "false", User, Radian, Metric, Cartesian, DoNotReplaceAnySymbol);
+  assert_parsed_expression_simplify_to("a=b", Undefined::Name(), User, Radian, Metric, Cartesian, DoNotReplaceAnySymbol);
+  assert_parsed_expression_simplify_to("(a+b)^2=a^2+b^2+2×a×b", "true", User, Radian, Metric, Cartesian, DoNotReplaceAnySymbol);
+  assert_parsed_expression_simplify_to("(a+b)^2=(a-b)^2+3×a×b", "false", User, Radian, Metric, Cartesian, DoNotReplaceAnySymbol);
+  assert_parsed_expression_simplify_to("(a+b)^2=(a-b)^2+4×a×b", "true", User, Radian, Metric, Cartesian, DoNotReplaceAnySymbol);
+}
+
 QUIZ_CASE(poincare_probability) {
   assert_parsed_expression_simplify_to("invnorm(-1.3,2,3)", Undefined::Name());
   assert_parsed_expression_simplify_to("invnorm(0,2,3)", "-∞");
