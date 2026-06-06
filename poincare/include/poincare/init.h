@@ -3,6 +3,8 @@
 
 namespace Poincare {
 
+void Init();
+
 void Tidy();
 
 }
