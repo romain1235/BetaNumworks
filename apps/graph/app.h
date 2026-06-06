@@ -8,6 +8,7 @@
 #include "values/values_controller.h"
 #include "../shared/function_app.h"
 #include "../shared/interval.h"
+#include "../shared/poincare_local_pool.h"
 
 namespace Graph {
 
@@ -61,6 +62,7 @@ public:
   }
 private:
   App(Snapshot * snapshot);
+  Shared::PoincareLocalPool m_poincarePool;
   ListController m_listController;
   ButtonRowController m_listFooter;
   ButtonRowController m_listHeader;

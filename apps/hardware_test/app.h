@@ -12,6 +12,7 @@
 #include "serial_number_controller.h"
 #include "vblank_test_controller.h"
 #include "../shared/shared_app.h"
+#include "../shared/poincare_local_pool.h"
 
 namespace HardwareTest {
 
@@ -42,6 +43,7 @@ private:
   };
 
   App(Snapshot * snapshot);
+  Shared::PoincareLocalPool m_poincarePool;
   WizardViewController m_wizardViewController;
 };
 

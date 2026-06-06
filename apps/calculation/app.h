@@ -4,9 +4,9 @@
 #include "calculation_store.h"
 #include "edit_expression_controller.h"
 #include "history_controller.h"
-#include "../shared/text_field_delegate_app.h"
 #include <escher.h>
 #include "../shared/shared_app.h"
+#include "../shared/poincare_local_pool.h"
 
 namespace Calculation {
 
@@ -47,6 +47,7 @@ public:
 
 private:
   App(Snapshot * snapshot);
+  Shared::PoincareLocalPool m_poincarePool;
   HistoryController m_historyController;
   void didBecomeActive(Window * window) override;
   void willBecomeInactive() override;

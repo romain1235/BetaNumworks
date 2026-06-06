@@ -26,9 +26,6 @@ void ion_main(int argc, const char * const argv[]) {
   Ion::Board::lockUnlockedPCBVersion();
 #endif
 
-  // Initialize Poincare::TreePool::sharedPool
-  Poincare::Init();
-
 #if EPSILON_GETOPT
   for (int i=1; i<argc; i++) {
     if (argv[i][0] != '-' || argv[i][1] != '-') {

@@ -3,6 +3,7 @@
 
 #include <escher.h>
 #include "list_book_controller.h"
+#include "../shared/poincare_local_pool.h"
 
 namespace Reader {
 
@@ -21,6 +22,7 @@ public:
   };
 private:
   App(Snapshot * snapshot);
+  Shared::PoincareLocalPool m_poincarePool;
   ListBookController m_listBookController;
   AlternateEmptyViewController m_alternateEmptyViewController;
   StackViewController m_stackViewController;

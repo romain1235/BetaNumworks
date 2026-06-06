@@ -4,6 +4,7 @@
 #include <escher.h>
 #include "../shared/sequence_context.h"
 #include "../shared/sequence_store.h"
+#include "../shared/poincare_local_pool.h"
 #include "graph/graph_controller.h"
 #include "graph/curve_view_range.h"
 #include "list/list_controller.h"
@@ -60,6 +61,7 @@ public:
   }
 private:
   App(Snapshot * snapshot);
+  Shared::PoincareLocalPool m_poincarePool;
   Shared::SequenceContext m_sequenceContext;
   ListController m_listController;
   ButtonRowController m_listFooter;

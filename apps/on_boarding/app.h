@@ -5,6 +5,7 @@
 #include "logo_controller.h"
 #include "localization_controller.h"
 #include "../shared/shared_app.h"
+#include "../shared/poincare_local_pool.h"
 
 namespace OnBoarding {
 
@@ -19,6 +20,7 @@ public:
   void didBecomeActive(Window * window) override;
 private:
   App(Snapshot * snapshot);
+  Shared::PoincareLocalPool m_poincarePool;
   void reinitOnBoarding();
   LocalizationController m_localizationController;
   LogoController m_logoController;

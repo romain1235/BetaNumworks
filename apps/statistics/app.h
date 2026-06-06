@@ -9,6 +9,7 @@
 #include "store_controller.h"
 #include "../shared/text_field_delegate_app.h"
 #include "../shared/shared_app.h"
+#include "../shared/poincare_local_pool.h"
 
 namespace Statistics {
 
@@ -48,6 +49,7 @@ public:
   TELEMETRY_ID("Statistics");
 private:
   App(Snapshot * snapshot, Poincare::Context * parentContext);
+  Shared::PoincareLocalPool m_poincarePool;
   CalculationController m_calculationController;
   AlternateEmptyViewController m_calculationAlternateEmptyViewController;
   ButtonRowController m_calculationHeader;

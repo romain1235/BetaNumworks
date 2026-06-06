@@ -36,7 +36,7 @@ public:
     s_topmostExceptionCheckpoint->rollback();
   }
 
-  ExceptionCheckpoint();
+  ExceptionCheckpoint(bool poolInitialized = true);
 
   ~ExceptionCheckpoint() {
     s_topmostExceptionCheckpoint = m_parent;

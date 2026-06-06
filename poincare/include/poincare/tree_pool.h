@@ -21,6 +21,8 @@ class TreePool final {
 public:
   static TreePool * sharedPool() { assert(SharedStaticPool != nullptr); return SharedStaticPool; }
   static void RegisterPool(TreePool * pool) {  assert(SharedStaticPool == nullptr); SharedStaticPool = pool; }
+  static void UnregisterPool() { SharedStaticPool = nullptr; }
+  static bool PoolInitialized() { return SharedStaticPool != nullptr; }
 
   TreePool() : m_cursor(buffer()) {}
 
@@ -49,6 +51,7 @@ public:
   __attribute__((__used__)) void log() { treeLog(std::cout); }
 #endif
   int numberOfNodes() const;
+  void reset();
 
 private:
   constexpr static int BufferSize = 16384;

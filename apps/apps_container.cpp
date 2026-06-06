@@ -344,7 +344,7 @@ void AppsContainer::run() {
    * called. During a longjump, the stack pointer is set to this stored stack
    * pointer value, so the method where we call setjump must remain in the call
    * tree for the jump to work. */
-  Poincare::ExceptionCheckpoint ecp;
+  Poincare::ExceptionCheckpoint ecp(false);
 
   if (ExceptionRun(ecp)) {
     /* Normal execution. The exception checkpoint must be created before
