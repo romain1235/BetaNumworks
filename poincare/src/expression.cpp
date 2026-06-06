@@ -88,14 +88,15 @@ void Expression::SetCircuitBreaker(CircuitBreaker cb) {
 }
 
 bool Expression::ShouldStopProcessing() {
-  if (sCircuitBreaker == nullptr) {
-    return false;
-  }
-  if (sCircuitBreaker()) {
+  if (CheckInterruption()) {
     sSimplificationHasBeenInterrupted = true;
     return true;
   }
   return false;
+}
+
+bool Expression::CheckInterruption() {
+  return sCircuitBreaker != nullptr && sCircuitBreaker();
 }
 
 void Expression::SetInterruption(bool interrupt) {

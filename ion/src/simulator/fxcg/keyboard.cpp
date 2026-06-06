@@ -250,6 +250,30 @@ State scan() {
   return state;
 }
 
+static bool isGintKeyPairDown(const KeyPair & keyPair) {
+  if (!keydown(keyPair.gintKey())) {
+    return false;
+  }
+  if (!keyPair.ignoreShiftAlpha() &&
+      (keyPair.gintShift() != Events::isShiftActive() ||
+       keyPair.gintAlpha() != Events::isAlphaActive())) {
+    return false;
+  }
+  return true;
+}
+
+bool isKeyDown(Key k) {
+  if (k == Key::Home && keydown(KEY_MENU)) {
+    return true;
+  }
+  for (int i = 0; i < sNumberOfKeyPairs; i++) {
+    if (sKeyPairs[i].key() == k && isGintKeyPairDown(sKeyPairs[i])) {
+      return true;
+    }
+  }
+  return false;
+}
+
 }
 }
 

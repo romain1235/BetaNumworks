@@ -267,6 +267,10 @@ State scan() {
   return state;
 }
 
+bool isKeyDown(Key k) {
+  return scan().keyDown(k);
+}
+
 }
 }
 

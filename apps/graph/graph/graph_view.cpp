@@ -24,9 +24,13 @@ void GraphView::reload() {
 
 void GraphView::drawRect(KDContext * ctx, KDRect rect) const {
   FunctionGraphView::drawRect(ctx, rect);
+  resetDrawingInterruption();
   ContinuousFunctionStore * functionStore = App::app()->functionStore();
   const int activeFunctionsCount = functionStore->numberOfActiveFunctions();
   for (int i = 0; i < activeFunctionsCount ; i++) {
+    if (drawingWasInterrupted()) {
+      break;
+    }
     Ion::Storage::Record record = functionStore->activeRecordAtIndex(i);
     ExpiringPointer<ContinuousFunction> f = functionStore->modelForRecord(record);
     ContinuousFunctionCache * cch = functionStore->cacheAtIndex(i);
@@ -93,6 +97,9 @@ void GraphView::drawRect(KDContext * ctx, KDRect rect) const {
           return f->evaluateXYAtParameter(t, c);
         }, f.operator->(), context(), false, f->color());
     }
+  }
+  if (drawingWasInterrupted()) {
+    const_cast<GraphView *>(this)->markRectAsDirty(rect);
   }
 }
 

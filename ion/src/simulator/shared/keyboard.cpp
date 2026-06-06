@@ -75,6 +75,25 @@ State scan() {
   return state;
 }
 
+bool isKeyDown(Key k) {
+  if (Simulator::Window::isHeadless()) {
+    return sKeyboardState.keyDown(k);
+  }
+  SDL_PumpEvents();
+  const uint8_t * SDLstate = SDL_GetKeyboardState(NULL);
+  for (int i = 0; i < sNumberOfKeyPairs; i++) {
+    if (sKeyPairs[i].key() == k && SDLstate[sKeyPairs[i].SDLKey()]) {
+      return true;
+    }
+  }
+#if !EPSILON_SDL_SCREEN_ONLY
+  if (Simulator::Layout::getHighlightedKey() == k && (SDL_GetMouseState(nullptr, nullptr) & SDL_BUTTON(SDL_BUTTON_LEFT))) {
+    return true;
+  }
+#endif
+  return sKeyboardState.keyDown(k);
+}
+
 }
 }
 

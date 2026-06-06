@@ -165,6 +165,9 @@ public:
   typedef bool (*CircuitBreaker)();
   static void SetCircuitBreaker(CircuitBreaker cb);
   static bool ShouldStopProcessing();
+  /* CheckInterruption calls the circuit breaker without setting the
+   * simplification interrupted flag. */
+  static bool CheckInterruption();
   static void SetInterruption(bool interrupt);
 
   /* Hierarchy */

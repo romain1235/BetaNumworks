@@ -78,6 +78,7 @@ private:
 };
 
 State scan();
+bool isKeyDown(Key k);
 
 static_assert(sizeof(State)*8>NumberOfKeys, "Ion::Keyboard::State cannot hold a keyboard snapshot");
 

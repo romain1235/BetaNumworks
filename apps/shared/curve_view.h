@@ -29,6 +29,8 @@ public:
       CursorView * cursorView = nullptr,
       View * okView = nullptr,
       bool displayBanner = true);
+  static void resetDrawingInterruption();
+  static bool drawingWasInterrupted();
   virtual void reload();
   // When the main view is selected, the banner view is visible
   bool isMainViewSelected() const;

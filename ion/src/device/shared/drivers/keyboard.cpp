@@ -69,6 +69,11 @@ State scan() {
   return State(state);
 }
 
+bool isKeyDown(Key k) {
+  activateRow(rowForKey(k));
+  return columnIsActive(columnForKey(k));
+}
+
 }
 }
 

@@ -2,6 +2,8 @@
 #include "../constant.h"
 #include "dots.h"
 #include <poincare/print_float.h>
+#include <ion/keyboard.h>
+#include <ion/timing.h>
 #include <assert.h>
 #include <string.h>
 #include <algorithm>
@@ -14,6 +16,41 @@
 using namespace Poincare;
 
 namespace Shared {
+
+static bool s_drawingInterrupted = false;
+static bool s_backWasDownAtDrawingStart = false;
+static uint64_t s_lastInterruptionCheckMs = 0;
+
+static bool shouldInterruptDrawing() {
+  return Ion::Keyboard::isKeyDown(Ion::Keyboard::Key::Back) && !s_backWasDownAtDrawingStart;
+}
+
+/* Throttled polling (~60 Hz) to keep keyboard scan cheap. */
+static bool pollDrawingInterruption() {
+  if (s_drawingInterrupted) {
+    return true;
+  }
+  uint64_t now = Ion::Timing::millis();
+  if (now - s_lastInterruptionCheckMs < 16) {
+    return false;
+  }
+  s_lastInterruptionCheckMs = now;
+  if (shouldInterruptDrawing()) {
+    s_drawingInterrupted = true;
+    return true;
+  }
+  return false;
+}
+
+void CurveView::resetDrawingInterruption() {
+  s_drawingInterrupted = false;
+  s_lastInterruptionCheckMs = 0;
+  s_backWasDownAtDrawingStart = Ion::Keyboard::isKeyDown(Ion::Keyboard::Key::Back);
+}
+
+bool CurveView::drawingWasInterrupted() {
+  return s_drawingInterrupted;
+}
 
 CurveView::CurveView(CurveViewRange * curveViewRange, CurveViewCursor * curveViewCursor, BannerView * bannerView,
     CursorView * cursorView, View * okView, bool displayBanner) :
@@ -624,6 +661,9 @@ const uint8_t thickStampMask[(thickStampSize+1)*(thickStampSize+1)] = {
 constexpr static int k_maxNumberOfIterations = 10;
 
 void CurveView::drawCurve(KDContext * ctx, KDRect rect, float tStart, float tEnd, float tStep, EvaluateXYForFloatParameter xyFloatEvaluation, void * model, void * context, bool drawStraightLinesEarly, KDColor color, bool thick, bool colorUnderCurve, float colorLowerBound, float colorUpperBound, EvaluateXYForDoubleParameter xyDoubleEvaluation) const {
+  if (pollDrawingInterruption()) {
+    return;
+  }
   float previousT = NAN;
   float t = NAN;
   float previousX = NAN;
@@ -633,6 +673,9 @@ void CurveView::drawCurve(KDContext * ctx, KDRect rect, float tStart, float tEnd
   int i = 0;
   bool isLastSegment = false;
   do {
+    if (pollDrawingInterruption()) {
+      return;
+    }
     previousT = t;
     t = tStart + (i++) * tStep;
     if (t <= tStart) {
@@ -832,6 +875,9 @@ static bool pointInBoundingBox(float x1, float y1, float x2, float y2, float xC,
 }
 
 void CurveView::joinDots(KDContext * ctx, KDRect rect, EvaluateXYForFloatParameter xyFloatEvaluation , void * model, void * context, bool drawStraightLinesEarly, float t, float x, float y, float s, float u, float v, KDColor color, bool thick, int maxNumberOfRecursion, EvaluateXYForDoubleParameter xyDoubleEvaluation) const {
+  if (pollDrawingInterruption()) {
+    return;
+  }
   const bool isFirstDot = std::isnan(t);
   const bool isLeftDotValid = !(
       std::isnan(x) || std::isinf(x) ||

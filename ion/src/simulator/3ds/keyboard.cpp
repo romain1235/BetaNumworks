@@ -138,5 +138,24 @@ State scan() {
   return state;
 }
 
+bool isKeyDown(Key k) {
+  hidScanInput();
+  u32 kDown = hidKeysDown();
+  switch (k) {
+  case Key::Up: return kDown & KEY_DUP;
+  case Key::Down: return kDown & KEY_DDOWN;
+  case Key::Left: return kDown & KEY_DLEFT;
+  case Key::Right: return kDown & KEY_DRIGHT;
+  case Key::OK: return kDown & KEY_A;
+  case Key::Back: return kDown & KEY_B;
+  case Key::Shift: return kDown & KEY_Y;
+  case Key::Alpha: return kDown & KEY_X;
+  case Key::Home: return kDown & KEY_START;
+  case Key::OnOff: return kDown & KEY_SELECT;
+  default:
+    return scan().keyDown(k);
+  }
+}
+
 }
 }

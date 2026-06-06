@@ -339,8 +339,7 @@ int extapp_getKey(int allowSuspend, bool * alphaWasActive) {
 }
 
 bool extapp_isKeydown(int key) {
-  Ion::Keyboard::State scan = Ion::Keyboard::scan();
-  return scan.keyDown(Ion::Keyboard::Key(key));
+  return Ion::Keyboard::isKeyDown(Ion::Keyboard::Key(key));
 }
 
 bool extapp_eraseSector(void * ptr) {
