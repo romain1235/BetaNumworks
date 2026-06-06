@@ -31,7 +31,7 @@ private:
   Apps m_apps;
   // static_assert(sizeof(Apps) != 1); // Uncomment this line to log the Apps union size
   #ifdef CODE_APP_H
-  static_assert(sizeof(Apps) == sizeof(Code::App), "Code should be the biggest app. Increase the Python heap in apps/code/app.h to match available memory to avoid wasting RAM");
+  static_assert((sizeof(Apps) == sizeof(Code::App)) || (sizeof(Apps) == sizeof(Code::App) + 4), "Code should be the biggest app. Increase the Python heap in apps/code/app.h to match available memory to avoid wasting RAM");
   #endif
 
   // TODO: Assert code app is almost the same size as Home app

@@ -54,7 +54,7 @@ public:
   void reset();
 
 private:
-  constexpr static int BufferSize = 16384;
+  constexpr static int BufferSize = 38700;
   constexpr static int MaxNumberOfNodes = BufferSize/sizeof(TreeNode);
   constexpr static int k_maxNodeOffset = BufferSize/ByteAlignment;
 
