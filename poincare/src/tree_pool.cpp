@@ -179,4 +179,13 @@ void TreePool::freePoolFromNode(TreeNode * firstNodeToDiscard) {
   m_cursor = reinterpret_cast<char *>(firstNodeToDiscard);
 }
 
+void TreePool::reset() {
+  // Initialize the tree pool to an empty state. Used when switching apps with
+  // the pool being in an undefined state
+  memset(buffer(), 0, BufferSize);
+  m_cursor = buffer();
+  memset(m_nodeForIdentifierOffset, 0, sizeof(m_nodeForIdentifierOffset));
+  m_identifiers = IdentifierStack();
+}
+
 }

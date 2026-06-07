@@ -3,6 +3,7 @@
 
 #include "main_controller.h"
 #include "../shared/text_field_delegate_app.h"
+#include "../shared/poincare_local_pool.h"
 
 namespace Settings {
 
@@ -23,6 +24,7 @@ public:
   TELEMETRY_ID("Settings");
 private:
   App(Snapshot * snapshot);
+  Shared::PoincareLocalPool m_poincarePool;
   MainController m_mainController;
   StackViewController m_stackViewController;
 };

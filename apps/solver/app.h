@@ -8,6 +8,7 @@
 #include "interval_controller.h"
 #include "solutions_controller.h"
 #include "../shared/shared_app.h"
+#include "../shared/poincare_local_pool.h"
 
 namespace Solver {
 
@@ -48,6 +49,7 @@ public:
   TELEMETRY_ID("Solver");
 private:
   App(Snapshot * snapshot);
+  Shared::PoincareLocalPool m_poincarePool;
   SolutionsController m_solutionsController;
   IntervalController m_intervalController;
   AlternateEmptyViewController m_alternateEmptyViewController;

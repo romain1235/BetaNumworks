@@ -26,14 +26,10 @@ void ion_main(int argc, const char * const argv[]) {
 #if 0 // We don't want OTP locked on omega :p
   Ion::Board::lockUnlockedPCBVersion();
 #endif
-
-  // Initialize Poincare::TreePool::sharedPool
-  Poincare::Init();
   // Apply stored theme BEFORE AppsContainer is constructed, so that all views
   // (including TitleBarView which caches Palette::Toolbar at construction) get
   // the correct theme colors.
   ThemeLoader::applyStoredTheme();
-
 #if EPSILON_GETOPT
   for (int i=1; i<argc; i++) {
     if (argv[i][0] != '-' || argv[i][1] != '-') {

@@ -13,7 +13,8 @@ App::Descriptor::ExaminationLevel App::Descriptor::examinationLevel() {
 void App::Snapshot::pack(App * app) {
   tidy();
   app->~App();
-  assert(Poincare::TreePool::sharedPool()->numberOfNodes() == 0);
+  // We can't unregister the pool sooner because packing the app may call Poincare
+  Poincare::TreePool::UnregisterPool();
 }
 
 bool App::processEvent(Ion::Events::Event event) {

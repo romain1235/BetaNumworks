@@ -9,6 +9,7 @@
 #include "store.h"
 #include "store_controller.h"
 #include "../shared/shared_app.h"
+#include "../shared/poincare_local_pool.h"
 
 namespace Regression {
 
@@ -47,6 +48,7 @@ public:
   RegressionController * regressionController() { return &m_regressionController; }
 private:
   App(Snapshot * snapshot, Poincare::Context * parentContext);
+  Shared::PoincareLocalPool m_poincarePool;
   CalculationController m_calculationController;
   AlternateEmptyViewController m_calculationAlternateEmptyViewController;
   ButtonRowController m_calculationHeader;

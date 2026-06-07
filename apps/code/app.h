@@ -75,7 +75,7 @@ public:
 
   VariableBoxController * variableBoxController() { return &m_variableBoxController; }
 
-  static constexpr int k_pythonHeapSize = 66000; // reduced to avoid SRAM overflow (subtracted 652 bytes)
+  static constexpr int k_pythonHeapSize = 83000;
 
 private:
   /* Python delegate:

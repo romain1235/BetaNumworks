@@ -4,6 +4,7 @@
 #include "escher/include/escher/app.h"
 #include "usb_connected_controller.h"
 #include "../shared/shared_app.h"
+#include "../shared/poincare_local_pool.h"
 
 namespace USB {
 
@@ -22,6 +23,7 @@ public:
   bool processEvent(Ion::Events::Event) override;
 private:
   App(Snapshot * snapshot);
+  Shared::PoincareLocalPool m_poincarePool;
   USBConnectedController m_usbConnectedController;
 };
 

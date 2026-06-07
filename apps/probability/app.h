@@ -15,6 +15,7 @@
 #include "calculation/right_integral_calculation.h"
 #include "calculation/finite_integral_calculation.h"
 #include "../shared/shared_app.h"
+#include "../shared/poincare_local_pool.h"
 
 constexpr static size_t max(const int * data, int seed = 0) {
   return (*data == 0 ? seed : max(data+1, *data > seed ? *data : seed));
@@ -77,6 +78,7 @@ public:
   TELEMETRY_ID("Probability");
 private:
   App(Snapshot * snapshot);
+  Shared::PoincareLocalPool m_poincarePool;
   CalculationController m_calculationController;
   ParametersController m_parametersController;
   DistributionController m_distributionController;

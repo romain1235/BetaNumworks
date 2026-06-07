@@ -7,6 +7,8 @@ namespace Poincare {
 
 void Init() {
   // Create and register the shared static pool
+  // Shouldn't be used on the physical calculator due to per-app initialization,
+  // but required for tests
   static TreePool pool;
   TreePool::RegisterPool(&pool);
 }
