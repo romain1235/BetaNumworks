@@ -154,6 +154,7 @@ void MenuController::duplicateScript(Script script) {
 
 void MenuController::deleteScript(Script script) {
   assert(!script.isNull());
+  Script::destroyCursorRecord(script.fullName());
   script.destroy();
   updateAddScriptRowDisplay();
 }
@@ -333,8 +334,12 @@ bool MenuController::textFieldDidFinishEditing(TextField * textField, const char
     }
     newName = const_cast<const char *>(numberedDefaultName);
   }
-  Script::ErrorStatus error = Script::nameCompliant(newName) ? m_scriptStore->scriptAtIndex(m_selectableTableView.selectedRow()).setName(newName) : Script::ErrorStatus::NonCompliantName;
+  Script script = m_scriptStore->scriptAtIndex(m_selectableTableView.selectedRow());
+  char previousFullName[bufferSize];
+  strlcpy(previousFullName, script.fullName(), bufferSize);
+  Script::ErrorStatus error = Script::nameCompliant(newName) ? script.setName(newName) : Script::ErrorStatus::NonCompliantName;
   if (error == Script::ErrorStatus::None) {
+    Script::renameCursorRecord(previousFullName, newName);
     updateAddScriptRowDisplay();
     textField->setText(newName);
     int currentRow = m_selectableTableView.selectedRow();
@@ -414,8 +419,12 @@ bool MenuController::privateTextFieldDidAbortEditing(TextField * textField, bool
       deleteScript(script);
       return true;
     }
+    static constexpr int fullNameBufferSize = Script::k_defaultScriptNameMaxSize + 1 + ScriptStore::k_scriptExtensionLength;
+    char previousFullName[fullNameBufferSize];
+    strlcpy(previousFullName, script.fullName(), fullNameBufferSize);
     Script::ErrorStatus error = script.setBaseNameWithExtension(numberedDefaultName, ScriptStore::k_scriptExtension);
     scriptName = m_scriptStore->scriptAtIndex(m_selectableTableView.selectedRow()).fullName();
+    Script::renameCursorRecord(previousFullName, scriptName);
     /* Because we use the numbered default name, the name should not be
      * already taken. Plus, the script could be added only if the storage has
      * enough available space to add a script named 'script99.py' */

@@ -44,6 +44,12 @@ public:
   static bool nameCompliant(const char * name);
   static constexpr size_t StatusSize() { return k_statusSize; }
 
+  static constexpr char k_cursorExtension[] = "cursor";
+  static constexpr size_t k_cursorFullNameBufferSize = k_defaultScriptNameMaxSize + 1 + 6 + 1;
+  static bool buildCursorFullName(const char * scriptFullName, char buffer[], size_t bufferSize);
+  static void destroyCursorRecord(const char * scriptFullName);
+  static void renameCursorRecord(const char * oldScriptFullName, const char * newScriptFullName);
+
 
   Script(Ion::Storage::Record r = Ion::Storage::Record()) : Record(r) {}
   bool autoImportationStatus() const;

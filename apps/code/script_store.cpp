@@ -15,7 +15,9 @@ ScriptStore::ScriptStore() {
 
 void ScriptStore::deleteAllScripts() {
   for (int i = numberOfScripts() - 1; i >= 0; i--) {
-    scriptAtIndex(i).destroy();
+    Script script = scriptAtIndex(i);
+    Script::destroyCursorRecord(script.fullName());
+    script.destroy();
   }
 }
 

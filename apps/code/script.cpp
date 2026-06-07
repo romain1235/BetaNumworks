@@ -1,7 +1,54 @@
 #include "script.h"
 #include "script_store.h"
+#include <string.h>
 
 namespace Code {
+
+constexpr char Script::k_cursorExtension[];
+
+bool Script::buildCursorFullName(const char * scriptFullName, char buffer[], size_t bufferSize) {
+  if (scriptFullName == nullptr) {
+    return false;
+  }
+  const char * dot = strchr(scriptFullName, '.');
+  size_t baseLen = dot ? static_cast<size_t>(dot - scriptFullName) : strlen(scriptFullName);
+  if (baseLen + 1 + strlen(k_cursorExtension) + 1 > bufferSize) {
+    return false;
+  }
+  memcpy(buffer, scriptFullName, baseLen);
+  buffer[baseLen] = '.';
+  memcpy(buffer + baseLen + 1, k_cursorExtension, sizeof(k_cursorExtension));
+  return true;
+}
+
+void Script::destroyCursorRecord(const char * scriptFullName) {
+  char cursorFullName[k_cursorFullNameBufferSize];
+  if (!buildCursorFullName(scriptFullName, cursorFullName, sizeof(cursorFullName))) {
+    return;
+  }
+  Ion::Storage::Record cursorRecord = Ion::Storage::sharedStorage()->recordNamed(cursorFullName);
+  if (!cursorRecord.isNull()) {
+    cursorRecord.destroy();
+  }
+}
+
+void Script::renameCursorRecord(const char * oldScriptFullName, const char * newScriptFullName) {
+  char oldCursorFullName[k_cursorFullNameBufferSize];
+  char newCursorFullName[k_cursorFullNameBufferSize];
+  if (!buildCursorFullName(oldScriptFullName, oldCursorFullName, sizeof(oldCursorFullName))
+      || !buildCursorFullName(newScriptFullName, newCursorFullName, sizeof(newCursorFullName)))
+  {
+    return;
+  }
+  Ion::Storage::Record cursorRecord = Ion::Storage::sharedStorage()->recordNamed(oldCursorFullName);
+  if (cursorRecord.isNull()) {
+    return;
+  }
+  Ion::Storage::Record::ErrorStatus status = cursorRecord.setName(newCursorFullName);
+  if (status == Ion::Storage::Record::ErrorStatus::NameTaken) {
+    cursorRecord.destroy();
+  }
+}
 
 static inline void intToText(int i, char * buffer, int bufferSize) {
   // We only support integers from 0 to 99.

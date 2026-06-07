@@ -73,13 +73,11 @@ void EditorController::viewWillAppear() {
   if (!m_script.isNull()) {
     const char * scriptFullName = m_script.fullName();
     if (scriptFullName != nullptr) {
-      const char * dot = strchr(scriptFullName, '.');
-      size_t baseLen = dot ? (size_t)(dot - scriptFullName) : strlen(scriptFullName);
-      char cursorFullName[Script::k_defaultScriptNameMaxSize + 1 + 6 + 1];
-      memcpy(cursorFullName, scriptFullName, baseLen);
-      cursorFullName[baseLen] = '.';
-      memcpy(cursorFullName + baseLen + 1, "cursor", sizeof("cursor"));
-
+      char cursorFullName[Script::k_cursorFullNameBufferSize];
+      if (!Script::buildCursorFullName(scriptFullName, cursorFullName, sizeof(cursorFullName))) {
+        m_editorView.setCursorLocation(m_editorView.text() + strlen(m_editorView.text()));
+        return;
+      }
       Ion::Storage::Record cursorRecord = Ion::Storage::sharedStorage()->recordNamed(cursorFullName);
       if (!cursorRecord.isNull()) {
         Ion::Storage::Record::Data d = cursorRecord.value();
@@ -107,25 +105,21 @@ void EditorController::viewDidDisappear() {
   if (!m_script.isNull()) {
     const char * scriptFullName = m_script.fullName();
     if (scriptFullName != nullptr) {
-      const char * dot = strchr(scriptFullName, '.');
-      size_t baseLen = dot ? (size_t)(dot - scriptFullName) : strlen(scriptFullName);
-      char cursorFullName[Script::k_defaultScriptNameMaxSize + 1 + 6 + 1];
-      memcpy(cursorFullName, scriptFullName, baseLen);
-      cursorFullName[baseLen] = '.';
-      memcpy(cursorFullName + baseLen + 1, "cursor", sizeof("cursor"));
-
-      const char * text = m_editorView.text();
-      const char * cursor = m_editorView.cursorLocation();
-      uint16_t pos = 0;
-      if (text != nullptr && cursor != nullptr && cursor >= text) {
-        size_t offset = (size_t)(cursor - text);
-        pos = offset > UINT16_MAX ? UINT16_MAX : (uint16_t)offset;
-      }
-      Ion::Storage::Record::ErrorStatus status = Ion::Storage::sharedStorage()->createRecordWithFullName(cursorFullName, &pos, sizeof(pos));
-      if (status == Ion::Storage::Record::ErrorStatus::NameTaken) {
-        Ion::Storage::Record r = Ion::Storage::sharedStorage()->recordNamed(cursorFullName);
-        Ion::Storage::Record::Data data{ &pos, sizeof(pos) };
-        r.setValue(data);
+      char cursorFullName[Script::k_cursorFullNameBufferSize];
+      if (Script::buildCursorFullName(scriptFullName, cursorFullName, sizeof(cursorFullName))) {
+        const char * text = m_editorView.text();
+        const char * cursor = m_editorView.cursorLocation();
+        uint16_t pos = 0;
+        if (text != nullptr && cursor != nullptr && cursor >= text) {
+          size_t offset = (size_t)(cursor - text);
+          pos = offset > UINT16_MAX ? UINT16_MAX : (uint16_t)offset;
+        }
+        Ion::Storage::Record::ErrorStatus status = Ion::Storage::sharedStorage()->createRecordWithFullName(cursorFullName, &pos, sizeof(pos));
+        if (status == Ion::Storage::Record::ErrorStatus::NameTaken) {
+          Ion::Storage::Record r = Ion::Storage::sharedStorage()->recordNamed(cursorFullName);
+          Ion::Storage::Record::Data data{ &pos, sizeof(pos) };
+          r.setValue(data);
+        }
       }
     }
   }
