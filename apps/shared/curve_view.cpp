@@ -19,14 +19,28 @@ namespace Shared {
 
 static bool s_drawingInterrupted = false;
 static bool s_backWasDownAtDrawingStart = false;
+static bool s_backWasReleasedDuringDraw = false;
 static uint64_t s_lastInterruptionCheckMs = 0;
 
 static bool shouldInterruptDrawing() {
-  return Ion::Keyboard::isKeyDown(Ion::Keyboard::Key::Back) && !s_backWasDownAtDrawingStart;
+  bool backDown = Ion::Keyboard::isKeyDown(Ion::Keyboard::Key::Back);
+  if (!backDown) {
+    if (s_backWasDownAtDrawingStart) {
+      s_backWasReleasedDuringDraw = true;
+    }
+    return false;
+  }
+  if (!s_backWasDownAtDrawingStart) {
+    return true;
+  }
+  /* Back was already down at the start of the draw (e.g. Back triggered a
+   * redraw). Allow interruption only after the user releases and presses Back
+   * again. */
+  return s_backWasReleasedDuringDraw;
 }
 
 /* Throttled polling (~60 Hz) to keep keyboard scan cheap. */
-static bool pollDrawingInterruption() {
+static bool pollDrawingInterruptionImpl() {
   if (s_drawingInterrupted) {
     return true;
   }
@@ -46,6 +60,11 @@ void CurveView::resetDrawingInterruption() {
   s_drawingInterrupted = false;
   s_lastInterruptionCheckMs = 0;
   s_backWasDownAtDrawingStart = Ion::Keyboard::isKeyDown(Ion::Keyboard::Key::Back);
+  s_backWasReleasedDuringDraw = false;
+}
+
+bool CurveView::pollDrawingInterruption() {
+  return pollDrawingInterruptionImpl();
 }
 
 bool CurveView::drawingWasInterrupted() {
@@ -661,7 +680,7 @@ const uint8_t thickStampMask[(thickStampSize+1)*(thickStampSize+1)] = {
 constexpr static int k_maxNumberOfIterations = 10;
 
 void CurveView::drawCurve(KDContext * ctx, KDRect rect, float tStart, float tEnd, float tStep, EvaluateXYForFloatParameter xyFloatEvaluation, void * model, void * context, bool drawStraightLinesEarly, KDColor color, bool thick, bool colorUnderCurve, float colorLowerBound, float colorUpperBound, EvaluateXYForDoubleParameter xyDoubleEvaluation) const {
-  if (pollDrawingInterruption()) {
+  if (pollDrawingInterruptionImpl()) {
     return;
   }
   float previousT = NAN;
@@ -673,7 +692,7 @@ void CurveView::drawCurve(KDContext * ctx, KDRect rect, float tStart, float tEnd
   int i = 0;
   bool isLastSegment = false;
   do {
-    if (pollDrawingInterruption()) {
+    if (pollDrawingInterruptionImpl()) {
       return;
     }
     previousT = t;
@@ -875,7 +894,7 @@ static bool pointInBoundingBox(float x1, float y1, float x2, float y2, float xC,
 }
 
 void CurveView::joinDots(KDContext * ctx, KDRect rect, EvaluateXYForFloatParameter xyFloatEvaluation , void * model, void * context, bool drawStraightLinesEarly, float t, float x, float y, float s, float u, float v, KDColor color, bool thick, int maxNumberOfRecursion, EvaluateXYForDoubleParameter xyDoubleEvaluation) const {
-  if (pollDrawingInterruption()) {
+  if (pollDrawingInterruptionImpl()) {
     return;
   }
   const bool isFirstDot = std::isnan(t);

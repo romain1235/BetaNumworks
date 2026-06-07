@@ -23,8 +23,12 @@ void GraphView::reload() {
 }
 
 void GraphView::drawRect(KDContext * ctx, KDRect rect) const {
-  FunctionGraphView::drawRect(ctx, rect);
   resetDrawingInterruption();
+  FunctionGraphView::drawRect(ctx, rect);
+  if (CurveView::pollDrawingInterruption()) {
+    const_cast<GraphView *>(this)->markRectAsDirty(rect);
+    return;
+  }
   ContinuousFunctionStore * functionStore = App::app()->functionStore();
   const int activeFunctionsCount = functionStore->numberOfActiveFunctions();
   for (int i = 0; i < activeFunctionsCount ; i++) {
@@ -35,6 +39,9 @@ void GraphView::drawRect(KDContext * ctx, KDRect rect) const {
     ExpiringPointer<ContinuousFunction> f = functionStore->modelForRecord(record);
     ContinuousFunctionCache * cch = functionStore->cacheAtIndex(i);
     Shared::ContinuousFunction::PlotType type = f->plotType();
+    if (drawingWasInterrupted()) {
+      break;
+    }
     Poincare::Expression e = f->expressionReduced(context());
     if (e.isUndefined() || (
         type == Shared::ContinuousFunction::PlotType::Parametric &&
@@ -57,6 +64,9 @@ void GraphView::drawRect(KDContext * ctx, KDRect rect) const {
       tCacheMin = tmin;
       // Compute tCacheStep and tStepNonCartesian
       ContinuousFunctionCache::ComputeNonCartesianSteps(&tStepNonCartesian, &tCacheStep, tmax, tmin);
+    }
+    if (drawingWasInterrupted()) {
+      break;
     }
     ContinuousFunctionCache::PrepareForCaching(f.operator->(), cch, tCacheMin, tCacheStep);
 
