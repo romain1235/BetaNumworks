@@ -13,10 +13,6 @@ app_files_src = $(addprefix apps/files/,\
   \
 )
 
-# PointerTextTableCell is defined in apps/external; include it here to
-# ensure the symbol is available when linking the Files app.
-app_files_src += apps/external/pointer_text_table_cell.cpp
-
 apps_src += $(app_files_src)
 
 i18n_files += $(call i18n_without_universal_for,files/base)

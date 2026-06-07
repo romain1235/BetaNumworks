@@ -2,7 +2,6 @@
 #define FILES_MAIN_CONTROLLER_H
 
 #include <escher.h>
-#include "pointer_text_table_cell.h"
 #include "file_name_cell.h"
 #include "files_parameter_controller.h"
 
