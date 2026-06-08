@@ -37,6 +37,8 @@ public:
 protected:
   class ContentView : public TextArea::ContentView {
   public:
+    constexpr static int kInvalidEstimateWindowRadius = 512;
+
     ContentView(App * pythonDelegate, const KDFont * font) :
       TextArea::ContentView(font),
       m_pythonDelegate(pythonDelegate),
@@ -67,12 +69,12 @@ protected:
      * `position` (cost controlled by `windowRadius`) and returns
      * `invalid_after - invalid_before`. Positive means worse (more invalids),
      * negative means better (fewer invalids). */
-    int estimateInvalidDeltaForInsertion(const char * position, const char * insertedText, int insertedLen, int windowRadius = 1024) const;
+    int estimateInvalidDeltaForInsertion(const char * position, const char * insertedText, int insertedLen, int windowRadius = kInvalidEstimateWindowRadius) const;
     /* Estimate the change in number of invalid delimiters when deleting
      * `deletionLen` characters starting at `position`. Returns
      * `invalid_after - invalid_before`. Positive means worse, negative
      * means better. */
-    int estimateInvalidDeltaForDeletion(const char * position, int deletionLen, int windowRadius = 1024) const;
+    int estimateInvalidDeltaForDeletion(const char * position, int deletionLen, int windowRadius = kInvalidEstimateWindowRadius) const;
     void clearRect(KDContext * ctx, KDRect rect) const override;
     void drawLine(KDContext * ctx, int line, const char * text, size_t length, int fromColumn, int toColumn, const char * selectionStart, const char * selectionEnd) const override;
     KDRect dirtyRectFromPosition(const char * position, bool includeFollowingLines) const override;
@@ -84,9 +86,12 @@ protected:
     int delimiterDepthAtLine(int line) const;
     bool isInvalidOpeningDelimiter(const char * position) const;
     bool isInvalidClosingDelimiter(const char * position) const;
+    char * invalidEstimateScratchBuffer() const;
 
     constexpr static int kInvalidDelimitersCapacity = 256;
     constexpr static int kLineDepthCapacity = 512;
+    /* Reuses m_invalidOpenings + m_invalidClosings as a scratch text buffer. */
+    constexpr static int kInvalidEstimateBufferSize = 2 * kInvalidDelimitersCapacity * sizeof(DelimiterOffset);
 
     App * m_pythonDelegate;
     bool m_autocomplete;
@@ -98,7 +103,7 @@ protected:
     mutable DelimiterOffset m_invalidClosings[kInvalidDelimitersCapacity];
     mutable int m_lineDepthCount;
     mutable DelimiterDepth m_lineStartDelimiterDepths[kLineDepthCapacity];
-    
+
   };
 private:
   void removeAutocompletion();

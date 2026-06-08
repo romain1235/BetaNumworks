@@ -10,7 +10,6 @@ extern "C" {
 #include "py/nlr.h"
 #include "py/lexer.h"
 }
-#include <stdlib.h>
 #include <algorithm>
 #include <string.h>
 
@@ -424,14 +423,63 @@ bool PythonTextArea::ContentView::hasInvalidClosingAfter(const char * position, 
   return false;
 }
 
+static int CountInvalidDelimitersInBuffer(const char * buf, size_t len) {
+  const int kDelimiterTypeCount = 3;
+  int openingDepth[kDelimiterTypeCount] = {0, 0, 0};
+  int invalidClosings = 0;
+
+  mp_lexer_t * lex = mp_lexer_new_from_str_len(0, buf, len, 0);
+  const char * lineStart = buf;
+  int currentLine = 1;
+#if defined(MICROPY_PY_FSTRINGS) && defined(MP_TOKEN_FSTRING_RAW)
+  while (lex->tok_kind != MP_TOKEN_END && lex->tok_kind != MP_TOKEN_FSTRING_RAW) {
+#else
+  while (lex->tok_kind != MP_TOKEN_END) {
+#endif
+    while (currentLine < lex->tok_line) {
+      const char * nextLine = UTF8Helper::CodePointSearch(lineStart, '\n');
+      if (UTF8Helper::CodePointIs(nextLine, UCodePointNull)) {
+        break;
+      }
+      lineStart = nextLine + 1;
+      currentLine++;
+    }
+    int delimiterType = DelimiterTypeIndex(lex->tok_kind);
+    if (delimiterType >= 0) {
+      if (IsOpeningDelimiter(lex->tok_kind)) {
+        openingDepth[delimiterType]++;
+      } else if (IsClosingDelimiter(lex->tok_kind)) {
+        if (openingDepth[delimiterType] > 0) {
+          openingDepth[delimiterType]--;
+        } else {
+          invalidClosings++;
+        }
+      }
+    }
+    mp_lexer_to_next(lex);
+  }
+  mp_lexer_free(lex);
+  int remainingOpenings = openingDepth[0] + openingDepth[1] + openingDepth[2];
+  return invalidClosings + remainingOpenings;
+}
+
+char * PythonTextArea::ContentView::invalidEstimateScratchBuffer() const {
+  /* The estimate helpers need a local text copy. Reuse the invalid-delimiter
+   * offset arrays as scratch memory: they will be rebuilt on next draw. */
+  m_delimiterColoringCacheIsValid = false;
+  return reinterpret_cast<char *>(const_cast<DelimiterOffset *>(m_invalidOpenings));
+}
+
 int PythonTextArea::ContentView::estimateInvalidDeltaForInsertion(const char * position, const char * insertedText, int insertedLen, int windowRadius) const {
   const char * fullText = editedText();
-  if (fullText == nullptr) {
+  if (fullText == nullptr || insertedLen <= 0) {
     return 0;
+  }
+  if (windowRadius > kInvalidEstimateWindowRadius) {
+    windowRadius = kInvalidEstimateWindowRadius;
   }
   const char * fullEnd = fullText + strlen(fullText);
 
-  // Determine window bounds around position
   int back = 0;
   const char * windowStart = position;
   while (windowStart > fullText && back < windowRadius) {
@@ -448,69 +496,21 @@ int PythonTextArea::ContentView::estimateInvalidDeltaForInsertion(const char * p
   }
 
   size_t origLen = windowEnd - windowStart;
-  // Build original buffer (C-style)
-  char * origBuf = (char *)malloc(origLen + 1);
-  if (origBuf == nullptr) {
-    return 0;
-  }
-  memcpy(origBuf, windowStart, origLen);
-  origBuf[origLen] = '\0';
-
-  // Build new buffer with insertion
-  size_t relPos = position - windowStart;
   size_t newLen = origLen + insertedLen;
-  char * newBuf = (char *)malloc(newLen + 1);
-  if (newBuf == nullptr) {
-    free(origBuf);
+  if (newLen > kInvalidEstimateBufferSize) {
     return 0;
   }
-  memcpy(newBuf, origBuf, relPos);
-  memcpy(newBuf + relPos, insertedText, insertedLen);
-  memcpy(newBuf + relPos + insertedLen, origBuf + relPos, origLen - relPos);
-  newBuf[newLen] = '\0';
 
-  auto countInvalidsInBuffer = [](const char * buf, size_t len) -> int {
-    const int kDelimiterTypeCount = 3;
-    int openingDepth[kDelimiterTypeCount] = {0,0,0};
-    int invalidClosings = 0;
+  char * buffer = invalidEstimateScratchBuffer();
+  memcpy(buffer, windowStart, origLen);
+  buffer[origLen] = '\0';
+  int before = CountInvalidDelimitersInBuffer(buffer, origLen);
 
-    mp_lexer_t * lex = mp_lexer_new_from_str_len(0, buf, len, 0);
-    const char * lineStart = buf;
-    int currentLine = 1;
-  #if defined(MICROPY_PY_FSTRINGS) && defined(MP_TOKEN_FSTRING_RAW)
-    while (lex->tok_kind != MP_TOKEN_END && lex->tok_kind != MP_TOKEN_FSTRING_RAW) {
-  #else
-    while (lex->tok_kind != MP_TOKEN_END) {
-  #endif
-      while (currentLine < lex->tok_line) {
-        const char * nextLine = UTF8Helper::CodePointSearch(lineStart, '\n');
-        if (UTF8Helper::CodePointIs(nextLine, UCodePointNull)) break;
-        lineStart = nextLine + 1;
-        currentLine++;
-      }
-      int delimiterType = DelimiterTypeIndex(lex->tok_kind);
-      if (delimiterType >= 0) {
-        if (IsOpeningDelimiter(lex->tok_kind)) {
-          openingDepth[delimiterType]++;
-        } else if (IsClosingDelimiter(lex->tok_kind)) {
-          if (openingDepth[delimiterType] > 0) {
-            openingDepth[delimiterType]--;
-          } else {
-            invalidClosings++;
-          }
-        }
-      }
-      mp_lexer_to_next(lex);
-    }
-    mp_lexer_free(lex);
-    int remainingOpenings = openingDepth[0] + openingDepth[1] + openingDepth[2];
-    return invalidClosings + remainingOpenings;
-  };
-
-  int before = countInvalidsInBuffer(origBuf, origLen);
-  int after = countInvalidsInBuffer(newBuf, newLen);
-  free(origBuf);
-  free(newBuf);
+  size_t relPos = position - windowStart;
+  memmove(buffer + relPos + insertedLen, buffer + relPos, origLen - relPos);
+  memcpy(buffer + relPos, insertedText, insertedLen);
+  buffer[newLen] = '\0';
+  int after = CountInvalidDelimitersInBuffer(buffer, newLen);
   return after - before;
 }
 
@@ -519,9 +519,11 @@ int PythonTextArea::ContentView::estimateInvalidDeltaForDeletion(const char * po
   if (fullText == nullptr || deletionLen <= 0) {
     return 0;
   }
+  if (windowRadius > kInvalidEstimateWindowRadius) {
+    windowRadius = kInvalidEstimateWindowRadius;
+  }
   const char * fullEnd = fullText + strlen(fullText);
 
-  // Determine window bounds around position
   int back = 0;
   const char * windowStart = position;
   while (windowStart > fullText && back < windowRadius) {
@@ -538,83 +540,28 @@ int PythonTextArea::ContentView::estimateInvalidDeltaForDeletion(const char * po
   }
 
   size_t origLen = windowEnd - windowStart;
-  if (origLen == 0) {
+  if (origLen == 0 || origLen > kInvalidEstimateBufferSize) {
     return 0;
   }
 
-  // Build original buffer (C-style)
-  char * origBuf = (char *)malloc(origLen + 1);
-  if (origBuf == nullptr) {
-    return 0;
-  }
-  memcpy(origBuf, windowStart, origLen);
-  origBuf[origLen] = '\0';
+  char * buffer = invalidEstimateScratchBuffer();
+  memcpy(buffer, windowStart, origLen);
+  buffer[origLen] = '\0';
+  int before = CountInvalidDelimitersInBuffer(buffer, origLen);
 
-  // Compute deletion relative to window
   size_t relPos = position - windowStart;
   int clampedDeletion = deletionLen;
   if ((size_t)clampedDeletion > origLen - relPos) {
     clampedDeletion = (int)(origLen - relPos);
   }
   if (clampedDeletion <= 0) {
-    free(origBuf);
     return 0;
   }
 
   size_t newLen = origLen - clampedDeletion;
-  char * newBuf = (char *)malloc(newLen + 1);
-  if (newBuf == nullptr) {
-    free(origBuf);
-    return 0;
-  }
-  // Copy before deletion
-  memcpy(newBuf, origBuf, relPos);
-  // Copy after deletion
-  memcpy(newBuf + relPos, origBuf + relPos + clampedDeletion, origLen - relPos - clampedDeletion);
-  newBuf[newLen] = '\0';
-
-  auto countInvalidsInBuffer = [](const char * buf, size_t len) -> int {
-    const int kDelimiterTypeCount = 3;
-    int openingDepth[kDelimiterTypeCount] = {0,0,0};
-    int invalidClosings = 0;
-
-    mp_lexer_t * lex = mp_lexer_new_from_str_len(0, buf, len, 0);
-    const char * lineStart = buf;
-    int currentLine = 1;
-  #if defined(MICROPY_PY_FSTRINGS) && defined(MP_TOKEN_FSTRING_RAW)
-    while (lex->tok_kind != MP_TOKEN_END && lex->tok_kind != MP_TOKEN_FSTRING_RAW) {
-  #else
-    while (lex->tok_kind != MP_TOKEN_END) {
-  #endif
-      while (currentLine < lex->tok_line) {
-        const char * nextLine = UTF8Helper::CodePointSearch(lineStart, '\n');
-        if (UTF8Helper::CodePointIs(nextLine, UCodePointNull)) break;
-        lineStart = nextLine + 1;
-        currentLine++;
-      }
-      int delimiterType = DelimiterTypeIndex(lex->tok_kind);
-      if (delimiterType >= 0) {
-        if (IsOpeningDelimiter(lex->tok_kind)) {
-          openingDepth[delimiterType]++;
-        } else if (IsClosingDelimiter(lex->tok_kind)) {
-          if (openingDepth[delimiterType] > 0) {
-            openingDepth[delimiterType]--;
-          } else {
-            invalidClosings++;
-          }
-        }
-      }
-      mp_lexer_to_next(lex);
-    }
-    mp_lexer_free(lex);
-    int remainingOpenings = openingDepth[0] + openingDepth[1] + openingDepth[2];
-    return invalidClosings + remainingOpenings;
-  };
-
-  int before = countInvalidsInBuffer(origBuf, origLen);
-  int after = countInvalidsInBuffer(newBuf, newLen);
-  free(origBuf);
-  free(newBuf);
+  memmove(buffer + relPos, buffer + relPos + clampedDeletion, origLen - relPos - clampedDeletion);
+  buffer[newLen] = '\0';
+  int after = CountInvalidDelimitersInBuffer(buffer, newLen);
   return after - before;
 }
 
