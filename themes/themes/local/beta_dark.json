@@ -8,8 +8,8 @@
         "ApproximateSignText": "6f6f6f",
         "ApproximateExpressionText": "6f6f6f",
         "Background": {
-            "Hard": "000000",
-            "Apps": "191919",
+            "Hard": "191919",
+            "Apps": "000000",
             "AppsSecondary": "111111"
         },
         "Toolbar": {
@@ -39,8 +39,8 @@
             "Disabled": "444444"
         },
         "Calculation": {
-            "BackgroundOdd": "191919",
-            "BackgroundEven": "000000",
+            "BackgroundOdd": "000000",
+            "BackgroundEven": "191919",
             "EmptyBox": "2a2a2a",
             "EmptyBoxNeeded": "ffd400",
             "TrigoAndComplexForeground": "45ada8"
