@@ -8,8 +8,8 @@
         "ApproximateSignText": "6f6f6f",
         "ApproximateExpressionText": "6f6f6f",
         "Background": {
-            "Hard": "0a0a0a",
-            "Apps": "000000",
+            "Hard": "000000",
+            "Apps": "191919",
             "AppsSecondary": "111111"
         },
         "Toolbar": {
@@ -27,7 +27,7 @@
         "Battery": {
             "": "0f6b5c",
             "InCharge": "45ada8",
-            "Low": "f800"
+            "Low": "f80000"
         },
         "ScrollBar": {
             "Foreground": "ffd400",
@@ -39,7 +39,7 @@
             "Disabled": "444444"
         },
         "Calculation": {
-            "BackgroundOdd": "111111",
+            "BackgroundOdd": "191919",
             "BackgroundEven": "000000",
             "EmptyBox": "2a2a2a",
             "EmptyBoxNeeded": "ffd400",
@@ -47,7 +47,7 @@
         },
         "Code": {
             "Background": "000000",
-            "BackgroundSelected": "111111",
+            "BackgroundSelected": "555555",
             "Text": "f5f5f5",
             "Comment": "5a6f6f",
             "Number": "ffd400",
@@ -83,8 +83,8 @@
         },
         "List": {
             "CellBackground": "000000",
-            "CellBackgroundSelected": "111111",
-            "CellBorder": "111111"
+            "CellBackgroundSelected": "333333",
+            "CellBorder": "222222"
         },
         "Button": {
             "Background": "111111",
