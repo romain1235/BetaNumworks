@@ -23,9 +23,9 @@ public:
   static constexpr char funcExtension[] = "func";
   static constexpr char seqExtension[] = "seq";
 #ifdef _FXCG
-  constexpr static size_t k_storageSize = 64400;
+  constexpr static size_t k_storageSize = 58866;
 #else
-  constexpr static size_t k_storageSize = 65534;
+  constexpr static size_t k_storageSize = 60000;
 #endif
   static_assert(UINT16_MAX >= k_storageSize, "record_size_t not big enough");
 
