@@ -15,6 +15,7 @@ void ScrollableTwoExpressionsCell::setLayouts(Poincare::Layout exactLayout, Poin
 }
 
 void ScrollableTwoExpressionsCell::setHighlighted(bool highlight) {
+  EvenOddCell::setHighlighted(highlight);
   m_view.evenOddCell()->setHighlighted(highlight);
 }
 
@@ -34,7 +35,7 @@ void ScrollableTwoExpressionsCell::didBecomeFirstResponder() {
 }
 
 void ScrollableTwoExpressionsCell::reinitSelection() {
-  ScrollableTwoExpressionsView::SubviewPosition selectedSubview = m_view.displayCenter() ? ScrollableTwoExpressionsView::SubviewPosition::Center : ScrollableTwoExpressionsView::SubviewPosition::Right;
+  AbstractScrollableMultipleExpressionsView::SubviewPosition selectedSubview = m_view.displayCenter() ? AbstractScrollableMultipleExpressionsView::SubviewPosition::Center : AbstractScrollableMultipleExpressionsView::SubviewPosition::Right;
   m_view.setSelectedSubviewPosition(selectedSubview);
   reloadScroll();
 }

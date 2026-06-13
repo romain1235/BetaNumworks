@@ -4,11 +4,11 @@
     "colors": {
         "PrimaryText": "45ada8",
         "SecondaryText": "8a8a8a",
-        "AccentText": "45ada8",
+        "AccentText": "ffd400",
         "ApproximateSignText": "6f6f6f",
         "ApproximateExpressionText": "6f6f6f",
         "Background": {
-            "Hard": "191919",
+            "Hard": "000000",
             "Apps": "000000",
             "AppsSecondary": "111111"
         },

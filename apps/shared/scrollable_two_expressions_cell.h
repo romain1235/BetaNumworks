@@ -23,10 +23,32 @@ public:
   void didBecomeFirstResponder() override;
   void reinitSelection();
 private:
+  class SolverScrollableTwoExpressionsView : public AbstractScrollableMultipleExpressionsView {
+  public:
+    SolverScrollableTwoExpressionsView(Responder * parentResponder) : AbstractScrollableMultipleExpressionsView(parentResponder, &m_contentCell) {
+      setMargins(
+          Metric::CommonSmallMargin,
+          Metric::CommonLargeMargin,
+          Metric::CommonSmallMargin,
+          Metric::CommonLargeMargin
+      );
+    }
+  private:
+    class ContentCell : public AbstractScrollableMultipleExpressionsView::ContentCell {
+    public:
+      KDColor backgroundColor() const override {
+        return m_even ? Palette::BackgroundHard : Palette::BackgroundApps;
+      }
+    };
+    ContentCell * contentCell() override { return &m_contentCell; }
+    const ContentCell * constContentCell() const override { return &m_contentCell; }
+    ContentCell m_contentCell;
+  };
+
   int numberOfSubviews() const override;
   View * subviewAtIndex(int index) override;
   void layoutSubviews(bool force = false) override;
-  ScrollableTwoExpressionsView m_view;
+  SolverScrollableTwoExpressionsView m_view;
 };
 
 }
