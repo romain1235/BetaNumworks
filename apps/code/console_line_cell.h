@@ -5,8 +5,6 @@
 #include <escher/message_text_view.h>
 #include <escher/responder.h>
 #include <escher/palette.h>
-#include <escher/scrollable_view.h>
-#include <escher/scroll_view_data_source.h>
 #include <assert.h>
 
 #include "console_line.h"
@@ -31,30 +29,29 @@ public:
   void layoutSubviews(bool force = false) override;
 
   /* Responder */
-  void didBecomeFirstResponder() override;
+  bool handleEvent(Ion::Events::Event event) override;
 private:
-  class ScrollableConsoleLineView : public ScrollableView, public ScrollViewDataSource {
+  class ConsoleLineTextView : public View {
   public:
-    class ConsoleLineView : public HighlightCell {
-    public:
-      ConsoleLineView();
-      void setLine(ConsoleLine * line);
-      void drawRect(KDContext * ctx, KDRect rect) const override;
-      KDSize minimalSizeForOptimalDisplay() const override;
-    private:
-      ConsoleLine * m_line;
-    };
-
-    ScrollableConsoleLineView(Responder * parentResponder);
-    ConsoleLineView * consoleLineView() { return &m_consoleLineView; }
+    ConsoleLineTextView();
+    void setLine(ConsoleLine * line);
+    void setHighlighted(bool highlight);
+    void resetHorizontalOffset();
+    KDCoordinate horizontalOffset() const { return m_horizontalOffset; }
+    KDCoordinate maxHorizontalOffset() const;
+    void scrollHorizontally(KDCoordinate offset);
+    void drawRect(KDContext * ctx, KDRect rect) const override;
+    KDSize minimalSizeForOptimalDisplay() const override;
   private:
-    ConsoleLineView m_consoleLineView;
+    ConsoleLine * m_line;
+    KDCoordinate m_horizontalOffset;
+    bool m_highlighted;
   };
   static KDColor textColor(ConsoleLine * line) {
     return line->isFromCurrentSession() ? Palette::CodeText : Palette::SecondaryText;
   }
   MessageTextView m_promptView;
-  ScrollableConsoleLineView m_scrollableView;
+  ConsoleLineTextView m_lineTextView;
   ConsoleLine m_line;
 };
 

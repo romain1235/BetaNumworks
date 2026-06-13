@@ -78,6 +78,9 @@ protected:
     void clearRect(KDContext * ctx, KDRect rect) const override;
     void drawLine(KDContext * ctx, int line, const char * text, size_t length, int fromColumn, int toColumn, const char * selectionStart, const char * selectionEnd) const override;
     KDRect dirtyRectFromPosition(const char * position, bool includeFollowingLines) const override;
+    void insertTextAtLocation(const char * text, char * location, int textLength = -1) override;
+    bool removePreviousGlyph() override;
+    bool removeEndOfLine() override;
   private:
     using DelimiterOffset = uint16_t;
     using DelimiterDepth = uint8_t;

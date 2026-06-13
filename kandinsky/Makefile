@@ -71,6 +71,7 @@ kandinsky_src += $(addprefix kandinsky/fonts/, \
   ItalicSmallFontExtended.ttf \
   LargeFontSimple.ttf \
   SmallFontSimple.ttf \
+  TinyFontSimple.ttf \
 )
 
 default_kandinsky_src += $(addprefix kandinsky/fonts/, \
@@ -78,11 +79,13 @@ default_kandinsky_src += $(addprefix kandinsky/fonts/, \
   ItalicLargeFontExtended.ttf \
   SmallFontExtended.ttf \
   ItalicSmallFontExtended.ttf \
+  TinyFontSimple.ttf \
 )
 
 simple_kandinsky_src += $(addprefix kandinsky/fonts/, \
   LargeFontSimple.ttf \
   SmallFontSimple.ttf \
+  TinyFontSimple.ttf \
 )
 
 
@@ -93,6 +96,7 @@ $(eval $(call raster_font,ItalicLargeFont,ItalicLargeFontExtended,1,16,10,18))
 
 $(eval $(call raster_font,SmallFont,SmallFontSimple,0,12,7,14))
 $(eval $(call raster_font,LargeFont,LargeFontSimple,0,16,10,18))
+$(eval $(call raster_font,TinyFont,TinyFontSimple,0,9,6,9))
 
 else
 
@@ -101,6 +105,7 @@ kandinsky_src += $(addprefix kandinsky/fonts/, \
   ItalicLargeFont.ttf \
   SmallFont.ttf \
   ItalicSmallFont.ttf \
+  TinyFontSimple.ttf \
 )
 
 default_kandinsky_src = $(kandinsky_src)
@@ -110,4 +115,5 @@ $(eval $(call raster_font,SmallFont,SmallFontSimple,0,12,7,14))
 $(eval $(call raster_font,LargeFont,LargeFontSimple,0,16,10,18))
 $(eval $(call raster_font,ItalicSmallFont,ItalicSmallFontSimple,0,12,7,14))
 $(eval $(call raster_font,ItalicLargeFont,ItalicLargeFontSimple,0,16,10,18))
+$(eval $(call raster_font,TinyFont,TinyFontSimple,0,9,6,9))
 endif

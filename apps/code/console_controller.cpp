@@ -22,6 +22,11 @@ namespace Code {
 
 static const char * sStandardPromptText = ">>> ";
 
+int ConsoleController::numberOfVisibleLineCells() {
+  KDCoordinate rowHeight = GlobalPreferences::sharedGlobalPreferences()->font()->glyphSize().height();
+  return (Ion::Display::Height - Metric::TitleBarHeight) / rowHeight + 2;
+}
+
 static void stripConsoleColorSequences(const char * text, char * buffer, size_t bufferSize) {
   if (bufferSize == 0) {
     return;
@@ -75,7 +80,7 @@ ConsoleController::ConsoleController(Responder * parentResponder, App * pythonDe
   m_selectableTableView.setMargins(0, Metric::CommonRightMargin, 0, Metric::TitleBarExternHorizontalMargin);
   m_selectableTableView.setBackgroundColor(Palette::CodeBackground);
   m_editCell.setPrompt(sStandardPromptText);
-  for (int i = 0; i < k_numberOfLineCells; i++) {
+  for (int i = 0; i < k_maxNumberOfVisibleLineCells; i++) {
     m_cells[i].setParentResponder(&m_selectableTableView);
   }
 }
@@ -366,7 +371,7 @@ int ConsoleController::indexFromCumulatedHeight(KDCoordinate offsetY ){
 HighlightCell * ConsoleController::reusableCell(int index, int type) {
   assert(index >= 0);
   if (type == LineCellType) {
-    assert(index < k_numberOfLineCells);
+    assert(index < numberOfVisibleLineCells());
     return m_cells+index;
   } else {
     assert(type == EditCellType);
@@ -377,7 +382,7 @@ HighlightCell * ConsoleController::reusableCell(int index, int type) {
 
 int ConsoleController::reusableCellCount(int type) {
   if (type == LineCellType) {
-    return k_numberOfLineCells;
+    return numberOfVisibleLineCells();
   } else {
     return 1;
   }

@@ -31,11 +31,13 @@ private:
   static const KDFont privateItalicLargeFont;
   static const KDFont privateSmallFont;
   static const KDFont privateItalicSmallFont;
+  static const KDFont privateTinyFont;
 public:
   static constexpr const KDFont * LargeFont = &privateLargeFont;
   static constexpr const KDFont * ItalicLargeFont = &privateItalicLargeFont;
   static constexpr const KDFont * SmallFont = &privateSmallFont;
   static constexpr const KDFont * ItalicSmallFont = &privateItalicSmallFont;
+  static constexpr const KDFont * TinyFont = &privateTinyFont;
 
   static bool CanBeWrittenWithGlyphs(const char * text);
 

@@ -176,9 +176,10 @@ Layout PreferencesController::layoutForPreferences(I18n::Message message) {
     // Font size
     case I18n::Message::LargeFont:
     case I18n::Message::SmallFont:
+    case I18n::Message::TinyFont:
     {
       const char * text = "abc";
-      const KDFont * font = message == I18n::Message::LargeFont ? KDFont::LargeFont : KDFont::SmallFont;
+      const KDFont * font = message == I18n::Message::LargeFont ? KDFont::LargeFont : (message == I18n::Message::SmallFont ? KDFont::SmallFont : KDFont::TinyFont);
       return LayoutHelper::String(text, strlen(text), font);
     }
 
@@ -224,7 +225,8 @@ void PreferencesController::setPreferenceWithValueIndex(I18n::Message message, i
   } else if (message == I18n::Message::SymbolFunction) {
     preferences->setSymbolOfFunction((Preferences::SymbolFunction)valueIndex);
   } else if (message == I18n::Message::FontSizes) {
-    GlobalPreferences::sharedGlobalPreferences()->setFont(valueIndex == 0 ? KDFont::LargeFont : KDFont::SmallFont);
+    const KDFont * font = valueIndex == 0 ? KDFont::LargeFont : (valueIndex == 1 ? KDFont::SmallFont : KDFont::TinyFont);
+    GlobalPreferences::sharedGlobalPreferences()->setFont(font);
   }
 }
 
@@ -249,7 +251,14 @@ int PreferencesController::valueIndexForPreference(I18n::Message message) const 
     return (int)preferences->symbolOfFunction();
   }
   if (message == I18n::Message::FontSizes) {
-    return GlobalPreferences::sharedGlobalPreferences()->font() == KDFont::LargeFont ? 0 : 1;
+    const KDFont * font = GlobalPreferences::sharedGlobalPreferences()->font();
+    if (font == KDFont::LargeFont) {
+      return 0;
+    }
+    if (font == KDFont::SmallFont) {
+      return 1;
+    }
+    return 2;
   }
   return 0;
 }

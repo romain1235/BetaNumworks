@@ -42,7 +42,7 @@ typedef struct {
 void writeImageToPNGFile(image_t * image, char * filename);
 #endif
 
-void drawGlyphInImage(FT_Bitmap * glyphBitmap, image_t * image, int x, int y);
+void drawGlyphInImage(FT_Bitmap * glyphBitmap, image_t * image, int x, int y, int clipX, int clipY, int clipW, int clipH);
 static void prettyPrintArray(FILE * stream, int maxWidth, int typeSize, void * array, int numberOfElements);
 
 int main(int argc, char * argv[]) {
@@ -129,7 +129,7 @@ int main(int argc, char * argv[]) {
     glyph_width -= 1;
   }
   if (packed_glyph_width != 0) {
-    ENSURE(glyph_width == packed_glyph_width, "Expecting a packed glyph width of %d but got %d instead", packed_glyph_width, glyph_width);
+    glyph_width = packed_glyph_width;
   } else {
     printf("Computed packed_glyph_width = %d\n", glyph_width);
   }
@@ -137,8 +137,9 @@ int main(int argc, char * argv[]) {
   if (glyph_height == 13) { // FIXME: Same here
     glyph_height += 1;
   }
+  int naturalGlyphHeight = maxAboveBaseline + maxBelowBaseline;
   if (packed_glyph_height != 0) {
-    ENSURE(glyph_height == packed_glyph_height, "Expecting a packed glyph height of %d but got %d instead", packed_glyph_height, glyph_height);
+    glyph_height = packed_glyph_height;
   } else {
     printf("Computed packed_glyph_height = %d\n", glyph_height);
   }
@@ -170,17 +171,32 @@ int main(int argc, char * argv[]) {
     // FT_LOAD_RENDER: Render the glyph upon load
     ENSURE(!FT_Load_Char(face, codePoint, FT_LOAD_RENDER), "Loading character 0x%08x", codePoint);
     //printf("Advances = %dx%d\n", face->glyph->bitmap_left, face->glyph->bitmap_top);
-    while (face->glyph->bitmap_left < 0) {
+    int glyphX = face->glyph->bitmap_left;
+    while (glyphX < 0) {
       // This is a workaround for combining glyphs.
       // For some reason, FreeType does a fun hack and yields a negative bitmap_left
       // This way, the glyph automagically combines with the previous one. That's neat,
       // but we don't want to do that.
-      face->glyph->bitmap_left += glyph_width;
+      glyphX += glyph_width;
+    }
+    int baselineRow = maxAboveBaseline;
+    if (packed_glyph_height != 0 && naturalGlyphHeight > glyph_height) {
+      baselineRow = glyph_height - maxBelowBaseline;
+    }
+    int glyphY = baselineRow - face->glyph->bitmap_top;
+    int cellX = x*(glyph_width+grid_size);
+    int cellY = y*(glyph_height+grid_size);
+    for (int cy = 0; cy < glyph_height; cy++) {
+      for (int cx = 0; cx < glyph_width; cx++) {
+        pixel_t * cellPixel = bitmap_image.pixels + (cellY + cy)*bitmap_image.width + (cellX + cx);
+        *cellPixel = (pixel_t){.red = 0xFF, .green = 0xFF, .blue = 0xFF};
+      }
     }
     drawGlyphInImage(&face->glyph->bitmap,
         &bitmap_image,
-        x*(glyph_width+grid_size)  + face->glyph->bitmap_left,
-        y*(glyph_height+grid_size) + maxAboveBaseline - face->glyph->bitmap_top
+        cellX + glyphX,
+        cellY + glyphY,
+        cellX, cellY, glyph_width, glyph_height
     );
   }
 
@@ -316,13 +332,27 @@ static void prettyPrintArray(FILE * stream, int maxWidth, int typeSize, void * a
   }
 }
 
-void drawGlyphInImage(FT_Bitmap * glyphBitmap, image_t * image, int x, int y) {
+void drawGlyphInImage(FT_Bitmap * glyphBitmap, image_t * image, int x, int y, int clipX, int clipY, int clipW, int clipH) {
   // printf("Drawing glyph. Size is %dx%d, pitch is %d\n", glyphBitmap->width, glyphBitmap->rows, glyphBitmap->pitch);
   ENSURE(glyphBitmap->pixel_mode == FT_PIXEL_MODE_GRAY, "Checking glyph is in FT_PIXEL_MODE_GRAY");
   for (int j=0;j<glyphBitmap->rows;j++) {
+    int destY = y + j;
+    if (destY < 0 || destY >= image->height) {
+      continue;
+    }
+    if (clipW >= 0 && (destY < clipY || destY >= clipY + clipH)) {
+      continue;
+    }
     for (int i=0;i<glyphBitmap->width;i++) {
+      int destX = x + i;
+      if (destX < 0 || destX >= image->width) {
+        continue;
+      }
+      if (clipW >= 0 && (destX < clipX || destX >= clipX + clipW)) {
+        continue;
+      }
       uint8_t glyphPixel = *(glyphBitmap->buffer + j*glyphBitmap->pitch + i);
-      pixel_t * currentPixelPointer = (image->pixels + (y+j)*image->width + (x+i));
+      pixel_t * currentPixelPointer = (image->pixels + destY*image->width + destX);
       *currentPixelPointer = (pixel_t){.red = (0xFF-glyphPixel), .green = (0xFF-glyphPixel), .blue = (0xFF-glyphPixel)}; // Alpha blending
     }
   }

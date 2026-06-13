@@ -78,9 +78,14 @@ void CodeOptionsController::willDisplayCellForIndex(HighlightCell * cell, int in
   if (thisLabel == I18n::Message::FontSizes){
     MessageTableCellWithChevronAndMessage * myTextCell = (MessageTableCellWithChevronAndMessage *)cell;
     myTextCell->setMessage(thisLabel);
-    GlobalPreferences::sharedGlobalPreferences()->font() == KDFont::LargeFont
-        ? myTextCell->setSubtitle(I18n::Message::LargeFont)
-        : myTextCell->setSubtitle(I18n::Message::SmallFont);
+    const KDFont * font = GlobalPreferences::sharedGlobalPreferences()->font();
+    I18n::Message subtitle = I18n::Message::SmallFont;
+    if (font == KDFont::LargeFont) {
+      subtitle = I18n::Message::LargeFont;
+    } else if (font == KDFont::TinyFont) {
+      subtitle = I18n::Message::TinyFont;
+    }
+    myTextCell->setSubtitle(subtitle);
   }
 #ifdef HAS_CODE
   else if (thisLabel == I18n::Message::Autocomplete) {

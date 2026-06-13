@@ -1,10 +1,11 @@
 #include "console_line_cell.h"
-#include "console_controller.h"
 #include <kandinsky/point.h>
 #include <kandinsky/coordinate.h>
 #include <apps/i18n.h>
 #include <apps/global_preferences.h>
 #include <escher/text_field.h>
+#include <escher/metric.h>
+#include <algorithm>
 
 namespace {
 
@@ -53,8 +54,8 @@ void StripColorSequences(const char * text, char * buffer, size_t bufferSize) {
   buffer[out] = 0;
 }
 
-void DrawConsoleText(KDContext * ctx, const char * text, const KDFont * font, KDColor defaultColor, KDColor background) {
-  KDCoordinate x = 0;
+void DrawConsoleText(KDContext * ctx, const char * text, const KDFont * font, KDColor defaultColor, KDColor background, KDCoordinate xOffset = 0) {
+  KDCoordinate x = -xOffset;
   for (const char * p = text; *p != '\0'; ) {
     if (IsColorPrefix(p)) {
       const char * h = p + 3;
@@ -130,47 +131,71 @@ KDSize ConsoleTextSize(const char * text, const KDFont * font) {
 
 namespace Code {
 
-ConsoleLineCell::ScrollableConsoleLineView::ConsoleLineView::ConsoleLineView() :
-  HighlightCell(),
-  m_line(nullptr)
+ConsoleLineCell::ConsoleLineTextView::ConsoleLineTextView() :
+  View(),
+  m_line(nullptr),
+  m_horizontalOffset(0),
+  m_highlighted(false)
 {
 }
 
-void ConsoleLineCell::ScrollableConsoleLineView::ConsoleLineView::setLine(ConsoleLine * line) {
+void ConsoleLineCell::ConsoleLineTextView::setLine(ConsoleLine * line) {
   m_line = line;
 }
 
-void ConsoleLineCell::ScrollableConsoleLineView::ConsoleLineView::drawRect(KDContext * ctx, KDRect rect) const {
-  KDColor background = isHighlighted() ? Palette::Select : Palette::CodeBackground;
+void ConsoleLineCell::ConsoleLineTextView::setHighlighted(bool highlight) {
+  m_highlighted = highlight;
+}
+
+void ConsoleLineCell::ConsoleLineTextView::resetHorizontalOffset() {
+  m_horizontalOffset = 0;
+}
+
+KDCoordinate ConsoleLineCell::ConsoleLineTextView::maxHorizontalOffset() const {
+  if (m_line == nullptr) {
+    return 0;
+  }
+  const KDFont * font = GlobalPreferences::sharedGlobalPreferences()->font();
+  KDCoordinate textWidth = ConsoleTextSize(m_line->text(), font).width();
+  return std::max<KDCoordinate>(0, textWidth - bounds().width());
+}
+
+void ConsoleLineCell::ConsoleLineTextView::scrollHorizontally(KDCoordinate offset) {
+  m_horizontalOffset = offset;
+  markRectAsDirty(bounds());
+}
+
+void ConsoleLineCell::ConsoleLineTextView::drawRect(KDContext * ctx, KDRect rect) const {
+  if (m_line == nullptr) {
+    return;
+  }
+  KDColor background = m_highlighted ? Palette::Select : Palette::CodeBackground;
   ctx->fillRect(bounds(), Palette::CodeBackground);
   const KDFont * font = GlobalPreferences::sharedGlobalPreferences()->font();
   KDColor defaultColor = textColor(m_line);
-  DrawConsoleText(ctx, m_line->text(), font, defaultColor, background);
+  DrawConsoleText(ctx, m_line->text(), font, defaultColor, background, m_horizontalOffset);
 }
 
-KDSize ConsoleLineCell::ScrollableConsoleLineView::ConsoleLineView::minimalSizeForOptimalDisplay() const {
+KDSize ConsoleLineCell::ConsoleLineTextView::minimalSizeForOptimalDisplay() const {
+  if (m_line == nullptr) {
+    return KDSizeZero;
+  }
   const KDFont * font = GlobalPreferences::sharedGlobalPreferences()->font();
   return ConsoleTextSize(m_line->text(), font);
-}
-
-ConsoleLineCell::ScrollableConsoleLineView::ScrollableConsoleLineView(Responder * parentResponder) :
-  ScrollableView(parentResponder, &m_consoleLineView, this),
-  m_consoleLineView()
-{
 }
 
 ConsoleLineCell::ConsoleLineCell(Responder * parentResponder) :
   HighlightCell(),
   Responder(parentResponder),
   m_promptView(GlobalPreferences::sharedGlobalPreferences()->font(), I18n::Message::ConsolePrompt, 0, 0.5),
-  m_scrollableView(this),
+  m_lineTextView(),
   m_line()
 {
 }
 
 void ConsoleLineCell::setLine(ConsoleLine line) {
   m_line = line;
-  m_scrollableView.consoleLineView()->setLine(&m_line);
+  m_lineTextView.setLine(&m_line);
   m_promptView.setTextColor(textColor(&m_line));
   reloadCell();
 }
@@ -182,13 +207,31 @@ const char * ConsoleLineCell::text() const {
 
 void ConsoleLineCell::setHighlighted(bool highlight) {
   HighlightCell::setHighlighted(highlight);
-  m_scrollableView.consoleLineView()->setHighlighted(highlight);
+  m_lineTextView.setHighlighted(highlight);
 }
 
 void ConsoleLineCell::reloadCell() {
+  m_lineTextView.resetHorizontalOffset();
   layoutSubviews();
   HighlightCell::reloadCell();
-  m_scrollableView.reloadScroll();
+}
+
+bool ConsoleLineCell::handleEvent(Ion::Events::Event event) {
+  KDCoordinate scrollStep = static_cast<KDCoordinate>(Ion::Events::repetitionFactor() * Metric::ScrollStep);
+  KDCoordinate offset = m_lineTextView.horizontalOffset();
+  KDCoordinate maxOffset = m_lineTextView.maxHorizontalOffset();
+  if (event == Ion::Events::Left) {
+    if (offset > 0) {
+      m_lineTextView.scrollHorizontally(offset - std::min<KDCoordinate>(scrollStep, offset));
+      return true;
+    }
+  } else if (event == Ion::Events::Right) {
+    if (offset < maxOffset) {
+      m_lineTextView.scrollHorizontally(offset + std::min<KDCoordinate>(scrollStep, maxOffset - offset));
+      return true;
+    }
+  }
+  return false;
 }
 
 int ConsoleLineCell::numberOfSubviews() const {
@@ -202,28 +245,24 @@ int ConsoleLineCell::numberOfSubviews() const {
 View * ConsoleLineCell::subviewAtIndex(int index) {
   if (m_line.isCommand()) {
     assert(index >= 0 && index < 2);
-    View * views[] = {&m_promptView, &m_scrollableView};
+    View * views[] = {&m_promptView, &m_lineTextView};
     return views[index];
   }
   assert(m_line.isResult());
   assert(index == 0);
-  return &m_scrollableView;
+  return &m_lineTextView;
 }
 
 void ConsoleLineCell::layoutSubviews(bool force) {
   if (m_line.isCommand()) {
     KDSize promptSize = GlobalPreferences::sharedGlobalPreferences()->font()->stringSize(I18n::translate(I18n::Message::ConsolePrompt));
     m_promptView.setFrame(KDRect(KDPointZero, promptSize.width(), bounds().height()), force);
-    m_scrollableView.setFrame(KDRect(KDPoint(promptSize.width(), 0), bounds().width() - promptSize.width(), bounds().height()), force);
+    m_lineTextView.setFrame(KDRect(KDPoint(promptSize.width(), 0), bounds().width() - promptSize.width(), bounds().height()), force);
     return;
   }
   assert(m_line.isResult());
   m_promptView.setFrame(KDRectZero, force);
-  m_scrollableView.setFrame(bounds(), force);
-}
-
-void ConsoleLineCell::didBecomeFirstResponder() {
-  Container::activeApp()->setFirstResponder(&m_scrollableView);
+  m_lineTextView.setFrame(bounds(), force);
 }
 
 }

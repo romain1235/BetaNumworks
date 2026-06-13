@@ -2,7 +2,9 @@
 #include "app.h"
 #include <escher/palette.h>
 #include <ion/keyboard.h>
+#include <ion/unicode/utf8_decoder.h>
 #include <ion/unicode/utf8_helper.h>
+#include <poincare/serialization_helper.h>
 #include <python/port/port.h>
 #include "../global_preferences.h"
 
@@ -62,9 +64,18 @@ static inline bool IsClosingDelimiter(mp_token_kind_t tokenKind) {
       || tokenKind == MP_TOKEN_DEL_BRACE_CLOSE;
 }
 
-static inline bool TextContainsDelimiter(const char * text) {
-  for (const char * c = text; *c != 0; c++) {
-    if (*c == '(' || *c == ')' || *c == '[' || *c == ']' || *c == '{' || *c == '}') {
+static inline bool TextContainsDelimiter(const char * text, int textLength = -1) {
+  if (textLength < 0) {
+    for (const char * c = text; *c != 0; c++) {
+      if (*c == '(' || *c == ')' || *c == '[' || *c == ']' || *c == '{' || *c == '}') {
+        return true;
+      }
+    }
+    return false;
+  }
+  for (int i = 0; i < textLength; i++) {
+    char c = text[i];
+    if (c == '(' || c == ')' || c == '[' || c == ']' || c == '{' || c == '}') {
       return true;
     }
   }
@@ -897,25 +908,78 @@ void PythonTextArea::ContentView::drawLine(KDContext * ctx, int line, const char
 }
 
 KDRect PythonTextArea::ContentView::dirtyRectFromPosition(const char * position, bool includeFollowingLines) const {
-  /* Mark the whole line as dirty.
-   * TextArea has a very conservative approach and only dirties the surroundings
-   * of the current character. That works for plain text, but when doing syntax
-   * highlighting, you may want to redraw the surroundings as well. For example,
-   * if editing "def foo" into "df foo", you'll want to redraw "df". */
-  KDRect baseDirtyRect = TextArea::ContentView::dirtyRectFromPosition(position, includeFollowingLines);
-  /* Delimiter colors depend on all previous delimiters, potentially across
-   * multiple lines. Redraw from the edited line to the bottom to keep colors in
-   * sync after insertions/deletions. */
-  KDCoordinate dirtyHeight = bounds().height() - baseDirtyRect.y();
-  if (dirtyHeight < 0) {
-    dirtyHeight = 0;
+  if (includeFollowingLines) {
+    /* Delimiter colors depend on all previous delimiters, potentially across
+     * multiple lines. Redraw from the edited line to the bottom to keep colors
+     * in sync after line breaks or delimiter edits. */
+    return TextArea::ContentView::dirtyRectFromPosition(position, true);
   }
+  /* Syntax highlighting needs the full current line width. For example, if
+   * editing "def foo" into "df foo", redraw the whole line. */
+  int line = m_text.positionAtPointer(position).line();
+  KDCoordinate lineHeight = m_font->glyphSize().height();
   return KDRect(
     bounds().x(),
-    baseDirtyRect.y(),
+    line * lineHeight,
     bounds().width(),
-    dirtyHeight
+    lineHeight
   );
+}
+
+void PythonTextArea::ContentView::insertTextAtLocation(const char * text, char * location, int textLength) {
+  int textLen = textLength < 0 ? strlen(text) : textLength;
+  assert(textLen < 0 || textLen <= strlen(text));
+  assert(isAbleToInsertTextAt(textLen, location, false));
+
+  bool lineBreak = UTF8Helper::HasCodePoint(text, '\n', text + textLen);
+  bool delimiterEdit = TextContainsDelimiter(text, textLen);
+  int invalidDelta = 0;
+  if (!lineBreak && !delimiterEdit) {
+    invalidDelta = estimateInvalidDeltaForInsertion(location, text, textLen);
+  }
+
+  m_text.insertText(text, textLen, location);
+  Poincare::SerializationHelper::ReplaceSystemParenthesesByUserParentheses(location, textLen);
+  invalidateDelimiterColoringCache();
+  reloadRectFromPosition(location, lineBreak || delimiterEdit || invalidDelta != 0);
+}
+
+bool PythonTextArea::ContentView::removePreviousGlyph() {
+  if (cursorLocation() <= text()) {
+    assert(cursorLocation() == text());
+    return false;
+  }
+  const char * previousCursorLocation = cursorLocation();
+  UTF8Decoder decoder(m_text.text(), previousCursorLocation);
+  const char * previousGlyphPos = decoder.previousGlyphPosition();
+  assert(previousGlyphPos != nullptr);
+  int deletionLen = previousCursorLocation - previousGlyphPos;
+  bool deletedDelimiter = IsOpeningDelimiterChar(*previousGlyphPos) || IsClosingDelimiterChar(*previousGlyphPos);
+
+  bool lineBreak = false;
+  char * cursorLoc = const_cast<char *>(previousCursorLocation);
+  lineBreak = m_text.removePreviousGlyph(&cursorLoc) == '\n';
+  setCursorLocation(cursorLoc);
+  layoutSubviews();
+
+  int invalidDelta = 0;
+  if (!lineBreak && !deletedDelimiter) {
+    invalidDelta = estimateInvalidDeltaForDeletion(previousGlyphPos, deletionLen);
+  }
+  invalidateDelimiterColoringCache();
+  reloadRectFromPosition(cursorLocation(), lineBreak || deletedDelimiter || invalidDelta != 0);
+  return true;
+}
+
+bool PythonTextArea::ContentView::removeEndOfLine() {
+  size_t removedLine = m_text.removeRemainingLine(cursorLocation(), 1);
+  if (removedLine > 0) {
+    layoutSubviews();
+    invalidateDelimiterColoringCache();
+    reloadRectFromPosition(cursorLocation(), true);
+    return true;
+  }
+  return false;
 }
 
 bool PythonTextArea::handleEvent(Ion::Events::Event event) {

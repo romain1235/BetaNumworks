@@ -86,8 +86,12 @@ private:
   static constexpr size_t k_maxImportCommandSize = 5 + 9 + TextField::maxBufferSize(); // strlen(k_importCommand1) + strlen(k_importCommand2) + TextField::maxBufferSize()
   static constexpr int LineCellType = 0;
   static constexpr int EditCellType = 1;
-  static constexpr int k_numberOfLineCells = (Ion::Display::Height - Metric::TitleBarHeight) / 14 + 2; // 14 = KDFont::SmallFont->glyphSize().height()
-  // k_numberOfLineCells = (240 - 18)/14 ~ 15.9. The 0.1 cell can be above and below the 15 other cells so we add +2 cells.
+  /* Reusable cells only cover the visible viewport (scroll recycles them).
+   * The console history (ConsoleStore::k_historySize) is unrelated and can hold
+   * many more lines than fit on screen. Size the pool for the smallest Python
+   * font row height so TinyFont can display more lines without overflowing. */
+  static constexpr int k_maxNumberOfVisibleLineCells = (Ion::Display::Height - Metric::TitleBarHeight) / 9 + 2; // 9 = KDFont::TinyFont->glyphSize().height()
+  static int numberOfVisibleLineCells();
   // Increase accumulation buffer to reduce automatic wrapping that breaks
   // colored escape sequences. 512 is a reasonable trade-off for device RAM.
   static constexpr int k_outputAccumulationBufferSize = 512;
@@ -102,7 +106,7 @@ private:
   bool m_importScriptsWhenViewAppears;
   ConsoleStore m_consoleStore;
   SelectableTableView m_selectableTableView;
-  ConsoleLineCell m_cells[k_numberOfLineCells];
+  ConsoleLineCell m_cells[k_maxNumberOfVisibleLineCells];
   ConsoleEditCell m_editCell;
   char m_outputAccumulationBuffer[k_outputAccumulationBufferSize];
   /* The Python machine might call printText several times to print a single

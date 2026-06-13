@@ -63,7 +63,7 @@ constexpr SettingsMessageTree s_contributorsChildren[19] = {SettingsMessageTree(
 #ifdef HAS_CODE
 constexpr SettingsMessageTree s_codeChildren[5] = {SettingsMessageTree(I18n::Message::FontSizes, s_modelFontChildren), SettingsMessageTree(I18n::Message::Autocomplete), SettingsMessageTree(I18n::Message::AutoCloseParentheses), SettingsMessageTree(I18n::Message::SyntaxHighlighting), SettingsMessageTree(I18n::Message::ClearShift)};
 #endif
-constexpr SettingsMessageTree s_modelFontChildren[2] = {SettingsMessageTree(I18n::Message::LargeFont), SettingsMessageTree(I18n::Message::SmallFont)};
+constexpr SettingsMessageTree s_modelFontChildren[3] = {SettingsMessageTree(I18n::Message::LargeFont), SettingsMessageTree(I18n::Message::SmallFont), SettingsMessageTree(I18n::Message::TinyFont)};
 
 constexpr SettingsMessageTree s_modelAboutChildren[11] = {SettingsMessageTree(I18n::Message::Username), SettingsMessageTree(I18n::Message::BetaVersion), SettingsMessageTree(I18n::Message::UpsilonVersion), SettingsMessageTree(I18n::Message::OmegaVersion), SettingsMessageTree(I18n::Message::SoftwareVersion), SettingsMessageTree(I18n::Message::MicroPythonVersion), SettingsMessageTree(I18n::Message::Battery), SettingsMessageTree(I18n::Message::MemUse), SettingsMessageTree(I18n::Message::SerialNumber), SettingsMessageTree(I18n::Message::FccId), SettingsMessageTree(I18n::Message::Contributors, s_contributorsChildren)};
 
