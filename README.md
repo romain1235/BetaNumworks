@@ -18,21 +18,22 @@ Beta is a fork of Upsilon (itself derived from Omega and Epsilon). Beta adds man
 - Python:
   - Kandinsky:
     - Configurable framebuffer (rgb222, rgb332, rgb565 and customizable n-bit palettes)
-    - Kandinsky display/drawing functions
     - `set_fullscreen(bool)`, `get_pixels(x,y,w,h)`, `wait_vblank()`
   - Ion:
     - LED (disabled in exam mode)
-  - New `console` module: `colored_text("text", (r,g,b))` to build colorized strings and `select("choice 1", "choice 2", ...)` to return the selected index
-  - Fixed a matplotlib issue that forced a white background regardless of theme
-- Improvements to the `atomic` app
+  - New `console` module
+  - Other small additions
+- Improvements to the `atomic` app (more info, faster)
 - Parser improvements to match Epsilon behavior
 - New `files` app
 - Bootloader with a dark theme
 - Battery percentage shown in the toolbar and toolbar reorganization
-- spacing between thousands of 3px(1000->1 000)
-- python editor improvements
+- Spacing between thousands of 3px(1000->1 000)
+- Python editor improvements
 - New theme `beta_dark`
-- installing multiple themes at the same time.
+- New "Minuscule" font for python
+- Installing multiple themes at the same time
+- Bugs and other small changes
 
 <br>
 
