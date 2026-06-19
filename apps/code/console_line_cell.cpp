@@ -89,11 +89,30 @@ void DrawConsoleText(KDContext * ctx, const char * text, const KDFont * font, KD
       }
       p = *segEnd == '\x1b' ? segEnd + 4 : segEnd;
     } else {
-      KDPoint point(x, 0);
-      KDSize s = font->stringSize(p);
-      ctx->drawString(p, point, font, defaultColor, background);
-      x += s.width();
-      break;
+      const char * segEnd = p;
+      while (*segEnd != '\0' && !IsColorPrefix(segEnd)) {
+        segEnd++;
+      }
+      int segLen = segEnd - p;
+      if (segLen > 0) {
+        KDPoint point(x, 0);
+        if (segLen < 256) {
+          char buf[256];
+          memcpy(buf, p, segLen);
+          buf[segLen] = '\0';
+          KDSize s = font->stringSize(buf);
+          ctx->drawString(buf, point, font, defaultColor, background);
+          x += s.width();
+        } else {
+          char save = p[segLen];
+          ((char *)p)[segLen] = '\0';
+          KDSize s = font->stringSize(p);
+          ctx->drawString(p, point, font, defaultColor, background);
+          ((char *)p)[segLen] = save;
+          x += s.width();
+        }
+      }
+      p = segEnd;
     }
   }
 }
@@ -120,8 +139,25 @@ KDSize ConsoleTextSize(const char * text, const KDFont * font) {
       }
       p = *segEnd == '\x1b' ? segEnd + 4 : segEnd;
     } else {
-      width += font->stringSize(p).width();
-      break;
+      const char * segEnd = p;
+      while (*segEnd != '\0' && !IsColorPrefix(segEnd)) {
+        segEnd++;
+      }
+      int segLen = segEnd - p;
+      if (segLen > 0) {
+        if (segLen < 256) {
+          char buf[256];
+          memcpy(buf, p, segLen);
+          buf[segLen] = '\0';
+          width += font->stringSize(buf).width();
+        } else {
+          char save = p[segLen];
+          ((char *)p)[segLen] = '\0';
+          width += font->stringSize(p).width();
+          ((char *)p)[segLen] = save;
+        }
+      }
+      p = segEnd;
     }
   }
   return KDSize(width, font->glyphSize().height());

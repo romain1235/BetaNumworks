@@ -6,8 +6,6 @@ extern "C" {
 #include "py/mphal.h"
 }
 
-#include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
 
 #include "../../port.h"
@@ -67,10 +65,7 @@ mp_obj_t modconsole_colored_text(mp_obj_t text_obj, mp_obj_t color_obj) {
   }
 
   size_t total_len = (size_t)h + textlen + 4 + newline_count * ((size_t)h + 4);
-  char * out = static_cast<char *>(malloc(total_len + 1));
-  if (out == nullptr) {
-    mp_raise_msg(&mp_type_MemoryError, MP_ERROR_TEXT("out of memory"));
-  }
+  char * out = m_new(char, total_len + 1);
 
   size_t out_pos = 0;
   const char * p = text;
@@ -105,7 +100,7 @@ mp_obj_t modconsole_colored_text(mp_obj_t text_obj, mp_obj_t color_obj) {
   out[out_pos] = 0;
 
   mp_obj_t result = mp_obj_new_str(out, out_pos);
-  free(out);
+  m_free(out);
   return result;
 }
 
@@ -127,10 +122,7 @@ mp_obj_t modconsole_select(size_t n_args, const mp_obj_t * args) {
     mp_raise_TypeError("select choices cannot be empty");
   }
 
-  const char ** utf8_choices = static_cast<const char **>(malloc(choice_count * sizeof(const char *)));
-  if (utf8_choices == nullptr) {
-    mp_raise_msg(&mp_type_MemoryError, MP_ERROR_TEXT("out of memory"));
-  }
+  const char ** utf8_choices = m_new(const char *, choice_count);
 
   for (size_t i = 0; i < choice_count; i++) {
     utf8_choices[i] = mp_obj_str_get_str(choices[i]);
@@ -138,12 +130,12 @@ mp_obj_t modconsole_select(size_t n_args, const mp_obj_t * args) {
 
   MicroPython::ExecutionEnvironment * env = MicroPython::ExecutionEnvironment::currentExecutionEnvironment();
   if (env == nullptr) {
-    free(utf8_choices);
+    m_free(utf8_choices);
     mp_raise_msg(&mp_type_RuntimeError, MP_ERROR_TEXT("select requires running code context"));
   }
 
   int selected_index = env->selectText(utf8_choices, choice_count);
-  free(utf8_choices);
+  m_free(utf8_choices);
   if (selected_index < 0) {
     mp_raise_type(&mp_type_KeyboardInterrupt);
   }
