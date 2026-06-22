@@ -106,7 +106,9 @@ protected:
   public:
     ContentView(const KDFont * font) :
       TextInput::ContentView(font),
-      m_text(nullptr, 0)
+      m_text(nullptr, 0),
+      m_preferredCursorColumn(-1),
+      m_updatePreferredCursorColumn(true)
     {
       m_cursorLocation = m_text.text();
     }
@@ -122,6 +124,7 @@ protected:
     const Text * getText() const { return &m_text; }
     bool isAbleToInsertTextAt(int textLength, const char * location, bool shouldRemoveLastCharacter) const override;
     void insertTextAtLocation(const char * text, char * location, int textLength = -1) override;
+    void setCursorLocation(const char * location) override;
     void moveCursorGeo(int deltaX, int deltaY);
     bool removePreviousGlyph() override;
     bool removeEndOfLine() override;
@@ -131,6 +134,11 @@ protected:
   protected:
     KDRect glyphFrameAtPosition(const char * text, const char * position) const override;
     Text m_text;
+  private:
+    /* When moving vertically, keep the cursor on the same column when possible,
+     * even if an intermediate line is shorter. */
+    int m_preferredCursorColumn;
+    bool m_updatePreferredCursorColumn;
   };
 
   ContentView * contentView() { return static_cast<ContentView *>(TextInput::contentView()); }

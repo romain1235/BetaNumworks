@@ -44,7 +44,7 @@ protected:
 
     // Cursor location
     const char * cursorLocation() const { assert(m_cursorLocation != nullptr); return m_cursorLocation; }
-    void setCursorLocation(const char * cursorLocation);
+    virtual void setCursorLocation(const char * cursorLocation);
     KDRect cursorRect();
 
     // Virtual text get/add/remove

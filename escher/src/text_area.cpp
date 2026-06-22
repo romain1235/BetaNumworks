@@ -697,9 +697,38 @@ KDRect TextArea::ContentView::glyphFrameAtPosition(const char * text, const char
   );
 }
 
+void TextArea::ContentView::setCursorLocation(const char * location) {
+  TextInput::ContentView::setCursorLocation(location);
+  if (m_updatePreferredCursorColumn) {
+    m_preferredCursorColumn = m_text.positionAtPointer(cursorLocation()).column();
+  }
+}
+
 void TextArea::ContentView::moveCursorGeo(int deltaX, int deltaY) {
   Text::Position p = m_text.positionAtPointer(cursorLocation());
-  setCursorLocation(m_text.pointerAtPosition(Text::Position(p.column() + deltaX, p.line() + deltaY)));
+  if (deltaX == 0 && deltaY == 0) {
+    m_preferredCursorColumn = -1;
+    setCursorLocation(m_text.pointerAtPosition(Text::Position(0, 0)));
+    return;
+  }
+  int targetColumn = p.column() + deltaX;
+  int targetLine = p.line() + deltaY;
+  if (deltaY != 0) {
+    if (m_preferredCursorColumn < 0) {
+      m_preferredCursorColumn = p.column();
+    }
+    targetColumn = m_preferredCursorColumn;
+    m_updatePreferredCursorColumn = false;
+  }
+  setCursorLocation(m_text.pointerAtPosition(Text::Position(targetColumn, targetLine)));
+  if (deltaY != 0) {
+    m_updatePreferredCursorColumn = true;
+    Text::Position newPosition = m_text.positionAtPointer(cursorLocation());
+    if (newPosition.line() != targetLine) {
+      // Vertical boundary reached: keep the actual column for next moves.
+      m_preferredCursorColumn = newPosition.column();
+    }
+  }
 }
 
 void TextArea::selectUpDown(bool up, int step) {
