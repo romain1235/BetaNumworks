@@ -70,7 +70,7 @@ private:
 namespace Kandinsky {
 /* Resolve the font selected by kandinsky.draw_string. See FontForId in
  * modkandinsky.cpp for the meaning of each id. */
-const KDFont * FontForId(int id, bool isItalic);
+const KDFont * FontForId(int id);
 /* Configure origin and clipping on ctx from fullscreen and user clip state. */
 void ApplyDrawingContext(KDContext * ctx);
 }

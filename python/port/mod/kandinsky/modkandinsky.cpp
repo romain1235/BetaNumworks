@@ -146,44 +146,59 @@ mp_obj_t modkandinsky_set_pixel(mp_obj_t x, mp_obj_t y, mp_obj_t input) {
   return mp_const_none;
 }
 
-/* The font argument of draw_string is an integer so that the historical
- * booleans large_font (False/0) and small_font (True/1) keep working. The
- * "italic" bit (value 4) and the tiny font are also encoded here:
+/* Font ids used by kandinsky.draw_string:
  *   0 -> LargeFont        4 -> ItalicLargeFont
  *   1 -> SmallFont        5 -> ItalicSmallFont
  *   3 -> TinyFont */
-const KDFont * MicroPython::Kandinsky::FontForId(int id, bool isItalic) {
-  const KDFont * font;
+const KDFont * MicroPython::Kandinsky::FontForId(int id) {
   switch (id) {
     case 1:
-      font = KDFont::SmallFont;
-      break;
+      return KDFont::SmallFont;
     case 3:
-      font = KDFont::TinyFont;
-      break;
+      return KDFont::TinyFont;
     case 4:
-      font = KDFont::ItalicLargeFont;
-      break;
+      return KDFont::ItalicLargeFont;
     case 5:
-      font = KDFont::ItalicSmallFont;
-      break;
+      return KDFont::ItalicSmallFont;
     case 0:
     default:
-      font = KDFont::LargeFont;
-      break;
+      return KDFont::LargeFont;
   }
-  // The legacy 7th boolean argument can still force the italic variant.
-  return isItalic ? font->toItalic() : font;
 }
 
-mp_obj_t modkandinsky_draw_string(size_t n_args, const mp_obj_t * args) {
-  const char * text = mp_obj_str_get_str(args[0]);
-  KDPoint point(mp_obj_get_int(args[1]), mp_obj_get_int(args[2]));
-  KDColor textColor = (n_args >= 4) ? MicroPython::Color::Parse(args[3]) : Palette::PrimaryText;
-  KDColor backgroundColor = (n_args >= 5) ? MicroPython::Color::Parse(args[4]) : Palette::HomeBackground;
-  int fontId = (n_args >= 6) ? mp_obj_get_int(args[5]) : 0;
-  bool isItalic = (n_args >= 7) ? mp_obj_is_true(args[6]) : false;
-  const KDFont * font = MicroPython::Kandinsky::FontForId(fontId, isItalic);
+mp_obj_t modkandinsky_draw_string(size_t n_args, const mp_obj_t *pos_args, mp_map_t *kw_args) {
+  enum {
+    ARG_text,
+    ARG_x,
+    ARG_y,
+    ARG_color,
+    ARG_background,
+    ARG_font,
+    ARG_italic,
+  };
+  static const mp_arg_t allowedArgs[] = {
+    { MP_QSTR_, MP_ARG_REQUIRED | MP_ARG_OBJ, {.u_rom_obj = MP_ROM_NONE} },
+    { MP_QSTR_, MP_ARG_REQUIRED | MP_ARG_INT, {.u_int = 0} },
+    { MP_QSTR_, MP_ARG_REQUIRED | MP_ARG_INT, {.u_int = 0} },
+    { MP_QSTR_color, MP_ARG_OBJ, {.u_rom_obj = MP_ROM_NONE} },
+    { MP_QSTR_background, MP_ARG_OBJ, {.u_rom_obj = MP_ROM_NONE} },
+    { MP_QSTR_font, MP_ARG_INT, {.u_int = 0} },
+    { MP_QSTR_italic, MP_ARG_OBJ, {.u_rom_obj = MP_ROM_NONE} },
+  };
+  mp_arg_val_t args[MP_ARRAY_SIZE(allowedArgs)];
+  mp_arg_parse_all(n_args, pos_args, kw_args, MP_ARRAY_SIZE(allowedArgs), allowedArgs, args);
+
+  const char * text = mp_obj_str_get_str(args[ARG_text].u_obj);
+  KDPoint point(args[ARG_x].u_int, args[ARG_y].u_int);
+  KDColor textColor = (args[ARG_color].u_obj != mp_const_none)
+    ? MicroPython::Color::Parse(args[ARG_color].u_obj) : Palette::PrimaryText;
+  KDColor backgroundColor = (args[ARG_background].u_obj != mp_const_none)
+    ? MicroPython::Color::Parse(args[ARG_background].u_obj) : Palette::HomeBackground;
+  const KDFont * font = MicroPython::Kandinsky::FontForId(args[ARG_font].u_int);
+  // Legacy 7th positional argument: force the italic variant of the font.
+  if (args[ARG_italic].u_obj != mp_const_none && mp_obj_is_true(args[ARG_italic].u_obj)) {
+    font = font->toItalic();
+  }
   MicroPython::ExecutionEnvironment::currentExecutionEnvironment()->displaySandbox();
   KDContext * ctx = KDIonContext::sharedContext();
   KDPoint oldOrigin = ctx->origin();

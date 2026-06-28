@@ -594,16 +594,42 @@ const mp_obj_fun_builtin_var_t framebuffer_draw_line_obj = {
   {(mp_fun_var_t)framebuffer_draw_line}
 };
 
-// draw_string(self, text, x, y, textColor?, backgroundColor?, smallFont?, italic?)
-STATIC mp_obj_t framebuffer_draw_string(size_t n_args, const mp_obj_t * args) {
-  kandinsky_framebuffer_obj_t * self = (kandinsky_framebuffer_obj_t*) MP_OBJ_TO_PTR(args[0]);
-  const char * text = mp_obj_str_get_str(args[1]);
-  KDPoint point(mp_obj_get_int(args[2]), mp_obj_get_int(args[3]));
-  KDColor textColor = (n_args >= 5) ? parse_color_or_palette(self, args[4]) : Palette::PrimaryText;
-  KDColor backgroundColor = (n_args >= 6) ? parse_color_or_palette(self, args[5]) : Palette::HomeBackground;
-  int fontId = (n_args >= 7) ? mp_obj_get_int(args[6]) : 0;
-  bool isItalic = (n_args >= 8) ? mp_obj_is_true(args[7]) : false;
-  const KDFont * font = Kandinsky::FontForId(fontId, isItalic);
+// draw_string(self, text, x, y, color?, background?, font?, italic?)
+STATIC mp_obj_t framebuffer_draw_string(size_t n_args, const mp_obj_t * pos_args, mp_map_t * kw_args) {
+  kandinsky_framebuffer_obj_t * self = (kandinsky_framebuffer_obj_t*) MP_OBJ_TO_PTR(pos_args[0]);
+  enum {
+    ARG_text,
+    ARG_x,
+    ARG_y,
+    ARG_color,
+    ARG_background,
+    ARG_font,
+    ARG_italic,
+  };
+  static const mp_arg_t allowedArgs[] = {
+    { MP_QSTR_, MP_ARG_REQUIRED | MP_ARG_OBJ, {.u_rom_obj = MP_ROM_NONE} },
+    { MP_QSTR_, MP_ARG_REQUIRED | MP_ARG_INT, {.u_int = 0} },
+    { MP_QSTR_, MP_ARG_REQUIRED | MP_ARG_INT, {.u_int = 0} },
+    { MP_QSTR_color, MP_ARG_OBJ, {.u_rom_obj = MP_ROM_NONE} },
+    { MP_QSTR_background, MP_ARG_OBJ, {.u_rom_obj = MP_ROM_NONE} },
+    { MP_QSTR_font, MP_ARG_INT, {.u_int = 0} },
+    { MP_QSTR_italic, MP_ARG_OBJ, {.u_rom_obj = MP_ROM_NONE} },
+  };
+  mp_arg_val_t args[MP_ARRAY_SIZE(allowedArgs)];
+  // pos_args[0] is self, skip it before parsing.
+  mp_arg_parse_all(n_args - 1, pos_args + 1, kw_args, MP_ARRAY_SIZE(allowedArgs), allowedArgs, args);
+
+  const char * text = mp_obj_str_get_str(args[ARG_text].u_obj);
+  KDPoint point(args[ARG_x].u_int, args[ARG_y].u_int);
+  KDColor textColor = (args[ARG_color].u_obj != mp_const_none)
+    ? parse_color_or_palette(self, args[ARG_color].u_obj) : Palette::PrimaryText;
+  KDColor backgroundColor = (args[ARG_background].u_obj != mp_const_none)
+    ? parse_color_or_palette(self, args[ARG_background].u_obj) : Palette::HomeBackground;
+  const KDFont * font = Kandinsky::FontForId(args[ARG_font].u_int);
+  // Legacy italic flag: force the italic variant of the font.
+  if (args[ARG_italic].u_obj != mp_const_none && mp_obj_is_true(args[ARG_italic].u_obj)) {
+    font = font->toItalic();
+  }
   init_rgb222_table();
   int x = point.x();
   int y = point.y();
@@ -654,8 +680,8 @@ STATIC mp_obj_t framebuffer_draw_string(size_t n_args, const mp_obj_t * args) {
 }
 const mp_obj_fun_builtin_var_t framebuffer_draw_string_obj = {
   {&mp_type_fun_builtin_var},
-  MP_OBJ_FUN_MAKE_SIG(4, 8, false),
-  {(mp_fun_var_t)framebuffer_draw_string}
+  MP_OBJ_FUN_MAKE_SIG(4, MP_OBJ_FUN_ARGS_MAX, true),
+  {.kw = (mp_fun_kw_t)framebuffer_draw_string}
 };
 
 // draw_circle(self, x, y, r, color)

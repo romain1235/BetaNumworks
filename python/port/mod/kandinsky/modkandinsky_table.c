@@ -4,7 +4,7 @@ static MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(modkandinsky_color_obj, 1, 3, modkand
 static MP_DEFINE_CONST_FUN_OBJ_2(modkandinsky_get_pixel_obj, modkandinsky_get_pixel);
 static MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(modkandinsky_get_pixels_obj, 4, 4, modkandinsky_get_pixels);
 static MP_DEFINE_CONST_FUN_OBJ_3(modkandinsky_set_pixel_obj, modkandinsky_set_pixel);
-static MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(modkandinsky_draw_string_obj, 3, 7, modkandinsky_draw_string);
+static MP_DEFINE_CONST_FUN_OBJ_KW(modkandinsky_draw_string_obj, 3, modkandinsky_draw_string);
 static MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(modkandinsky_draw_line_obj, 5, 5, modkandinsky_draw_line);
 static MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(modkandinsky_draw_circle_obj, 4, 4, modkandinsky_draw_circle);
 static MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(modkandinsky_fill_rect_obj, 5, 5, modkandinsky_fill_rect);
@@ -30,8 +30,6 @@ static const mp_rom_map_elem_t modkandinsky_module_globals_table[] = {
   { MP_ROM_QSTR(MP_QSTR_fill_rect), (mp_obj_t)&modkandinsky_fill_rect_obj },
   { MP_ROM_QSTR(MP_QSTR_fill_circle), (mp_obj_t)&modkandinsky_fill_circle_obj },
   { MP_ROM_QSTR(MP_QSTR_fill_polygon), (mp_obj_t)&modkandinsky_fill_polygon_obj },
-  { MP_ROM_QSTR(MP_QSTR_large_font), mp_const_false },
-  { MP_ROM_QSTR(MP_QSTR_small_font), mp_const_true },
   { MP_ROM_QSTR(MP_QSTR_LARGE_FONT), MP_ROM_INT(0) },
   { MP_ROM_QSTR(MP_QSTR_SMALL_FONT), MP_ROM_INT(1) },
   { MP_ROM_QSTR(MP_QSTR_TINY_FONT), MP_ROM_INT(3) },

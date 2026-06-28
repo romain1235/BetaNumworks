@@ -365,6 +365,14 @@ const ToolboxMessageTree RandomModuleChildren[] = {
   ToolboxMessageTree::Leaf(I18n::Message::PythonCommandUniform, I18n::Message::PythonUniform)
 };
 
+const ToolboxMessageTree KandinskyFontModuleChildren[] = {
+  ToolboxMessageTree::Leaf(I18n::Message::PythonCommandLargeFont, I18n::Message::PythonLargeFont, false),
+  ToolboxMessageTree::Leaf(I18n::Message::PythonCommandSmallFont, I18n::Message::PythonSmallFont, false),
+  ToolboxMessageTree::Leaf(I18n::Message::PythonCommandTinyFont, I18n::Message::PythonTinyFont, false),
+  ToolboxMessageTree::Leaf(I18n::Message::PythonCommandLargeFontItalic, I18n::Message::PythonLargeFontItalic, false),
+  ToolboxMessageTree::Leaf(I18n::Message::PythonCommandSmallFontItalic, I18n::Message::PythonSmallFontItalic, false),
+};
+
 const ToolboxMessageTree FrameBufferModuleChildren[] = {
   ToolboxMessageTree::Leaf(I18n::Message::PythonCommandFrameBufferCreate, I18n::Message::PythonFrameBufferCreate),
   ToolboxMessageTree::Leaf(I18n::Message::PythonCommandFrameBufferDraw, I18n::Message::PythonFrameBufferDraw),
@@ -395,6 +403,7 @@ const ToolboxMessageTree KandinskyModuleChildren[] = {
   ToolboxMessageTree::Leaf(I18n::Message::PythonCommandDrawLine, I18n::Message::PythonDrawLine),
   ToolboxMessageTree::Leaf(I18n::Message::PythonCommandDrawCircle, I18n::Message::PythonDrawCircle),
   ToolboxMessageTree::Leaf(I18n::Message::PythonCommandDrawString, I18n::Message::PythonDrawString),
+  ToolboxMessageTree::Node(I18n::Message::PythonKandinskyFontMenu, KandinskyFontModuleChildren),
   ToolboxMessageTree::Leaf(I18n::Message::PythonCommandFillCircle, I18n::Message::PythonFillCircle),
   ToolboxMessageTree::Leaf(I18n::Message::PythonCommandFillRect, I18n::Message::PythonFillRect),
   ToolboxMessageTree::Leaf(I18n::Message::PythonCommandFillPolygon, I18n::Message::PythonFillPolygon),
@@ -404,10 +413,12 @@ const ToolboxMessageTree KandinskyModuleChildren[] = {
   ToolboxMessageTree::Leaf(I18n::Message::PythonCommandWaitVBlank, I18n::Message::PythonWaitVBlank),
   ToolboxMessageTree::Leaf(I18n::Message::PythonCommandColor, I18n::Message::PythonColor),
   ToolboxMessageTree::Node(I18n::Message::PythonFrameBufferMenu, FrameBufferModuleChildren),
-  // framebuffer functions are available in the framebuffer submenu
-  ToolboxMessageTree::Leaf(I18n::Message::PythonCommandGetPalette, I18n::Message::PythonGetPalette)
-  ,ToolboxMessageTree::Leaf(I18n::Message::PythonCommandSetFullscreen, I18n::Message::PythonSetFullscreen)
-  ,ToolboxMessageTree::Leaf(I18n::Message::PythonCommandGetFullscreen, I18n::Message::PythonGetFullscreen)
+  ToolboxMessageTree::Leaf(I18n::Message::PythonCommandGetPalette, I18n::Message::PythonGetPalette),
+  ToolboxMessageTree::Leaf(I18n::Message::PythonCommandSetFullscreen, I18n::Message::PythonSetFullscreen),
+  ToolboxMessageTree::Leaf(I18n::Message::PythonCommandGetFullscreen, I18n::Message::PythonGetFullscreen),
+  ToolboxMessageTree::Leaf(I18n::Message::PythonCommandSetClip, I18n::Message::PythonSetClip),
+  ToolboxMessageTree::Leaf(I18n::Message::PythonCommandResetClip, I18n::Message::PythonResetClip),
+  ToolboxMessageTree::Leaf(I18n::Message::PythonCommandGetClip, I18n::Message::PythonGetClip),
 };
 
 
