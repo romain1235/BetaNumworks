@@ -997,10 +997,7 @@ STATIC mp_obj_t framebuffer_draw(size_t n_args, const mp_obj_t *args) {
     KDContext * ctx = KDIonContext::sharedContext();
     KDPoint oldOrigin = ctx->origin();
     KDRect oldClipping = ctx->clippingRect();
-    if (modkandinsky_is_fullscreen()) {
-      ctx->setOrigin(KDPoint(0, 0));
-      ctx->setClippingRect(KDRect(0, 0, Ion::Display::Width, Ion::Display::Height));
-    }
+    Kandinsky::ApplyDrawingContext(ctx);
     for (int j = 0; j < h; j++) {
       for (int i = 0; i < w; i++) {
         uint32_t v = packed_get_pixel_bits(self->pixels, (size_t)j * w + i, self->bitsPerPixel);
@@ -1022,10 +1019,7 @@ STATIC mp_obj_t framebuffer_draw(size_t n_args, const mp_obj_t *args) {
   KDContext * ctx = KDIonContext::sharedContext();
   KDPoint oldOrigin = ctx->origin();
   KDRect oldClipping = ctx->clippingRect();
-  if (modkandinsky_is_fullscreen()) {
-    ctx->setOrigin(KDPoint(0, 0));
-    ctx->setClippingRect(KDRect(0, 0, Ion::Display::Width, Ion::Display::Height));
-  }
+  Kandinsky::ApplyDrawingContext(ctx);
   for (int j = 0; j < self->size.height(); j++) {
     for (int i = 0; i < self->size.width(); i++) {
       uint32_t v = packed_get_pixel_bits(self->pixels, (size_t)j * self->size.width() + i, self->bitsPerPixel);

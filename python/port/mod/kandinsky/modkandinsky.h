@@ -18,6 +18,9 @@ mp_obj_t modkandinsky_get_keys();
 mp_obj_t modkandinsky_get_palette();
 mp_obj_t modkandinsky_set_fullscreen(mp_obj_t enable);
 mp_obj_t modkandinsky_get_fullscreen();
+mp_obj_t modkandinsky_set_clip(size_t n_args, const mp_obj_t *args);
+mp_obj_t modkandinsky_reset_clip();
+mp_obj_t modkandinsky_get_clip();
 
 mp_obj_t modkandinsky_get_pixels(size_t n_args, const mp_obj_t *args);
 // Returns true when kandinsky is in fullscreen mode. C linkage for calls

@@ -3,6 +3,7 @@ extern "C" {
 #include <py/runtime.h>
 }
 #include <escher/palette.h>
+#include <escher/metric.h>
 #include <kandinsky.h>
 #include <ion.h>
 #include <apps/apps_container.h>
@@ -21,6 +22,41 @@ static mp_obj_t TupleForKDColor(KDColor c) {
 // Fullscreen flag: when true, kandinsky drawing primitives use the full
 // display area (0,0,Width,Height) as clipping/origin.
 static bool s_kandinsky_fullscreen = false;
+
+// User clip in sandbox-local coordinates. It is intersected with the base clip
+// (sandbox area or fullscreen area).
+static bool s_kandinsky_clip_enabled = false;
+static KDRect s_kandinsky_clip_rect = KDRectZero;
+
+static KDCoordinate kandinskyTitleBarHeight() {
+  return s_kandinsky_fullscreen ? 0 : Metric::TitleBarHeight;
+}
+
+static KDRect kandinskyBaseClipRect() {
+  KDCoordinate titleHeight = kandinskyTitleBarHeight();
+  if (s_kandinsky_fullscreen) {
+    return KDRect(0, 0, Ion::Display::Width, Ion::Display::Height);
+  }
+  return KDRect(0, titleHeight, Ion::Display::Width, Ion::Display::Height - titleHeight);
+}
+
+static KDRect kandinskyEffectiveClipRect() {
+  KDRect clip = kandinskyBaseClipRect();
+  if (s_kandinsky_clip_enabled) {
+    clip = clip.intersectedWith(s_kandinsky_clip_rect.translatedBy(KDPoint(0, kandinskyTitleBarHeight())));
+  }
+  return clip;
+}
+
+void MicroPython::Kandinsky::ApplyDrawingContext(KDContext * ctx) {
+  ctx->setOrigin(KDPoint(0, kandinskyTitleBarHeight()));
+  ctx->setClippingRect(kandinskyEffectiveClipRect());
+}
+
+static void modkandinsky_reset_clip_state() {
+  s_kandinsky_clip_enabled = false;
+  s_kandinsky_clip_rect = KDRectZero;
+}
 
 
 /* KDIonContext::sharedContext needs to be set to the wanted Rect before
@@ -54,10 +90,7 @@ mp_obj_t modkandinsky_get_pixel(mp_obj_t x, mp_obj_t y) {
   KDContext * ctx = KDIonContext::sharedContext();
   KDPoint oldOrigin = ctx->origin();
   KDRect oldClipping = ctx->clippingRect();
-  if (s_kandinsky_fullscreen) {
-    ctx->setOrigin(KDPoint(0, 0));
-    ctx->setClippingRect(KDRect(0, 0, Ion::Display::Width, Ion::Display::Height));
-  }
+  MicroPython::Kandinsky::ApplyDrawingContext(ctx);
   ctx->getPixel(point, &c);
   ctx->setOrigin(oldOrigin);
   ctx->setClippingRect(oldClipping);
@@ -81,10 +114,7 @@ mp_obj_t modkandinsky_get_pixels(size_t n_args, const mp_obj_t *args) {
   KDContext * ctx = KDIonContext::sharedContext();
   KDPoint oldOrigin = ctx->origin();
   KDRect oldClipping = ctx->clippingRect();
-  if (s_kandinsky_fullscreen) {
-    ctx->setOrigin(KDPoint(0, 0));
-    ctx->setClippingRect(KDRect(0, 0, Ion::Display::Width, Ion::Display::Height));
-  }
+  MicroPython::Kandinsky::ApplyDrawingContext(ctx);
   ctx->getPixels(rect, buf);
   ctx->setOrigin(oldOrigin);
   ctx->setClippingRect(oldClipping);
@@ -109,10 +139,7 @@ mp_obj_t modkandinsky_set_pixel(mp_obj_t x, mp_obj_t y, mp_obj_t input) {
   KDContext * ctx = KDIonContext::sharedContext();
   KDPoint oldOrigin = ctx->origin();
   KDRect oldClipping = ctx->clippingRect();
-  if (s_kandinsky_fullscreen) {
-    ctx->setOrigin(KDPoint(0, 0));
-    ctx->setClippingRect(KDRect(0, 0, Ion::Display::Width, Ion::Display::Height));
-  }
+  MicroPython::Kandinsky::ApplyDrawingContext(ctx);
   ctx->setPixel(point, kdColor);
   ctx->setOrigin(oldOrigin);
   ctx->setClippingRect(oldClipping);
@@ -161,10 +188,7 @@ mp_obj_t modkandinsky_draw_string(size_t n_args, const mp_obj_t * args) {
   KDContext * ctx = KDIonContext::sharedContext();
   KDPoint oldOrigin = ctx->origin();
   KDRect oldClipping = ctx->clippingRect();
-  if (s_kandinsky_fullscreen) {
-    ctx->setOrigin(KDPoint(0, 0));
-    ctx->setClippingRect(KDRect(0, 0, Ion::Display::Width, Ion::Display::Height));
-  }
+  MicroPython::Kandinsky::ApplyDrawingContext(ctx);
   ctx->drawString(text, point, font, textColor, backgroundColor);
   ctx->setOrigin(oldOrigin);
   ctx->setClippingRect(oldClipping);
@@ -183,10 +207,7 @@ mp_obj_t modkandinsky_draw_line(size_t n_args, const mp_obj_t * args) {
   KDContext * ctx = KDIonContext::sharedContext();
   KDPoint oldOrigin = ctx->origin();
   KDRect oldClipping = ctx->clippingRect();
-  if (s_kandinsky_fullscreen) {
-    ctx->setOrigin(KDPoint(0, 0));
-    ctx->setClippingRect(KDRect(0, 0, Ion::Display::Width, Ion::Display::Height));
-  }
+  MicroPython::Kandinsky::ApplyDrawingContext(ctx);
   ctx->drawLine(p1, p2, color);
   ctx->setOrigin(oldOrigin);
   ctx->setClippingRect(oldClipping);
@@ -207,10 +228,7 @@ mp_obj_t modkandinsky_draw_circle(size_t n_args, const mp_obj_t * args) {
   KDContext * ctx = KDIonContext::sharedContext();
   KDPoint oldOrigin = ctx->origin();
   KDRect oldClipping = ctx->clippingRect();
-  if (s_kandinsky_fullscreen) {
-    ctx->setOrigin(KDPoint(0, 0));
-    ctx->setClippingRect(KDRect(0, 0, Ion::Display::Width, Ion::Display::Height));
-  }
+  MicroPython::Kandinsky::ApplyDrawingContext(ctx);
   ctx->drawCircle(center, r, color);
   ctx->setOrigin(oldOrigin);
   ctx->setClippingRect(oldClipping);
@@ -236,10 +254,7 @@ mp_obj_t modkandinsky_fill_rect(size_t n_args, const mp_obj_t * args) {
   KDContext * ctx = KDIonContext::sharedContext();
   KDPoint oldOrigin = ctx->origin();
   KDRect oldClipping = ctx->clippingRect();
-  if (s_kandinsky_fullscreen) {
-    ctx->setOrigin(KDPoint(0, 0));
-    ctx->setClippingRect(KDRect(0, 0, Ion::Display::Width, Ion::Display::Height));
-  }
+  MicroPython::Kandinsky::ApplyDrawingContext(ctx);
   ctx->fillRect(rect, color);
   ctx->setOrigin(oldOrigin);
   ctx->setClippingRect(oldClipping);
@@ -260,10 +275,7 @@ mp_obj_t modkandinsky_fill_circle(size_t n_args, const mp_obj_t * args) {
   KDContext * ctx = KDIonContext::sharedContext();
   KDPoint oldOrigin = ctx->origin();
   KDRect oldClipping = ctx->clippingRect();
-  if (s_kandinsky_fullscreen) {
-    ctx->setOrigin(KDPoint(0, 0));
-    ctx->setClippingRect(KDRect(0, 0, Ion::Display::Width, Ion::Display::Height));
-  }
+  MicroPython::Kandinsky::ApplyDrawingContext(ctx);
   ctx->fillCircle(center, r, color);
   ctx->setOrigin(oldOrigin);
   ctx->setClippingRect(oldClipping);
@@ -296,10 +308,7 @@ mp_obj_t modkandinsky_fill_polygon(size_t n_args, const mp_obj_t * args) {
   KDContext * ctx = KDIonContext::sharedContext();
   KDPoint oldOrigin = ctx->origin();
   KDRect oldClipping = ctx->clippingRect();
-  if (s_kandinsky_fullscreen) {
-    ctx->setOrigin(KDPoint(0, 0));
-    ctx->setClippingRect(KDRect(0, 0, Ion::Display::Width, Ion::Display::Height));
-  }
+  MicroPython::Kandinsky::ApplyDrawingContext(ctx);
   ctx->fillPolygon(pointsX, pointsY, itemLength, color);
   ctx->setOrigin(oldOrigin);
   ctx->setClippingRect(oldClipping);
@@ -325,6 +334,38 @@ mp_obj_t modkandinsky_get_fullscreen() {
   return s_kandinsky_fullscreen ? mp_const_true : mp_const_false;
 }
 
+mp_obj_t modkandinsky_set_clip(size_t n_args, const mp_obj_t *args) {
+  if (n_args != 4) {
+    mp_raise_TypeError("set_clip expects 4 arguments: x,y,w,h");
+  }
+  int x = mp_obj_get_int(args[0]);
+  int y = mp_obj_get_int(args[1]);
+  int w = mp_obj_get_int(args[2]);
+  int h = mp_obj_get_int(args[3]);
+  if (w <= 0 || h <= 0) {
+    mp_raise_ValueError("width and height must be > 0");
+  }
+  s_kandinsky_clip_rect = KDRect(x, y, w, h);
+  s_kandinsky_clip_enabled = true;
+  return mp_const_none;
+}
+
+mp_obj_t modkandinsky_reset_clip() {
+  modkandinsky_reset_clip_state();
+  return mp_const_none;
+}
+
+mp_obj_t modkandinsky_get_clip() {
+  KDRect clip = kandinskyEffectiveClipRect();
+  KDCoordinate titleHeight = kandinskyTitleBarHeight();
+  mp_obj_tuple_t * t = static_cast<mp_obj_tuple_t *>(MP_OBJ_TO_PTR(mp_obj_new_tuple(4, NULL)));
+  t->items[0] = MP_OBJ_NEW_SMALL_INT(clip.x());
+  t->items[1] = MP_OBJ_NEW_SMALL_INT(clip.y() - titleHeight);
+  t->items[2] = MP_OBJ_NEW_SMALL_INT(clip.width());
+  t->items[3] = MP_OBJ_NEW_SMALL_INT(clip.height());
+  return MP_OBJ_FROM_PTR(t);
+}
+
 extern "C" bool modkandinsky_is_fullscreen(void) {
   return s_kandinsky_fullscreen;
 }
@@ -339,6 +380,7 @@ void modkandinsky_reset_fullscreen(void) {
 void modkandinsky_view_did_disappear(void) {
   // When the Kandinsky display is closed, ensure fullscreen is cleared
   modkandinsky_reset_fullscreen();
+  modkandinsky_reset_clip_state();
 }
 
 mp_obj_t modkandinsky_get_palette() {

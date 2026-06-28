@@ -14,6 +14,9 @@ static MP_DEFINE_CONST_FUN_OBJ_0(modkandinsky_wait_vblank_obj, modkandinsky_wait
 static MP_DEFINE_CONST_FUN_OBJ_0(modkandinsky_get_palette_obj, modkandinsky_get_palette);
 static MP_DEFINE_CONST_FUN_OBJ_1(modkandinsky_set_fullscreen_obj, modkandinsky_set_fullscreen);
 static MP_DEFINE_CONST_FUN_OBJ_0(modkandinsky_get_fullscreen_obj, modkandinsky_get_fullscreen);
+static MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(modkandinsky_set_clip_obj, 4, 4, modkandinsky_set_clip);
+static MP_DEFINE_CONST_FUN_OBJ_0(modkandinsky_reset_clip_obj, modkandinsky_reset_clip);
+static MP_DEFINE_CONST_FUN_OBJ_0(modkandinsky_get_clip_obj, modkandinsky_get_clip);
 
 static const mp_rom_map_elem_t modkandinsky_module_globals_table[] = {
   { MP_ROM_QSTR(MP_QSTR___name__), MP_ROM_QSTR(MP_QSTR_kandinsky) },
@@ -38,6 +41,9 @@ static const mp_rom_map_elem_t modkandinsky_module_globals_table[] = {
   { MP_ROM_QSTR(MP_QSTR_get_palette), (mp_obj_t)&modkandinsky_get_palette_obj },
   { MP_ROM_QSTR(MP_QSTR_set_fullscreen), (mp_obj_t)&modkandinsky_set_fullscreen_obj },
   { MP_ROM_QSTR(MP_QSTR_get_fullscreen), (mp_obj_t)&modkandinsky_get_fullscreen_obj },
+  { MP_ROM_QSTR(MP_QSTR_set_clip), (mp_obj_t)&modkandinsky_set_clip_obj },
+  { MP_ROM_QSTR(MP_QSTR_reset_clip), (mp_obj_t)&modkandinsky_reset_clip_obj },
+  { MP_ROM_QSTR(MP_QSTR_get_clip), (mp_obj_t)&modkandinsky_get_clip_obj },
   { MP_ROM_QSTR(MP_QSTR_framebuffer), (mp_obj_t)&kandinsky_framebuffer_type },
 };
 

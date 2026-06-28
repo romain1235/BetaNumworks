@@ -8,6 +8,7 @@ extern "C" {
 #include <escher/view_controller.h>
 
 class KDFont;
+class KDContext;
 
 namespace MicroPython {
 
@@ -70,6 +71,8 @@ namespace Kandinsky {
 /* Resolve the font selected by kandinsky.draw_string. See FontForId in
  * modkandinsky.cpp for the meaning of each id. */
 const KDFont * FontForId(int id, bool isItalic);
+/* Configure origin and clipping on ctx from fullscreen and user clip state. */
+void ApplyDrawingContext(KDContext * ctx);
 }
 
 }
