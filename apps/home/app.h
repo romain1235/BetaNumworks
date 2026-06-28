@@ -36,7 +36,7 @@ private:
   App(Snapshot * snapshot);
   Controller m_controller;
 #if HOME_DISPLAY_EXTERNALS
-  static constexpr int k_externalHeapSize = 114652;
+  static constexpr int k_externalHeapSize = 114644;
   char m_externalHeap[k_externalHeapSize];
 #endif
   Window * m_window;

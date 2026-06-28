@@ -75,7 +75,7 @@ public:
 
   VariableBoxController * variableBoxController() { return &m_variableBoxController; }
 
-  static constexpr int k_pythonHeapSize = 93640;
+  static constexpr int k_pythonHeapSize = 93632;
 
 private:
   /* Python delegate:
