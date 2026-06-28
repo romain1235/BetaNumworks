@@ -12,3 +12,4 @@ epsilon.map
 compile_commands.json
 venv/
 *.theme
+emsdk/
