@@ -17,7 +17,7 @@ Beta est un fork d'Upsilon (lui-même dérivé d'Omega et d'Epsilon). Beta ajout
 - Python :
   - Kandinsky :
     - Framebuffer configurable (formats rgb222, rgb332, rgb565 et palettes à n bits)
-    - `set_fullscreen(bool)`, `get_pixels(x,y,w,h)`, `wait_vblank()`
+    - `set_fullscreen(bool)`, `get_pixels(x,y,w,h)`, `wait_vblank()`, `set_clip(x,y,w,h)`
   - Ion :
     - LED (désactiver en mode examen)
   - Nouveau module `console`
