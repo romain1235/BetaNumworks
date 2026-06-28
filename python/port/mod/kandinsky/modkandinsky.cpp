@@ -119,23 +119,44 @@ mp_obj_t modkandinsky_set_pixel(mp_obj_t x, mp_obj_t y, mp_obj_t input) {
   return mp_const_none;
 }
 
+/* The font argument of draw_string is an integer so that the historical
+ * booleans large_font (False/0) and small_font (True/1) keep working. The
+ * "italic" bit (value 4) and the tiny font are also encoded here:
+ *   0 -> LargeFont        4 -> ItalicLargeFont
+ *   1 -> SmallFont        5 -> ItalicSmallFont
+ *   3 -> TinyFont */
+const KDFont * MicroPython::Kandinsky::FontForId(int id, bool isItalic) {
+  const KDFont * font;
+  switch (id) {
+    case 1:
+      font = KDFont::SmallFont;
+      break;
+    case 3:
+      font = KDFont::TinyFont;
+      break;
+    case 4:
+      font = KDFont::ItalicLargeFont;
+      break;
+    case 5:
+      font = KDFont::ItalicSmallFont;
+      break;
+    case 0:
+    default:
+      font = KDFont::LargeFont;
+      break;
+  }
+  // The legacy 7th boolean argument can still force the italic variant.
+  return isItalic ? font->toItalic() : font;
+}
+
 mp_obj_t modkandinsky_draw_string(size_t n_args, const mp_obj_t * args) {
   const char * text = mp_obj_str_get_str(args[0]);
   KDPoint point(mp_obj_get_int(args[1]), mp_obj_get_int(args[2]));
   KDColor textColor = (n_args >= 4) ? MicroPython::Color::Parse(args[3]) : Palette::PrimaryText;
   KDColor backgroundColor = (n_args >= 5) ? MicroPython::Color::Parse(args[4]) : Palette::HomeBackground;
-  bool bigFont = (n_args >= 6) ? !mp_obj_is_true(args[5]) : true;
+  int fontId = (n_args >= 6) ? mp_obj_get_int(args[5]) : 0;
   bool isItalic = (n_args >= 7) ? mp_obj_is_true(args[6]) : false;
-  const KDFont * font = KDFont::LargeFont;
-  if (bigFont && !isItalic) {
-    font = KDFont::LargeFont;
-  } else if (!bigFont && !isItalic) {
-    font = KDFont::SmallFont;
-  } else if (bigFont && isItalic) {
-    font = KDFont::ItalicLargeFont;
-  } else if (!bigFont && isItalic) {
-    font = KDFont::ItalicSmallFont;
-  }
+  const KDFont * font = MicroPython::Kandinsky::FontForId(fontId, isItalic);
   MicroPython::ExecutionEnvironment::currentExecutionEnvironment()->displaySandbox();
   KDContext * ctx = KDIonContext::sharedContext();
   KDPoint oldOrigin = ctx->origin();

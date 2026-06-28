@@ -601,9 +601,9 @@ STATIC mp_obj_t framebuffer_draw_string(size_t n_args, const mp_obj_t * args) {
   KDPoint point(mp_obj_get_int(args[2]), mp_obj_get_int(args[3]));
   KDColor textColor = (n_args >= 5) ? parse_color_or_palette(self, args[4]) : Palette::PrimaryText;
   KDColor backgroundColor = (n_args >= 6) ? parse_color_or_palette(self, args[5]) : Palette::HomeBackground;
-  bool smallFont = (n_args >= 7) ? mp_obj_is_true(args[6]) : false;
+  int fontId = (n_args >= 7) ? mp_obj_get_int(args[6]) : 0;
   bool isItalic = (n_args >= 8) ? mp_obj_is_true(args[7]) : false;
-  const KDFont * font = (!smallFont && !isItalic) ? KDFont::LargeFont : (!smallFont && isItalic ? KDFont::ItalicLargeFont : (smallFont && !isItalic ? KDFont::SmallFont : KDFont::ItalicSmallFont));
+  const KDFont * font = Kandinsky::FontForId(fontId, isItalic);
   init_rgb222_table();
   int x = point.x();
   int y = point.y();
