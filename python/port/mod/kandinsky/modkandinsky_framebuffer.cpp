@@ -213,6 +213,26 @@ static inline uint32_t framebuffer_index_from_color(kandinsky_framebuffer_obj_t 
   return (uint32_t)palette_find_closest_index(self, c);
 }
 
+/* Intersect a rectangle with the framebuffer bounds. Returns false if empty. */
+static bool framebuffer_clip_rect(int x, int y, int w, int h, int fbw, int fbh,
+    int * clipX, int * clipY, int * clipW, int * clipH) {
+  if (w <= 0 || h <= 0) {
+    return false;
+  }
+  int x0 = x < 0 ? 0 : x;
+  int y0 = y < 0 ? 0 : y;
+  int x1 = x + w > fbw ? fbw : x + w;
+  int y1 = y + h > fbh ? fbh : y + h;
+  if (x0 >= x1 || y0 >= y1) {
+    return false;
+  }
+  *clipX = x0;
+  *clipY = y0;
+  *clipW = x1 - x0;
+  *clipH = y1 - y0;
+  return true;
+}
+
 static void framebuffer_print(const mp_print_t *print, mp_obj_t self_in, mp_print_kind_t kind) {
   (void)kind;
   kandinsky_framebuffer_obj_t * self = (kandinsky_framebuffer_obj_t*) MP_OBJ_TO_PTR(self_in);
@@ -376,7 +396,7 @@ STATIC mp_obj_t framebuffer_set_pixel(size_t n_args, const mp_obj_t *args) {
   int x = mp_obj_get_int(args[1]);
   int y = mp_obj_get_int(args[2]);
   if (x < 0 || y < 0 || x >= self->size.width() || y >= self->size.height()) {
-    mp_raise_msg(&mp_type_IndexError, "pixel out of range");
+    return mp_const_none;
   }
   init_rgb222_table();
   uint32_t colIndex;
@@ -635,22 +655,22 @@ STATIC mp_obj_t framebuffer_draw_string(size_t n_args, const mp_obj_t * pos_args
   int y = point.y();
   int w = self->size.width();
   int h = self->size.height();
-  if (x < 0) x = 0;
-  if (y < 0) y = 0;
-  // Measure text to avoid allocating a full-screen buffer when not needed
   KDSize textSize = font->stringSize(text);
-  int rectw = textSize.width();
-  int recth = textSize.height();
-  if (rectw <= 0 || recth <= 0) return mp_const_none;
-  if (x + rectw > w) rectw = w - x;
-  if (y + recth > h) recth = h - y;
-  if (rectw <= 0 || recth <= 0) return mp_const_none;
+  int clipX = 0;
+  int clipY = 0;
+  int rectw = 0;
+  int recth = 0;
+  if (!framebuffer_clip_rect(x, y, textSize.width(), textSize.height(), w, h, &clipX, &clipY, &rectw, &recth)) {
+    return mp_const_none;
+  }
+  int drawOffsetX = clipX - x;
+  int drawOffsetY = clipY - y;
   init_rgb332_table();
   KDColor * tmp = static_cast<KDColor *>(m_malloc(rectw * recth * sizeof(KDColor)));
   if (!tmp) mp_raise_msg(&mp_type_MemoryError, "not enough memory for draw buffer");
   for (int j = 0; j < recth; j++) {
     for (int i = 0; i < rectw; i++) {
-      size_t idx = (size_t)(y + j) * w + (x + i);
+      size_t idx = (size_t)(clipY + j) * w + (clipX + i);
       uint32_t pix = packed_get_pixel_bits(self->pixels, idx, self->bitsPerPixel);
       if (self->format == 1) tmp[j*rectw + i] = rgb222_to_kdcolor[pix];
       else if (self->format == 2) tmp[j*rectw + i] = rgb332_to_kdcolor[pix];
@@ -660,11 +680,11 @@ STATIC mp_obj_t framebuffer_draw_string(size_t n_args, const mp_obj_t * pos_args
   }
   KDFrameBuffer fb(tmp, KDSize(rectw, recth));
   KDFrameBufferContext ctx(&fb);
-  ctx.drawString(text, KDPoint(0,0), font, textColor, backgroundColor);
+  ctx.drawString(text, KDPoint(-drawOffsetX, -drawOffsetY), font, textColor, backgroundColor);
   /* write back compressed */
   for (int j = 0; j < recth; j++) {
     for (int i = 0; i < rectw; i++) {
-      size_t idx = (size_t)(y + j) * w + (x + i);
+      size_t idx = (size_t)(clipY + j) * w + (clipX + i);
       uint32_t idxColor;
       if (self->format == 1) idxColor = (uint32_t)kdcolor_to_rgb222(tmp[j*rectw + i]);
       else if (self->format == 2) idxColor = (uint32_t)(((tmp[j*rectw + i].red()>>5)<<5)|((tmp[j*rectw + i].green()>>5)<<2)|(tmp[j*rectw + i].blue()>>6));
