@@ -516,13 +516,17 @@ VariableBoxController * ConsoleController::variableBoxForInputEventHandler(Input
 
 void ConsoleController::resetSandbox() {
   // Restore LED state saved before script execution (or turn off if none)
-  micropython_port_restore_led_state();
+
   // If set_fullscreen(True) was called but no drawing occurred (sandbox never
   // displayed), viewDidDisappear is never called, so the flag must be cleared
   // here to avoid it leaking into the next script run.
   if (!isDisplayingViewController()) {
     modkandinsky_reset_fullscreen();
   }
+  if (Ion::ExamMode::FetchExamMode() != 0) {
+    return;
+  }
+  micropython_port_restore_led_state();
   //m_sandboxController.reset();
 }
 
