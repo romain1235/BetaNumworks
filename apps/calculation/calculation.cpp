@@ -275,6 +275,9 @@ Calculation::AdditionalInformationType Calculation::additionalInformationType(Co
   if (o.hasDefinedComplexApproximation(context, complexFormat, preferences->angleUnit())) {
     return AdditionalInformationType::Complex;
   }
+  if (o.hasDefinedRealApproximation(context, complexFormat, preferences->angleUnit())) {
+    return AdditionalInformationType::Real;
+  }
   if (o.type() == ExpressionNode::Type::Matrix) {
     return AdditionalInformationType::Matrix;
   }

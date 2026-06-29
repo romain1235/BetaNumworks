@@ -13,7 +13,8 @@ public:
   void setExpression(Poincare::Expression e) override;
 
 private:
-  static constexpr int k_indexOfFactorExpression = 3;
+  static constexpr int k_indexOfFirstBaseExpression = 2;
+  static constexpr int k_indexOfFactorExpression = 5;
   I18n::Message messageAtIndex(int index) override;
 };
 

@@ -19,7 +19,8 @@ HistoryController::HistoryController(EditExpressionController * editExpressionCo
   m_secondDegreeController(editExpressionController),
   m_trigonometryController(editExpressionController),
   m_unitController(editExpressionController),
-  m_matrixController(editExpressionController)
+  m_matrixController(editExpressionController),
+  m_realController(editExpressionController)
 {
   for (int i = 0; i < k_maxNumberOfDisplayedRows; i++) {
     m_calculationHistory[i].setParentResponder(&m_selectableTableView);
@@ -116,6 +117,8 @@ bool HistoryController::handleEvent(Ion::Events::Event event) {
         vc = &m_unitController;
       } else if (additionalInfoType == Calculation::AdditionalInformationType::Matrix) {
         vc = &m_matrixController;
+      } else if (additionalInfoType == Calculation::AdditionalInformationType::Real) {
+        vc = &m_realController;
       }
       if (vc) {
         vc->setExpression(e);

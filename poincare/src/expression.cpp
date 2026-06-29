@@ -332,6 +332,14 @@ bool Expression::hasDefinedComplexApproximation(Context * context, Preferences::
   return true;
 }
 
+bool Expression::hasDefinedRealApproximation(Context * context, Preferences::ComplexFormat complexFormat, Preferences::AngleUnit angleUnit) const {
+  if (!isReal(context) || isUndefined()) {
+    return false;
+  }
+  float a = approximateToScalar<float>(context, complexFormat, angleUnit);
+  return std::isfinite(a);
+}
+
 // Private
 
 void Expression::shallowAddMissingParenthesis() {

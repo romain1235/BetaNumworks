@@ -5,6 +5,7 @@
 #include <poincare/logarithm.h>
 #include <poincare/empty_layout.h>
 #include <poincare/factor.h>
+#include <poincare/float.h>
 #include "../app.h"
 #include "../../shared/poincare_helpers.h"
 
@@ -15,12 +16,12 @@ namespace Calculation {
 
 Integer::Base baseAtIndex(int index) {
   switch (index) {
-    case 0:
+    case 2:
       return Integer::Base::Decimal;
-    case 1:
+    case 3:
       return Integer::Base::Hexadecimal;
     default:
-      assert(index == 2);
+      assert(index == 4);
       return Integer::Base::Binary;
   }
 }
@@ -31,9 +32,16 @@ void IntegerListController::setExpression(Poincare::Expression e) {
   assert(!m_expression.isUninitialized() && m_expression.type() == ExpressionNode::Type::BasedInteger || (m_expression.type() == ExpressionNode::Type::Opposite && m_expression.childAtIndex(0).type() == ExpressionNode::Type::BasedInteger));
   assert(!m_expression.isUninitialized());
 
+  Preferences * preferences = Preferences::sharedPreferences();
+  float value = PoincareHelpers::ApproximateToScalar<float>(m_expression, App::app()->localContext());
+  Float<float> floatExpression = Float<float>::Builder(value);
+  int numberOfSignificantDigits = preferences->numberOfSignificantDigits();
+  m_layouts[0] = floatExpression.createLayout(Preferences::PrintFloatMode::Scientific, numberOfSignificantDigits);
+  m_layouts[1] = floatExpression.createLayout(Preferences::PrintFloatMode::Engineering, numberOfSignificantDigits);
+
   if (m_expression.type() == ExpressionNode::Type::BasedInteger) {
     Integer integer = static_cast<BasedInteger &>(m_expression).integer();
-    for (int index = 0; index < k_indexOfFactorExpression; ++index) {
+    for (int index = k_indexOfFirstBaseExpression; index < k_indexOfFactorExpression; ++index) {
       m_layouts[index] = integer.createLayout(baseAtIndex(index));
     }
   }
@@ -45,7 +53,7 @@ void IntegerListController::setExpression(Poincare::Expression e) {
     childInt.setNegative(true);
     Integer num_bits = Integer::CeilingLog2(childInt);
     Integer integer = Integer::TwosComplementToBits(childInt, num_bits);
-    for (int index = 0; index < k_indexOfFactorExpression; ++index) {
+    for (int index = k_indexOfFirstBaseExpression; index < k_indexOfFactorExpression; ++index) {
       if(baseAtIndex(index) == Integer::Base::Decimal) {
         m_layouts[index] = childInt.createLayout(baseAtIndex(index));
       } else {
@@ -64,10 +72,14 @@ void IntegerListController::setExpression(Poincare::Expression e) {
 I18n::Message IntegerListController::messageAtIndex(int index) {
   switch (index) {
     case 0:
-      return I18n::Message::DecimalBase;
+      return I18n::Message::Scientific;
     case 1:
-      return I18n::Message::HexadecimalBase;
+      return I18n::Message::Engineering;
     case 2:
+      return I18n::Message::DecimalBase;
+    case 3:
+      return I18n::Message::HexadecimalBase;
+    case 4:
       return I18n::Message::BinaryBase;
     default:
       return I18n::Message::PrimeFactors;

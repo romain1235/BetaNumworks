@@ -44,7 +44,8 @@ public:
     TrigonometryOutput,
     Unit,
     Matrix,
-    Complex
+    Complex,
+    Real
   };
   static bool DisplaysExact(DisplayOutput d) { return d != DisplayOutput::ApproximateOnly; }
 

@@ -190,6 +190,7 @@ public:
   bool isBasedIntegerCappedBy(const char * integerString) const;
   bool isDivisionOfIntegers() const;
   bool hasDefinedComplexApproximation(Context * context, Preferences::ComplexFormat complexFormat, Preferences::AngleUnit angleUnit) const;
+  bool hasDefinedRealApproximation(Context * context, Preferences::ComplexFormat complexFormat, Preferences::AngleUnit angleUnit) const;
   typedef bool (*ExpressionTest)(const Expression e, Context * context);
   bool recursivelyMatches(ExpressionTest test, Context * context, ExpressionNode::SymbolicComputation replaceSymbols = ExpressionNode::SymbolicComputation::ReplaceAllDefinedSymbolsWithDefinition) const;
   typedef bool (*ExpressionTypeTest)(const Expression e, const void * context);

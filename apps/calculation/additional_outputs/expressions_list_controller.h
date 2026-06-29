@@ -28,7 +28,7 @@ public:
   void setExpression(Poincare::Expression e) override;
 
 protected:
-  constexpr static int k_maxNumberOfRows = 5;
+  constexpr static int k_maxNumberOfRows = 6;
   int textAtIndex(char * buffer, size_t bufferSize, int index) override;
   Poincare::Expression m_expression;
   // Memoization of layouts
