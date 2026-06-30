@@ -250,6 +250,61 @@ mp_obj_t modkandinsky_draw_circle(size_t n_args, const mp_obj_t * args) {
   return mp_const_none;
 }
 
+static void modkandinsky_draw_rect_outline(KDContext * ctx, KDRect rect, KDColor color, int thickness) {
+  if (thickness == 1) {
+    ctx->strokeRect(rect, color);
+    return;
+  }
+  KDCoordinate x = rect.x();
+  KDCoordinate y = rect.y();
+  KDCoordinate w = rect.width();
+  KDCoordinate h = rect.height();
+  ctx->fillRect(KDRect(x, y, w, thickness), color);
+  if (h > thickness) {
+    ctx->fillRect(KDRect(x, y + h - thickness, w, thickness), color);
+  }
+  KDCoordinate innerHeight = h - 2 * thickness;
+  if (innerHeight > 0) {
+    ctx->fillRect(KDRect(x, y + thickness, thickness, innerHeight), color);
+    if (w > thickness) {
+      ctx->fillRect(KDRect(x + w - thickness, y + thickness, thickness, innerHeight), color);
+    }
+  }
+}
+
+mp_obj_t modkandinsky_draw_rect(size_t n_args, const mp_obj_t * args) {
+  mp_int_t x = mp_obj_get_int(args[0]);
+  mp_int_t y = mp_obj_get_int(args[1]);
+  mp_int_t width = mp_obj_get_int(args[2]);
+  mp_int_t height = mp_obj_get_int(args[3]);
+  if (width < 0) {
+    width = -width;
+    x = x - width;
+  }
+  if (height < 0) {
+    height = -height;
+    y = y - height;
+  }
+  KDRect rect(x, y, width, height);
+  KDColor color = MicroPython::Color::Parse(args[4]);
+  int thickness = 1;
+  if (n_args >= 6) {
+    thickness = mp_obj_get_int(args[5]);
+    if (thickness <= 0) {
+      mp_raise_ValueError("thickness must be > 0");
+    }
+  }
+  MicroPython::ExecutionEnvironment::currentExecutionEnvironment()->displaySandbox();
+  KDContext * ctx = KDIonContext::sharedContext();
+  KDPoint oldOrigin = ctx->origin();
+  KDRect oldClipping = ctx->clippingRect();
+  MicroPython::Kandinsky::ApplyDrawingContext(ctx);
+  modkandinsky_draw_rect_outline(ctx, rect, color, thickness);
+  ctx->setOrigin(oldOrigin);
+  ctx->setClippingRect(oldClipping);
+  return mp_const_none;
+}
+
 mp_obj_t modkandinsky_fill_rect(size_t n_args, const mp_obj_t * args) {
   mp_int_t x = mp_obj_get_int(args[0]);
   mp_int_t y = mp_obj_get_int(args[1]);

@@ -23,6 +23,8 @@ QUIZ_CASE(python_kandinsky_basics) {
   assert_command_execution_succeeds(env, "set_pixel(0,0,color(12,12,12))");
   assert_command_execution_succeeds(env, "get_pixel(0,0)");
   assert_command_execution_succeeds(env, "fill_rect(0,0,10,10,color(2,3,2))");
+  assert_command_execution_succeeds(env, "draw_rect(0,0,10,10,color(2,3,2))");
+  assert_command_execution_succeeds(env, "draw_rect(0,0,10,10,color(2,3,2),2)");
   assert_command_execution_succeeds(env, "draw_string('hello',0,0)");
   assert_command_execution_succeeds(env, "draw_string('hello',0,0,font=TINY_FONT)");
   deinit_environment();
