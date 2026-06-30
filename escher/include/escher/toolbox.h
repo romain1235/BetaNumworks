@@ -16,6 +16,7 @@ public:
 
   //ListViewDataSource
   int numberOfRows() const override;
+  KDCoordinate rowHeight(int j) override;
   int reusableCellCount(int type) override;
   void willDisplayCellForIndex(HighlightCell * cell, int index) override;
   int typeAtLocation(int i, int j) override;

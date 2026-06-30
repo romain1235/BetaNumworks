@@ -1,5 +1,6 @@
 #include <escher/toolbox.h>
 #include <escher/metric.h>
+#include <kandinsky/font.h>
 #include <assert.h>
 #include <string.h>
 
@@ -74,6 +75,35 @@ int Toolbox::numberOfRows() const {
     m_messageTreeModel = (ToolboxMessageTree *)rootModel();
   }
   return m_messageTreeModel->numberOfChildren();
+}
+
+KDCoordinate Toolbox::rowHeight(int j) {
+  if (m_messageTreeModel == nullptr) {
+    m_messageTreeModel = (ToolboxMessageTree *)rootModel();
+  }
+  const ToolboxMessageTree * messageTree = static_cast<const ToolboxMessageTree *>(m_messageTreeModel->childAtIndex(j));
+  /* Height needed to display a single line of text (the label, possibly with a
+   * description shown side by side with it). */
+  KDCoordinate singleLineHeight = KDFont::LargeFont->glyphSize().height() + 2 * Metric::TableCellVerticalMargin + 2 * Metric::CellSeparatorThickness;
+  bool isLeaf = messageTree->numberOfChildren() == 0;
+  bool hasDescription = isLeaf && messageTree->text() != static_cast<I18n::Message>(0);
+  if (!hasDescription) {
+    return singleLineHeight;
+  }
+  /* The label and its description are shown side by side when there is enough
+   * room, and stacked vertically otherwise. The "fits side by side" test below
+   * must stay in sync with TableCell::effectiveLayout. */
+  KDCoordinate width = m_selectableTableView.bounds().width() - m_selectableTableView.leftMargin() - m_selectableTableView.rightMargin();
+  KDSize labelSize = KDFont::LargeFont->stringSize(I18n::translate(messageTree->label()));
+  KDSize descriptionSize = KDFont::SmallFont->stringSize(I18n::translate(messageTree->text()));
+  KDCoordinate neededWidth = 2 * Metric::CellSeparatorThickness
+    + labelSize.width() + 2 * Metric::TableCellHorizontalMargin
+    + descriptionSize.width() + Metric::TableCellHorizontalMargin;
+  if (width > 0 && neededWidth > width) {
+    // Not enough room: label and description are stacked vertically.
+    return Metric::ToolboxRowHeight;
+  }
+  return singleLineHeight;
 }
 
 int Toolbox::reusableCellCount(int type) {

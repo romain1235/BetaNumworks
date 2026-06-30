@@ -836,7 +836,10 @@ void PythonToolbox::willDisplayCellForIndex(HighlightCell * cell, int index) {
 KDCoordinate PythonToolbox::rowHeight(int j) {
   const ToolboxMessageTree * messageTree = static_cast<const ToolboxMessageTree *>(m_messageTreeModel->childAtIndex(j));
   if (messageTree->isMultiLine()) {
-    return k_fontForMultiLine->glyphSize().height() * messageTree->numberOfLines() + 2*Metric::TableCellVerticalMargin + (messageTree->text() == I18n::Message::Default ? 0 : Toolbox::rowHeight(j));
+    /* Multi-line entries keep their description stacked below the label, so the
+     * extra block height is a full toolbox row (Toolbox::rowHeight is now
+     * adaptive and reserved for single-line entries). */
+    return k_fontForMultiLine->glyphSize().height() * messageTree->numberOfLines() + 2*Metric::TableCellVerticalMargin + (messageTree->text() == I18n::Message::Default ? 0 : Metric::ToolboxRowHeight);
   }
   return Toolbox::rowHeight(j);
 }

@@ -44,6 +44,25 @@ KDCoordinate withMargin(KDCoordinate length, KDCoordinate margin) {
   return length == 0 ? 0 : length + margin;
 }
 
+TableCell::Layout TableCell::effectiveLayout() const {
+  if (m_layout != Layout::Adaptive) {
+    return m_layout;
+  }
+  View * label = labelView();
+  View * accessory = accessoryView();
+  View * subAccessory = subAccessoryView();
+  KDSize labelSize = label ? label->minimalSizeForOptimalDisplay() : KDSizeZero;
+  KDSize accessorySize = accessory ? accessory->minimalSizeForOptimalDisplay() : KDSizeZero;
+  KDSize subAccessorySize = subAccessory ? subAccessory->minimalSizeForOptimalDisplay() : KDSizeZero;
+  /* Width needed to lay everything out horizontally without any subview
+   * overlapping another one (same spacing as the horizontal branch below). */
+  KDCoordinate neededWidth = 2 * k_separatorThickness
+    + withMargin(labelSize.width(), 2 * labelMargin())
+    + withMargin(subAccessorySize.width(), k_horizontalMargin)
+    + withMargin(accessorySize.width(), accessoryMargin());
+  return neededWidth <= bounds().width() ? Layout::HorizontalRightOverlap : Layout::Vertical;
+}
+
 void TableCell::layoutSubviews(bool force) {
   /* TODO: this code is awful. However, this should handle multiples cases
    * (subviews are not defined, margins are overriden...) */
@@ -55,7 +74,8 @@ void TableCell::layoutSubviews(bool force) {
   KDSize labelSize = label ? label->minimalSizeForOptimalDisplay() : KDSizeZero;
   KDSize accessorySize = accessory ? accessory->minimalSizeForOptimalDisplay() : KDSizeZero;
   KDSize subAccessorySize = subAccessory ? subAccessory->minimalSizeForOptimalDisplay() : KDSizeZero;
-  if (m_layout == Layout::Vertical) {
+  Layout layout = effectiveLayout();
+  if (layout == Layout::Vertical) {
     /*
      * Vertically:
      * ----------------
@@ -141,7 +161,7 @@ void TableCell::layoutSubviews(bool force) {
     if (label) {
       x = labelX;
       KDCoordinate labelWidth = std::min<KDCoordinate>(labelSize.width(), width - x - k_separatorThickness - labelMargin());
-      if (m_layout == Layout::HorizontalRightOverlap) {
+      if (layout == Layout::HorizontalRightOverlap) {
         labelWidth = std::min<KDCoordinate>(labelWidth, subAccessoryX - x - labelMargin());
       }
       label->setFrame(KDRect(x, verticalMargin, labelWidth, height-2*verticalMargin), force);
@@ -150,7 +170,7 @@ void TableCell::layoutSubviews(bool force) {
     if (subAccessory) {
       x = std::max(x, subAccessoryX);
       KDCoordinate subAccessoryWidth = std::min<KDCoordinate>(subAccessorySize.width(), width - x - k_separatorThickness - k_horizontalMargin);
-      if (m_layout == Layout::HorizontalRightOverlap) {
+      if (layout == Layout::HorizontalRightOverlap) {
         subAccessoryWidth = std::min<KDCoordinate>(subAccessoryWidth, accessoryX - x);
       }
       subAccessory->setFrame(KDRect(x, verticalMargin, subAccessoryWidth, height-2*verticalMargin), force);

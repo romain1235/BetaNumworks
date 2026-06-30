@@ -13,7 +13,9 @@ protected:
   MessageTableCellWithMessage<SlideableMessageTextView> * leafCellAtIndex(int index) override;
   MessageTableCellWithChevron<SlideableMessageTextView> * nodeCellAtIndex(int index) override;
   int maxNumberOfDisplayedRows() override;
-  constexpr static int k_maxNumberOfDisplayedRows = 6; // = 240/40
+  /* Rows can now be as short as a single line of text (label and description
+   * shown side by side), so more of them fit on screen at once. = 240/26 + 1 */
+  constexpr static int k_maxNumberOfDisplayedRows = 11;
 private:
   int indexAfterFork() const override;
 

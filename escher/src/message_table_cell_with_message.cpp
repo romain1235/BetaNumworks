@@ -7,7 +7,12 @@ MessageTableCellWithMessage<T>::MessageTableCellWithMessage(I18n::Message messag
   MessageTableCell<T>(message, KDFont::SmallFont, layout),
   m_accessoryView(KDFont::SmallFont, (I18n::Message)0, 0.0f, 0.5f)
 {
-  if (layout != TableCell::Layout::Vertical) {
+  /* For the Adaptive layout the description must stay left-aligned: when it
+   * falls back to a vertical layout its frame spans the whole width and it has
+   * to start under the label. In the horizontal case its frame is sized to its
+   * content and pushed against the right edge, so it appears right-aligned
+   * anyway. Only the fixed horizontal layouts need an explicit right alignment. */
+  if (layout == TableCell::Layout::HorizontalLeftOverlap || layout == TableCell::Layout::HorizontalRightOverlap) {
     m_accessoryView.setAlignment(1.0f, 0.5f);
   }
 }

@@ -16,6 +16,7 @@ public:
     Vertical,
     HorizontalLeftOverlap, // Label overlaps on SubAccessory which overlaps on Accessory
     HorizontalRightOverlap, // Reverse
+    Adaptive, // Horizontal if every subview fits side by side, Vertical otherwise
   };
   TableCell(Layout layout = Layout::HorizontalLeftOverlap);
   virtual View * labelView() const;
@@ -29,6 +30,9 @@ protected:
   int numberOfSubviews() const override;
   View * subviewAtIndex(int index) override;
   void layoutSubviews(bool force = false) override;
+  /* Resolves the layout actually used: for Adaptive, picks Horizontal when all
+   * subviews fit side by side, Vertical otherwise. */
+  Layout effectiveLayout() const;
   constexpr static KDCoordinate k_verticalMargin = Metric::TableCellVerticalMargin;
   constexpr static KDCoordinate k_horizontalMargin = Metric::TableCellHorizontalMargin;
 private:
