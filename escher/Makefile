@@ -33,6 +33,7 @@ escher_src += $(addprefix escher/src/,\
   chevron_view.cpp \
   clipboard.cpp \
   container.cpp \
+  cursor_blink_timer.cpp \
   editable_text_cell.cpp \
   ellipsis_view.cpp \
   expression_field.cpp \

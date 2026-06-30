@@ -1,4 +1,5 @@
 #include <escher/text_input.h>
+#include <escher/cursor_blink_timer.h>
 #include <ion/unicode/utf8_decoder.h>
 #include <ion/unicode/utf8_helper.h>
 #include <assert.h>
@@ -16,6 +17,7 @@ void TextInput::ContentView::setCursorLocation(const char * location) {
   assert(location >= editedText());
   const char * adjustedLocation = std::min(location, editedText() + editedTextLength());
   m_cursorLocation = adjustedLocation;
+  CursorBlinkTimer::sharedTimer()->resetBlinkPhase();
   layoutSubviews();
 }
 
@@ -85,6 +87,8 @@ void TextInput::ContentView::reloadRectFromPosition(const char * position, bool 
 
 void TextInput::ContentView::layoutSubviews(bool force) {
   m_cursorView.setFrame(cursorRect(), force);
+  KDRect cursorFrame = m_cursorView.frame();
+  m_cursorView.setBlinking(selectionIsEmpty() && cursorFrame.width() > 0 && cursorFrame.height() > 0);
 }
 
 void TextInput::ContentView::reloadRectFromAndToPositions(const char * start, const char * end) {

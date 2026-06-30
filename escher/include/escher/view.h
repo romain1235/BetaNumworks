@@ -19,6 +19,7 @@ extern "C" {
  *   send any display command. */
 
 class Window;
+class TextCursorView;
 
 namespace Shared {
   class RoundCursorView;
@@ -28,6 +29,7 @@ class View {
   // We only want Window to be able to invoke View::redraw
   friend class Window;
   friend class TransparentView;
+  friend class TextCursorView;
   friend class Shared::RoundCursorView;
 public:
   View() : m_frame(KDRectZero), m_superview(nullptr), m_dirtyRect(KDRectZero) {}

@@ -1,5 +1,6 @@
 #include <escher/layout_field.h>
 #include <escher/clipboard.h>
+#include <escher/cursor_blink_timer.h>
 #include <escher/text_field.h>
 #include <poincare/code_point_layout.h>
 #include <poincare/expression.h>
@@ -256,6 +257,11 @@ View * LayoutField::ContentView::subviewAtIndex(int index) {
   return m_views[index];
 }
 
+void LayoutField::ContentView::cursorPositionChanged() {
+  CursorBlinkTimer::sharedTimer()->resetBlinkPhase();
+  layoutCursorSubview(false);
+}
+
 void LayoutField::ContentView::layoutSubviews(bool force) {
   m_expressionView.setFrame(bounds(), force);
   layoutCursorSubview(force);
@@ -267,6 +273,7 @@ void LayoutField::ContentView::layoutCursorSubview(bool force) {
      * scrolling to the beginning when switching to the history. This way,
      * when calling scrollToCursor after layoutCursorSubview, we don't lose
      * sight of the cursor. */
+    m_cursorView.setBlinking(false);
     m_cursorView.setFrame(KDRect(cursorRect().x(), cursorRect().y(), 0, 0), force);
     return;
   }
@@ -286,10 +293,12 @@ void LayoutField::ContentView::layoutCursorSubview(bool force) {
   if (selectionIsEmpty()) {
     KDPoint cursorTopLeftPosition(cursorX, expressionViewOrigin.y() + cursoredExpressionViewOrigin.y() + pointedLayoutR.baseline() - m_cursor.baselineWithoutSelection());
     m_cursorView.setFrame(KDRect(cursorTopLeftPosition, LayoutCursor::k_cursorWidth, m_cursor.cursorHeightWithoutSelection()), force);
+    m_cursorView.setBlinking(true);
   } else {
     KDRect cursorRect = selectionRect();
     KDPoint cursorTopLeftPosition(cursorX, expressionViewOrigin.y() + cursorRect.y());
     m_cursorView.setFrame(KDRect(cursorTopLeftPosition, LayoutCursor::k_cursorWidth, cursorRect.height()), force);
+    m_cursorView.setBlinking(false);
   }
 }
 

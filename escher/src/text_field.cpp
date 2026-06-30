@@ -231,6 +231,7 @@ size_t TextField::ContentView::deleteSelection() {
 
 void TextField::ContentView::layoutSubviews(bool force) {
   if (!m_isEditing) {
+    m_cursorView.setBlinking(false);
     m_cursorView.setFrame(KDRectZero, force);
     return;
   }
