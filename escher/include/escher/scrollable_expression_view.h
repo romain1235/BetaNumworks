@@ -13,6 +13,7 @@ public:
   void setLayout(Poincare::Layout layout);
   void setBackgroundColor(KDColor backgroundColor) override;
   void setExpressionBackgroundColor(KDColor backgroundColor);
+  void setTextColor(KDColor textColor) { m_expressionView.setTextColor(textColor); }
 private:
   ExpressionView m_expressionView;
 };

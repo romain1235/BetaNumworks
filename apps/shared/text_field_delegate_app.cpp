@@ -10,6 +10,11 @@ using namespace Poincare;
 
 namespace Shared {
 
+Toolbox * TextFieldDelegateApp::toolboxForInputEventHandler(InputEventHandler * textInput) {
+  m_mathToolbox.setSender(textInput);
+  return &m_mathToolbox;
+}
+
 Context * TextFieldDelegateApp::localContext() {
   return AppsContainer::sharedAppsContainer()->globalContext();
 }

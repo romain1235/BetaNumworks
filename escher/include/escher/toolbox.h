@@ -30,8 +30,14 @@ protected:
   /* indexAfterFork is called when a fork-node is encountered to choose which
    * of its children should be selected, based on external context. */
   virtual int indexAfterFork() const { assert(false); return 0; };
-  MessageTableCellWithMessage<SlideableMessageTextView> * leafCellAtIndex(int index) override = 0;
+  /* Leaf cells default to a text cell (MessageTableCellWithMessage), but
+   * subclasses may use any HighlightCell (e.g. MathToolbox renders layouts).
+   * Subclasses that use a non-text leaf cell must override the leaf branch of
+   * willDisplayCellForIndex and refreshLeafCellAppearance accordingly. */
+  HighlightCell * leafCellAtIndex(int index) override = 0;
   MessageTableCellWithChevron<SlideableMessageTextView> * nodeCellAtIndex(int index) override = 0;
+  // Re-applies the active palette colors to the leaf cell at the given index.
+  virtual void refreshLeafCellAppearance(int i);
   mutable const ToolboxMessageTree * m_messageTreeModel;
   /* m_messageTreeModel points at the messageTree of the tree (describing the
    * whole model) where we are located. It enables to know which rows are leaves

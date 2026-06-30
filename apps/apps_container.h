@@ -36,7 +36,6 @@ public:
   App::Snapshot * usbConnectedAppSnapshot();
   void reset();
   Poincare::Context * globalContext();
-  MathToolbox * mathToolbox();
   MathVariableBoxController * variableBoxController();
   void suspend(bool checkIfOnOffKeyReleased = false);
   bool dispatchEvent(Ion::Events::Event event) override;
@@ -79,7 +78,6 @@ private:
   AppsWindow m_window;
   EmptyBatteryWindow m_emptyBatteryWindow;
   Shared::GlobalContext m_globalContext;
-  MathToolbox m_mathToolbox;
   MathVariableBoxController m_variableBoxController;
   ExamPopUpController m_examPopUpController;
   OnBoarding::PromptController m_promptController;

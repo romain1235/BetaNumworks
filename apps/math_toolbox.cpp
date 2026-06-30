@@ -1,6 +1,16 @@
 #include "math_toolbox.h"
 #include "global_preferences.h"
 #include "./shared/toolbox_helpers.h"
+#include <apps/apps_container.h>
+#include <poincare/exception_checkpoint.h>
+#include <poincare/expression.h>
+#include <poincare/layout_helper.h>
+#include <poincare/preferences.h>
+#include <poincare/src/parsing/parser.h>
+#include <escher/metric.h>
+#include <escher/palette.h>
+#include <kandinsky/font.h>
+#include <algorithm>
 #include <assert.h>
 #include <string.h>
 
@@ -932,12 +942,318 @@ const ToolboxMessageTree menu[] = {
 const ToolboxMessageTree toolboxModel = ToolboxMessageTree::Node(I18n::Message::Toolbox, menu);
 
 MathToolbox::MathToolbox() :
-  Toolbox(nullptr, rootModel()->label())
+  Toolbox(nullptr, rootModel()->label()),
+  m_firstMemoizedLayoutIndex(0),
+  m_memoizedModel(nullptr),
+  m_heightCacheModel(nullptr),
+  m_heightCacheRowCount(0),
+  m_heightCacheValid(false)
 {
   for (int i=0; i < k_maxNumberOfDisplayedRows; i++) {
-    m_leafCells[i].setMessageFont(KDFont::LargeFont);
+    m_leafCells[i].setParentResponder(&m_selectableTableView);
+    /* Show the layout label and its description side by side when they fit, and
+     * stacked vertically otherwise. Keep the description left-aligned so it sits
+     * under the label in the vertical fallback. */
+    m_leafCells[i].setLayoutType(TableCell::Layout::Adaptive);
+    m_leafCells[i].setAccessoryHorizontalAlignment(0.0f);
+    m_textLeafCells[i].setMessageFont(KDFont::LargeFont);
     m_nodeCells[i].setMessageFont(KDFont::LargeFont);
   }
+}
+
+bool MathToolbox::labelNeedsMathLayout(const char * text) {
+  if (text[0] == '_') {
+    // Unit symbols such as _km or _μm are rendered with the unit layout engine.
+    return true;
+  }
+  size_t length = strlen(text);
+  if (Parser::IsReservedName(text, length)) {
+    // Constants such as infinity, ans, true, false…
+    return true;
+  }
+  for (const char * c = text; *c != '\0'; c++) {
+    if (*c == '[' || *c == '!') {
+      return true;
+    }
+    if (*c == '=' || *c == '<' || *c == '>') {
+      // Comparisons such as a=b or a<b.
+      return true;
+    }
+    if (*c == '(' && c > text && *(c - 1) != ' ' && *(c - 1) != '-') {
+      // Function calls and grouped expressions, but not text such as "Hydrogen (H)".
+      return true;
+    }
+  }
+  static constexpr const char * k_logicalOperators[] = {" and ", " or ", " xor "};
+  for (const char * op : k_logicalOperators) {
+    size_t opLength = strlen(op);
+    for (const char * c = text; c[0] != '\0'; c++) {
+      if (strncmp(c, op, opLength) == 0) {
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
+bool MathToolbox::handleEvent(Ion::Events::Event event) {
+  return handleToolboxRowEvent(event, selectedRow());
+}
+
+bool MathToolbox::handleToolboxRowEvent(Ion::Events::Event event, int rowIndex) {
+  int depth = m_stack.depth();
+  if ((event == Ion::Events::Back || event == Ion::Events::Left) && depth > 0) {
+    return returnToPreviousMenu();
+  }
+  if ((event == Ion::Events::ShiftLeft || event == Ion::Events::AlphaLeft) && depth > 0) {
+    for (int i = depth; i > 0; i--) {
+      returnToPreviousMenu();
+    }
+    return true;
+  }
+  if (rowIndex < 0) {
+    return false;
+  }
+  int rowType = typeAtLocation(0, rowIndex);
+  if ((event == Ion::Events::OK || event == Ion::Events::EXE || event == Ion::Events::Right) && rowType == NodeCellType) {
+    return selectSubMenu(rowIndex);
+  }
+  if (canStayInMenu() && ((event == Ion::Events::ShiftOK || event == Ion::Events::ShiftEXE) && (rowType == LeafCellType || rowType == TextLeafCellType))) {
+    return selectLeaf(rowIndex, false);
+  }
+  if ((event == Ion::Events::OK || event == Ion::Events::EXE) && (rowType == LeafCellType || rowType == TextLeafCellType)) {
+    return selectLeaf(rowIndex, true);
+  }
+  return false;
+}
+
+HighlightCell * MathToolbox::reusableCell(int index, int type) {
+  assert(type < 4);
+  assert(index >= 0 && index < k_maxNumberOfDisplayedRows);
+  if (type == LeafCellType) {
+    return &m_leafCells[index];
+  }
+  if (type == TextLeafCellType) {
+    return &m_textLeafCells[index];
+  }
+  return &m_nodeCells[index];
+}
+
+int MathToolbox::typeAtLocation(int i, int j) {
+  const MessageTree * messageTree = m_messageTreeModel->childAtIndex(j);
+  if (messageTree->numberOfChildren() == 0) {
+    if (labelNeedsMathLayout(I18n::translate(static_cast<const ToolboxMessageTree *>(messageTree)->label()))) {
+      return LeafCellType;
+    }
+    return TextLeafCellType;
+  }
+  return NodeCellType;
+}
+
+void MathToolbox::viewDidDisappear() {
+  Toolbox::viewDidDisappear();
+  /* Free the layouts displayed in the cells and the memoized ones to tidy the
+   * TreePool. Done after the parent's viewDidDisappear because it may need the
+   * cell heights, which rely on the memoized layouts. */
+  for (int i = 0; i < k_maxNumberOfDisplayedRows; i++) {
+    m_leafCells[i].setLayout(Layout());
+  }
+  resetMemoization();
+  m_memoizedModel = nullptr;
+  m_heightCacheValid = false;
+  m_heightCacheModel = nullptr;
+}
+
+void MathToolbox::willDisplayCellForIndex(HighlightCell * cell, int index) {
+  const ToolboxMessageTree * messageTree = static_cast<const ToolboxMessageTree *>(m_messageTreeModel->childAtIndex(index));
+  if (messageTree->numberOfChildren() == 0) {
+    if (labelNeedsMathLayout(I18n::translate(messageTree->label()))) {
+      // Leaf: render the label as a 2D layout, with its description beside it.
+      ExpressionTableCellWithPointer * myCell = static_cast<ExpressionTableCellWithPointer *>(cell);
+      myCell->setLayout(layoutAtIndex(index));
+      myCell->setAccessoryMessage(messageTree->text());
+      myCell->setTextColor(Palette::PrimaryText);
+      myCell->setAccessoryTextColor(Palette::SecondaryText);
+      myCell->reloadScroll();
+      myCell->reloadCell();
+      return;
+    }
+    MessageTableCellWithMessage<SlideableMessageTextView> * myCell = static_cast<MessageTableCellWithMessage<SlideableMessageTextView> *>(cell);
+    myCell->setMessage(messageTree->label());
+    myCell->setAccessoryMessage(messageTree->text());
+    myCell->setTextColor(Palette::PrimaryText);
+    myCell->setAccessoryTextColor(Palette::SecondaryText);
+    return;
+  }
+  Toolbox::willDisplayCellForIndex(cell, index);
+}
+
+KDCoordinate MathToolbox::textLeafRowHeight(const ToolboxMessageTree * messageTree) {
+  KDCoordinate singleLineHeight = KDFont::LargeFont->glyphSize().height() + 2 * Metric::TableCellVerticalMargin + 2 * Metric::CellSeparatorThickness;
+  if (messageTree->text() == static_cast<I18n::Message>(0)) {
+    return singleLineHeight;
+  }
+  KDCoordinate width = cellContentWidth();
+  KDSize labelSize = KDFont::LargeFont->stringSize(I18n::translate(messageTree->label()));
+  KDSize descriptionSize = KDFont::SmallFont->stringSize(I18n::translate(messageTree->text()));
+  KDCoordinate neededWidth = 2 * Metric::CellSeparatorThickness
+    + labelSize.width() + 2 * Metric::TableCellHorizontalMargin
+    + descriptionSize.width() + Metric::TableCellHorizontalMargin;
+  if (width > 0 && neededWidth > width) {
+    return Metric::ToolboxRowHeight;
+  }
+  return singleLineHeight;
+}
+
+KDCoordinate MathToolbox::rowHeight(int j) {
+  if (m_messageTreeModel == nullptr) {
+    m_messageTreeModel = rootModel();
+  }
+  const ToolboxMessageTree * messageTree = static_cast<const ToolboxMessageTree *>(m_messageTreeModel->childAtIndex(j));
+  KDCoordinate singleLineHeight = KDFont::LargeFont->glyphSize().height() + 2 * Metric::TableCellVerticalMargin + 2 * Metric::CellSeparatorThickness;
+  if (messageTree->numberOfChildren() != 0) {
+    return singleLineHeight;
+  }
+  if (!labelNeedsMathLayout(I18n::translate(messageTree->label()))) {
+    return textLeafRowHeight(messageTree);
+  }
+  Layout l = layoutAtIndex(j);
+  KDSize labelSize = KDSizeZero;
+  if (!l.isUninitialized()) {
+    KDSize layoutSize = l.layoutSize();
+    // Mirror ScrollableExpressionView's horizontal margins around the layout.
+    labelSize = KDSize(layoutSize.width() + 2 * Metric::TableCellHorizontalMargin, layoutSize.height());
+  }
+  /* The cell's accessory is always present (an empty description still has the
+   * font's height), so measure it exactly like the cell does. */
+  KDSize descriptionSize = KDFont::SmallFont->stringSize(I18n::translate(messageTree->text()));
+  KDCoordinate height = leafCellAtIndex(0)->minimalHeightForOptimalDisplay(cellContentWidth(), labelSize, KDSizeZero, descriptionSize);
+  return std::max<KDCoordinate>(height, singleLineHeight);
+}
+
+void MathToolbox::rebuildHeightCacheIfNeeded() {
+  if (m_messageTreeModel == nullptr) {
+    m_messageTreeModel = rootModel();
+  }
+  int n = numberOfRows();
+  if (m_heightCacheValid && m_heightCacheModel == m_messageTreeModel && m_heightCacheRowCount == n) {
+    return;
+  }
+  if (n > k_maxNumberOfRows) {
+    // Should not happen, but stay correct by falling back to the base behavior.
+    m_heightCacheValid = false;
+    return;
+  }
+  KDCoordinate cumulated = 0;
+  m_cumulatedHeights[0] = 0;
+  for (int k = 0; k < n; k++) {
+    cumulated += rowHeight(k);
+    m_cumulatedHeights[k + 1] = cumulated;
+  }
+  m_heightCacheRowCount = n;
+  m_heightCacheModel = m_messageTreeModel;
+  m_heightCacheValid = true;
+}
+
+KDCoordinate MathToolbox::cumulatedHeightFromIndex(int j) {
+  rebuildHeightCacheIfNeeded();
+  if (!m_heightCacheValid) {
+    return Toolbox::cumulatedHeightFromIndex(j);
+  }
+  if (j < 0) {
+    j = 0;
+  } else if (j > m_heightCacheRowCount) {
+    j = m_heightCacheRowCount;
+  }
+  return m_cumulatedHeights[j];
+}
+
+int MathToolbox::indexFromCumulatedHeight(KDCoordinate offsetY) {
+  rebuildHeightCacheIfNeeded();
+  if (!m_heightCacheValid) {
+    return Toolbox::indexFromCumulatedHeight(offsetY);
+  }
+  int n = m_heightCacheRowCount;
+  int j = 0;
+  while (j < n && m_cumulatedHeights[j] < offsetY) {
+    j++;
+  }
+  KDCoordinate result = m_cumulatedHeights[j];
+  return (result < offsetY || offsetY == 0) ? j : j - 1;
+}
+
+void MathToolbox::refreshLeafCellAppearance(int i) {
+  ExpressionTableCellWithPointer * leafCell = leafCellAtIndex(i);
+  leafCell->setTextColor(Palette::PrimaryText);
+  leafCell->setAccessoryTextColor(Palette::SecondaryText);
+  leafCell->setHighlighted(leafCell->isHighlighted());
+  MessageTableCellWithMessage<SlideableMessageTextView> * textLeafCell = &m_textLeafCells[i];
+  textLeafCell->setTextColor(Palette::PrimaryText);
+  textLeafCell->setAccessoryTextColor(Palette::SecondaryText);
+  textLeafCell->setHighlighted(textLeafCell->isHighlighted());
+}
+
+KDCoordinate MathToolbox::cellContentWidth() {
+  return m_selectableTableView.bounds().width() - m_selectableTableView.leftMargin() - m_selectableTableView.rightMargin();
+}
+
+Layout MathToolbox::createLayoutForIndex(int index) {
+  const ToolboxMessageTree * messageTree = static_cast<const ToolboxMessageTree *>(m_messageTreeModel->childAtIndex(index));
+  const char * text = I18n::translate(messageTree->label());
+  if (!labelNeedsMathLayout(text)) {
+    return Layout();
+  }
+  Layout result;
+  Poincare::ExceptionCheckpoint ecp;
+  if (ExceptionRun(ecp)) {
+    Expression e = Expression::Parse(text, AppsContainer::sharedAppsContainer()->globalContext(), false, true);
+    if (!e.isUninitialized()) {
+      result = e.createLayout(Poincare::Preferences::sharedPreferences()->displayMode(), Poincare::Preferences::sharedPreferences()->numberOfSignificantDigits());
+    }
+  }
+  if (result.isUninitialized()) {
+    // Fallback for labels that are not parseable expressions.
+    result = LayoutHelper::String(text, strlen(text));
+  }
+  return result;
+}
+
+Layout MathToolbox::layoutAtIndex(int index) {
+  assert(index >= 0);
+  // Drop memoized layouts as soon as we display a different submenu.
+  if (m_memoizedModel != m_messageTreeModel) {
+    resetMemoization();
+    m_memoizedModel = m_messageTreeModel;
+  }
+  int firstIndex = m_firstMemoizedLayoutIndex;
+  if (index < firstIndex || index >= firstIndex + k_maxNumberOfDisplayedRows) {
+    // Slide the memoization window so that it contains index.
+    int newFirst = index < firstIndex ? index : index - k_maxNumberOfDisplayedRows + 1;
+    Layout window[k_maxNumberOfDisplayedRows];
+    for (int i = 0; i < k_maxNumberOfDisplayedRows; i++) {
+      int oldSlot = newFirst + i - firstIndex;
+      if (oldSlot >= 0 && oldSlot < k_maxNumberOfDisplayedRows) {
+        window[i] = m_layouts[oldSlot];
+      }
+    }
+    for (int i = 0; i < k_maxNumberOfDisplayedRows; i++) {
+      m_layouts[i] = window[i];
+    }
+    m_firstMemoizedLayoutIndex = newFirst;
+  }
+  int slot = index - m_firstMemoizedLayoutIndex;
+  assert(slot >= 0 && slot < k_maxNumberOfDisplayedRows);
+  if (m_layouts[slot].isUninitialized()) {
+    m_layouts[slot] = createLayoutForIndex(index);
+  }
+  return m_layouts[slot];
+}
+
+void MathToolbox::resetMemoization() {
+  for (int i = 0; i < k_maxNumberOfDisplayedRows; i++) {
+    m_layouts[i] = Layout();
+  }
+  m_firstMemoizedLayoutIndex = 0;
 }
 
 bool MathToolbox::selectLeaf(int selectedRow, bool quitToolbox) {
@@ -960,7 +1276,7 @@ const ToolboxMessageTree * MathToolbox::rootModel() const {
   return &toolboxModel;
 }
 
-MessageTableCellWithMessage<SlideableMessageTextView> * MathToolbox::leafCellAtIndex(int index) {
+ExpressionTableCellWithPointer * MathToolbox::leafCellAtIndex(int index) {
   assert(index >= 0 && index < k_maxNumberOfDisplayedRows);
   return &m_leafCells[index];
 }

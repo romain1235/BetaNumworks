@@ -23,11 +23,11 @@ static bool sApproximationEncounteredComplex = false;
 
 Expression Expression::clone() const { TreeHandle c = TreeHandle::clone(); return static_cast<Expression&>(c); }
 
-Expression Expression::Parse(char const * string, Context * context, bool addParentheses) {
+Expression Expression::Parse(char const * string, Context * context, bool addParentheses, bool symbolPlusParenthesesAreFunctions) {
   if (string[0] == 0) {
     return Expression();
   }
-  Parser p(string, context);
+  Parser p(string, context, symbolPlusParenthesesAreFunctions);
   Expression expression = p.parse();
   if (p.getStatus() != Parser::Status::Success) {
     expression = Expression();

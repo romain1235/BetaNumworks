@@ -14,9 +14,10 @@ InputEventHandlerDelegateApp::InputEventHandlerDelegateApp(Snapshot * snapshot, 
 }
 
 Toolbox * InputEventHandlerDelegateApp::toolboxForInputEventHandler(InputEventHandler * textInput) {
-  Toolbox * toolbox = AppsContainer::sharedAppsContainer()->mathToolbox();
-  toolbox->setSender(textInput);
-  return toolbox;
+  /* The math toolbox now lives in TextFieldDelegateApp (and other concrete apps
+   * provide their own, e.g. Code's PythonToolbox), so this base implementation
+   * is never actually used. */
+  return nullptr;
 }
 
 NestedMenuController * InputEventHandlerDelegateApp::variableBoxForInputEventHandler(InputEventHandler * textInput) {

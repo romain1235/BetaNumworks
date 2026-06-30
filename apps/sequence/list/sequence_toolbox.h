@@ -14,6 +14,7 @@ public:
   int numberOfRows() const override;
   HighlightCell * reusableCell(int index, int type) override;
   void willDisplayCellForIndex(HighlightCell * cell, int index) override;
+  KDCoordinate rowHeight(int j) override;
   int typeAtLocation(int i, int j) override;
   void buildExtraCellsLayouts(const char * sequenceName, int recurrenceDepth);
 private:

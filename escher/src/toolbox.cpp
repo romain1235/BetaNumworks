@@ -20,14 +20,11 @@ void Toolbox::viewWillAppear() {
   // Reusable cells can outlive theme changes, so their text colors must be
   // refreshed from the active palette.
   for (int i = 0; i < maxNumberOfDisplayedRows(); i++) {
-    auto * leafCell = leafCellAtIndex(i);
+    refreshLeafCellAppearance(i);
     auto * nodeCell = nodeCellAtIndex(i);
-    leafCell->setTextColor(Palette::PrimaryText);
-    leafCell->setAccessoryTextColor(Palette::SecondaryText);
     nodeCell->setTextColor(Palette::PrimaryText);
     // Re-run highlight painting to refresh message/accessory backgrounds from
     // current palette values (selected and non-selected states).
-    leafCell->setHighlighted(leafCell->isHighlighted());
     nodeCell->setHighlighted(nodeCell->isHighlighted());
   }
 
@@ -68,6 +65,13 @@ void Toolbox::viewDidDisappear() {
   m_savedVerticalScroll = m_selectableTableView.contentOffset().y();
   m_hasSavedState = true;
   NestedMenuController::viewDidDisappear();
+}
+
+void Toolbox::refreshLeafCellAppearance(int i) {
+  auto * leafCell = static_cast<MessageTableCellWithMessage<SlideableMessageTextView> *>(leafCellAtIndex(i));
+  leafCell->setTextColor(Palette::PrimaryText);
+  leafCell->setAccessoryTextColor(Palette::SecondaryText);
+  leafCell->setHighlighted(leafCell->isHighlighted());
 }
 
 int Toolbox::numberOfRows() const {

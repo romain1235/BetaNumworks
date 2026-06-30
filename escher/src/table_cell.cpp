@@ -44,6 +44,33 @@ KDCoordinate withMargin(KDCoordinate length, KDCoordinate margin) {
   return length == 0 ? 0 : length + margin;
 }
 
+TableCell::Layout TableCell::resolvedLayout(KDCoordinate width, KDSize labelSize, KDSize subAccessorySize, KDSize accessorySize) const {
+  if (m_layout != Layout::Adaptive) {
+    return m_layout;
+  }
+  /* Width needed to lay everything out horizontally without any subview
+   * overlapping another one (same spacing as the horizontal branch below). */
+  KDCoordinate neededWidth = 2 * k_separatorThickness
+    + withMargin(labelSize.width(), 2 * labelMargin())
+    + withMargin(subAccessorySize.width(), k_horizontalMargin)
+    + withMargin(accessorySize.width(), accessoryMargin());
+  return neededWidth <= width ? Layout::HorizontalRightOverlap : Layout::Vertical;
+}
+
+KDCoordinate TableCell::minimalHeightForOptimalDisplay(KDCoordinate width, KDSize labelSize, KDSize subAccessorySize, KDSize accessorySize) const {
+  Layout layout = resolvedLayout(width, labelSize, subAccessorySize, accessorySize);
+  if (layout == Layout::Vertical) {
+    // Label on top, then the accessories stacked below it.
+    return 2 * k_separatorThickness + k_verticalMargin
+      + labelSize.height() + k_verticalMargin
+      + subAccessorySize.height()
+      + accessorySize.height() + k_verticalMargin;
+  }
+  // Everything on a single line, vertically centered.
+  KDCoordinate maxHeight = std::max(labelSize.height(), std::max(subAccessorySize.height(), accessorySize.height()));
+  return 2 * k_separatorThickness + 2 * k_verticalMargin + maxHeight;
+}
+
 TableCell::Layout TableCell::effectiveLayout() const {
   if (m_layout != Layout::Adaptive) {
     return m_layout;
@@ -54,13 +81,7 @@ TableCell::Layout TableCell::effectiveLayout() const {
   KDSize labelSize = label ? label->minimalSizeForOptimalDisplay() : KDSizeZero;
   KDSize accessorySize = accessory ? accessory->minimalSizeForOptimalDisplay() : KDSizeZero;
   KDSize subAccessorySize = subAccessory ? subAccessory->minimalSizeForOptimalDisplay() : KDSizeZero;
-  /* Width needed to lay everything out horizontally without any subview
-   * overlapping another one (same spacing as the horizontal branch below). */
-  KDCoordinate neededWidth = 2 * k_separatorThickness
-    + withMargin(labelSize.width(), 2 * labelMargin())
-    + withMargin(subAccessorySize.width(), k_horizontalMargin)
-    + withMargin(accessorySize.width(), accessoryMargin());
-  return neededWidth <= bounds().width() ? Layout::HorizontalRightOverlap : Layout::Vertical;
+  return resolvedLayout(bounds().width(), labelSize, subAccessorySize, accessorySize);
 }
 
 void TableCell::layoutSubviews(bool force) {

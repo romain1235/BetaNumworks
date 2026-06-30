@@ -19,10 +19,18 @@ public:
     Adaptive, // Horizontal if every subview fits side by side, Vertical otherwise
   };
   TableCell(Layout layout = Layout::HorizontalLeftOverlap);
+  void setLayoutType(Layout layout) { m_layout = layout; }
   virtual View * labelView() const;
   virtual View * accessoryView() const;
   virtual View * subAccessoryView() const;
   void drawRect(KDContext * ctx, KDRect rect) const override;
+  /* Resolves the layout actually used: for Adaptive, picks Horizontal when all
+   * subviews fit side by side, Vertical otherwise. */
+  Layout effectiveLayout() const;
+  /* Same resolution but from explicit subview sizes and an available width.
+   * Lets a data source predict the layout/height without configuring the cell. */
+  Layout resolvedLayout(KDCoordinate width, KDSize labelSize, KDSize subAccessorySize, KDSize accessorySize) const;
+  KDCoordinate minimalHeightForOptimalDisplay(KDCoordinate width, KDSize labelSize, KDSize subAccessorySize, KDSize accessorySize) const;
 protected:
   virtual KDColor backgroundColor() const { return KDColorWhite; }
   virtual KDCoordinate labelMargin() const { return k_horizontalMargin; }
@@ -30,9 +38,6 @@ protected:
   int numberOfSubviews() const override;
   View * subviewAtIndex(int index) override;
   void layoutSubviews(bool force = false) override;
-  /* Resolves the layout actually used: for Adaptive, picks Horizontal when all
-   * subviews fit side by side, Vertical otherwise. */
-  Layout effectiveLayout() const;
   constexpr static KDCoordinate k_verticalMargin = Metric::TableCellVerticalMargin;
   constexpr static KDCoordinate k_horizontalMargin = Metric::TableCellHorizontalMargin;
 private:

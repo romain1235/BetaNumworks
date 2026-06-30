@@ -113,10 +113,6 @@ Poincare::Context * AppsContainer::globalContext() {
   return &m_globalContext;
 }
 
-MathToolbox * AppsContainer::mathToolbox() {
-  return &m_mathToolbox;
-}
-
 MathVariableBoxController * AppsContainer::variableBoxController() {
   return &m_variableBoxController;
 }

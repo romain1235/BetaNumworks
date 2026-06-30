@@ -2,6 +2,9 @@
 #include "../../shared/sequence_store.h"
 #include <poincare/layout_helper.h>
 #include <assert.h>
+#include <algorithm>
+#include <escher/metric.h>
+#include <kandinsky/font.h>
 #include <poincare/code_point_layout.h>
 #include <poincare/vertical_offset_layout.h>
 
@@ -26,7 +29,7 @@ bool SequenceToolbox::handleEvent(Ion::Events::Event event) {
     }
     return false;
   }
-  return MathToolbox::handleEventForRow(event, selectedRow() - stackRowOffset());
+  return MathToolbox::handleToolboxRowEvent(event, selectedRow() - stackRowOffset());
 }
 
 int SequenceToolbox::numberOfRows() const {
@@ -34,7 +37,7 @@ int SequenceToolbox::numberOfRows() const {
 }
 
 HighlightCell * SequenceToolbox::reusableCell(int index, int type) {
-  assert(type < 3);
+  assert(type < 4);
   assert(index >= 0);
   assert(index < k_maxNumberOfDisplayedRows);
   if (type == 2) {
@@ -50,6 +53,15 @@ void SequenceToolbox::willDisplayCellForIndex(HighlightCell * cell, int index) {
     return;
   }
   MathToolbox::willDisplayCellForIndex(cell, index - stackRowOffset());
+}
+
+KDCoordinate SequenceToolbox::rowHeight(int j) {
+  if (typeAtLocation(0, j) == 2) {
+    KDCoordinate singleLineHeight = KDFont::LargeFont->glyphSize().height() + 2 * Metric::TableCellVerticalMargin + 2 * Metric::CellSeparatorThickness;
+    KDCoordinate layoutHeight = m_addedCellLayout[j].layoutSize().height() + 2 * Metric::TableCellVerticalMargin + 2 * Metric::CellSeparatorThickness;
+    return std::max(singleLineHeight, layoutHeight);
+  }
+  return MathToolbox::rowHeight(j - stackRowOffset());
 }
 
 int SequenceToolbox::typeAtLocation(int i, int j) {

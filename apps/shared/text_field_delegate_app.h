@@ -5,6 +5,7 @@
 #include "input_event_handler_delegate_app.h"
 #include <escher/text_field_delegate.h>
 #include <apps/i18n.h>
+#include "../math_toolbox.h"
 #include "../apps_container.h"
 
 class EditableField;
@@ -14,6 +15,7 @@ namespace Shared {
 class TextFieldDelegateApp : public InputEventHandlerDelegateApp, public TextFieldDelegate {
 public:
   virtual ~TextFieldDelegateApp() = default;
+  Toolbox * toolboxForInputEventHandler(InputEventHandler * textInput) override;
   Poincare::Context * localContext() override;
   virtual bool XNTCanBeOverriden() const { return true; }
   virtual CodePoint XNT() { return 'x'; }
@@ -29,6 +31,11 @@ protected:
   bool isFinishingEvent(Ion::Events::Event event);
   virtual bool isAcceptableExpression(const Poincare::Expression expression);
   static bool ExpressionCanBeSerialized(const Poincare::Expression expression, bool replaceAns, Poincare::Expression ansExpression, Poincare::Context * context);
+  /* The math toolbox is a modal displayed over the active app. By living inside
+   * the app (which is stored in the shared apps union) rather than permanently
+   * in AppsContainer, it costs no permanent RAM: it overlaps with the inactive
+   * apps' memory. */
+  MathToolbox m_mathToolbox;
 };
 
 }

@@ -1,6 +1,7 @@
 #include <escher/nested_menu_controller.h>
 #include <escher/container.h>
 #include <escher/metric.h>
+#include <escher/palette.h>
 #include <assert.h>
 #include <string.h>
 
@@ -112,6 +113,9 @@ void NestedMenuController::didBecomeFirstResponder() {
 
 void NestedMenuController::viewWillAppear() {
   setStackFrameColors(Palette::ToolboxHeaderText, Palette::ToolboxHeaderBackground, Palette::ToolboxHeaderBorder);
+  /* When the list is shorter than the view, ScrollView fills the remaining area
+   * with its background color. Match the table cells so the theme is consistent. */
+  m_selectableTableView.setBackgroundColor(Palette::ListCellBackground);
   StackViewController::viewWillAppear();
   m_selectableTableView.reloadData();
   m_stack.resetStack();

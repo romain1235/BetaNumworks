@@ -11,6 +11,8 @@ public:
   View * accessoryView() const override;
   void setHighlighted(bool highlight) override;
   void setAccessoryMessage(I18n::Message messageBody);
+  void setAccessoryTextColor(KDColor color) { m_accessoryView.setTextColor(color); }
+  void setAccessoryHorizontalAlignment(float alignment) { m_accessoryView.setAlignment(alignment, 0.5f); }
 private:
   MessageTextView m_accessoryView;
 };
