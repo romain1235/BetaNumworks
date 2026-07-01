@@ -123,7 +123,7 @@ bool AboutController::handleEvent(Ion::Events::Event event) {
         MessageTableCellWithBuffer * myCell = (MessageTableCellWithBuffer *)m_selectableTableView.selectedCell();
         char batteryLevel[5];
         if(strchr(myCell->accessoryText(), '%') == NULL) {
-          float voltage = (Ion::Battery::voltage() - 3.6) * 166;
+          float voltage = (Ion::Battery::voltage() - 3.3f) * (100.0f / (4.2f - 3.3f));
           if(voltage < 0.0) {
             myCell->setAccessoryText("1%"); // We cheat...
             return true;
