@@ -38,17 +38,35 @@ void ScrollViewHorizontalBar::drawRect(KDContext * ctx, KDRect rect) const {
   if (!visible()) {
     return;
   }
+  int y = (m_frame.height() - k_indicatorThickness)/2;
+  int visibleLength = std::ceil(m_visibleLength*totalLength());
+  int totalLengthValue = totalLength();
+  int indicatorX = m_margin+m_offset*totalLengthValue;
   ctx->fillRect(
     KDRect(
-      m_margin, (m_frame.height() - k_indicatorThickness)/2,
-      totalLength(), k_indicatorThickness
+      m_margin, y+1,
+      totalLengthValue, k_indicatorThickness-2
     ),
     m_trackColor
   );
   ctx->fillRect(
     KDRect(
-      m_margin+m_offset*totalLength(), (m_frame.height() - k_indicatorThickness)/2,
-      std::ceil(m_visibleLength*totalLength()), k_indicatorThickness
+      m_margin+1, y,
+      totalLengthValue-2, k_indicatorThickness
+    ),
+    m_trackColor
+  );
+  ctx->fillRect(
+    KDRect(
+      indicatorX, y+1,
+      visibleLength, k_indicatorThickness-2
+    ),
+    m_color
+  );
+  ctx->fillRect(
+    KDRect(
+      indicatorX+1, y,
+      visibleLength-2, k_indicatorThickness
     ),
     m_color
   );
@@ -58,17 +76,35 @@ void ScrollViewVerticalBar::drawRect(KDContext * ctx, KDRect rect) const {
   if (!visible()) {
     return;
   }
+  int x = (m_frame.width() - k_indicatorThickness)/2;
+  int visibleLength = std::ceil(m_visibleLength*totalLength());
+  int totalLengthValue = totalLength();
+  int indicatorY = m_margin+m_offset*totalLengthValue;
   ctx->fillRect(
     KDRect(
-      (m_frame.width() - k_indicatorThickness)/2, m_margin,
-      k_indicatorThickness, totalLength()
+      x+1, m_margin,
+      k_indicatorThickness-2, totalLengthValue
     ),
     m_trackColor
   );
   ctx->fillRect(
     KDRect(
-      (m_frame.width() - k_indicatorThickness)/2, m_margin+m_offset*totalLength(),
-      k_indicatorThickness, std::ceil(m_visibleLength*totalLength())
+      x, m_margin+1,
+      k_indicatorThickness, totalLengthValue-2
+    ),
+    m_trackColor
+  );
+  ctx->fillRect(
+    KDRect(
+      x+1, indicatorY,
+      k_indicatorThickness-2, visibleLength
+    ),
+    m_color
+  );
+  ctx->fillRect(
+    KDRect(
+      x, indicatorY+1,
+      k_indicatorThickness, visibleLength-2
     ),
     m_color
   );
