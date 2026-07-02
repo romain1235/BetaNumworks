@@ -90,6 +90,7 @@ void ButtonRowController::ContentView::layoutSubviews(bool force) {
   int currentXOrigin = widthMargin;
   for (int i = 0; i < numberOfButtons(); i++) {
     Button * button = buttonAtIndex(i);
+    button->setEmbossedRoundedStyle(m_style == Style::EmbossedGray);
     KDCoordinate buttonWidth = button->minimalSizeForOptimalDisplay().width()+widthPadding;
     if (i == nbOfButtons - 1 && m_style == Style::PlainWhite) {
       buttonWidth = bounds().width() - currentXOrigin;
@@ -118,34 +119,12 @@ void ButtonRowController::ContentView::drawRect(KDContext * ctx, KDRect rect) co
     return;
   }
   int buttonHeight = m_size == Size::Small ? k_embossedStyleHeightSmall : k_embossedStyleHeightLarge;
-  int buttonMargin = m_size == Size::Small ? k_embossedStyleHeightMarginSmall : k_embossedStyleHeightMarginLarge;
   if (m_position == Position::Top) {
     ctx->fillRect(KDRect(0, 0, bounds().width(), buttonHeight), Palette::ButtonBorderOut);
     ctx->fillRect(KDRect(0, buttonHeight, bounds().width(), 1), Palette::ButtonRowBorder);
   } else {
     ctx->fillRect(KDRect(0, bounds().height() - buttonHeight, bounds().width(), buttonHeight), Palette::ButtonBorderOut);
     ctx->fillRect(KDRect(0,  bounds().height() - buttonHeight-1, bounds().width(), 1), Palette::ButtonRowBorder);
-  }
-  KDCoordinate y0 = m_position == Position::Top ? buttonMargin-1 : bounds().height()-buttonHeight+buttonMargin-1;
-  KDCoordinate y1 = m_position == Position::Top ? buttonHeight-buttonMargin-2 : bounds().height()-buttonMargin;
-  KDCoordinate totalButtonWidth = 0;
-  for (int i = 0; i < numberOfButtons(); i++) {
-    Button * button = buttonAtIndex(i);
-    totalButtonWidth += button->minimalSizeForOptimalDisplay().width();
-  }
-  KDCoordinate widthMargin = std::round(((float)(bounds().width() - totalButtonWidth))/((float)(numberOfButtons()+1)));
-
-  int currentXOrigin = widthMargin-1;
-  for (int i = 0; i < numberOfButtons(); i++) {
-    Button * button = buttonAtIndex(i);
-    KDCoordinate buttonWidth = button->minimalSizeForOptimalDisplay().width();
-    ctx->fillRect(KDRect(currentXOrigin, y0, 1, y1-y0+1), Palette::ButtonRowBorder);
-    ctx->fillRect(KDRect(currentXOrigin-1, y0, 1, y1-y0+2), Palette::SecondaryText);
-    ctx->fillRect(KDRect(currentXOrigin, y0, buttonWidth+2, 1), Palette::ButtonRowBorder);
-    ctx->fillRect(KDRect(currentXOrigin, y1, buttonWidth+2, 1), Palette::ButtonRowBorder);
-    ctx->fillRect(KDRect(currentXOrigin, y1+1, buttonWidth+2, 1), Palette::SecondaryText);
-    ctx->fillRect(KDRect(currentXOrigin+1+buttonWidth, y0, 1, y1-y0+1), Palette::ButtonRowBorder);
-    currentXOrigin += buttonWidth + widthMargin;
   }
 }
 

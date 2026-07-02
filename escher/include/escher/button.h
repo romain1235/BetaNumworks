@@ -12,6 +12,7 @@ class Button : public HighlightCell, public Responder {
 public:
   Button(Responder * parentResponder, I18n::Message textBody, Invocation invocation, const KDFont * font = KDFont::SmallFont, KDColor textColor = Palette::ButtonText);
   void setMessage(I18n::Message message);
+  void setEmbossedRoundedStyle(bool rounded);
   bool handleEvent(Ion::Events::Event event) override;
   void setHighlighted(bool highlight) override;
   virtual KDColor highlightedBackgroundColor() const { return Palette::ButtonBackgroundSelected; }
@@ -19,6 +20,7 @@ public:
     return this;
   }
   KDSize minimalSizeForOptimalDisplay() const override;
+  void drawRect(KDContext * ctx, KDRect rect) const override;
 protected:
   MessageTextView m_messageTextView;
   void layoutSubviews(bool force = false) override;
@@ -26,10 +28,12 @@ private:
   constexpr static KDCoordinate k_verticalMargin = 5;
   constexpr static KDCoordinate k_horizontalMarginSmall = 10;
   constexpr static KDCoordinate k_horizontalMarginLarge = 20;
+  constexpr static KDCoordinate k_embossedCornerRadius = 4;
   int numberOfSubviews() const override;
   View * subviewAtIndex(int index) override;
   Invocation m_invocation;
   const KDFont * m_font;
+  bool m_embossedRoundedStyle;
 };
 
 #endif
