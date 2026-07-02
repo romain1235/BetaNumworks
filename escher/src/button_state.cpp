@@ -12,10 +12,12 @@ View * ButtonState::subviewAtIndex(int index) {
 
 void ButtonState::layoutSubviews(bool force) {
   KDSize textSize = Button::minimalSizeForOptimalDisplay();
-  KDRect textRect = KDRect(0, 0, textSize.width(), bounds().height());
-  // State view will be vertically centered and aligned on the left
   KDSize stateSize = m_stateView.minimalSizeForOptimalDisplay();
-  KDRect stateRect = KDRect(textSize.width(), k_verticalOffset, stateSize.width(), stateSize.height());
+  KDCoordinate totalWidth = textSize.width() + stateSize.width();
+  KDCoordinate margin = (bounds().width()-totalWidth)>>1;
+  KDRect textRect = KDRect(margin, 0, textSize.width(), bounds().height());
+  // State view will be centered
+  KDRect stateRect = KDRect(textSize.width()+margin, k_verticalOffset, stateSize.width(), stateSize.height());
 
   m_messageTextView.setFrame(textRect, force);
   m_stateView.setFrame(stateRect, force);
