@@ -12,6 +12,10 @@
             "Apps": "000000",
             "AppsSecondary": "111111"
         },
+        "PopUp": {
+            "Background": "191919",
+            "Warning": "ff0000"
+        },
         "Toolbar": {
             "": "ffd400",
             "Text": "0f6b5c"

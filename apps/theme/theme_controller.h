@@ -4,6 +4,7 @@
 #include <escher.h>
 #include <apps/i18n.h>
 #include "theme_loader.h"
+#include <ion/display.h>
 #include <kandinsky/size.h>
 
 /**
@@ -64,7 +65,8 @@ private:
   };
 
   static constexpr int k_maxThemeFiles = 20;
-  static constexpr int k_cellCount     = 6;
+  // +2 for rounding and partially visible rows while scrolling (see DistributionController).
+  static constexpr int k_cellCount = Ion::Display::Height / Metric::ParameterCellHeight + 2;
 
   SelectableTableView m_tableView;
   ContentView         m_contentView;

@@ -71,8 +71,8 @@ void ThemeController::viewWillAppear() {
       }
     }
   }
-  m_tableView.reloadData();
   selectCellAtLocation(0, m_activeRow);
+  m_tableView.reloadData();
 }
 
 void ThemeController::didBecomeFirstResponder() {

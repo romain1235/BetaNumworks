@@ -29,6 +29,7 @@ escher_src += $(addprefix escher/src/,\
   buffer_text_view.cpp \
   button.cpp \
   button_state.cpp \
+  rounded_button.cpp \
   button_row_controller.cpp \
   chevron_view.cpp \
   clipboard.cpp \

@@ -3,29 +3,25 @@
 
 #include <escher/invocation.h>
 #include <escher/palette.h>
+#include <escher/rounded_button.h>
 #include <apps/i18n.h>
-
-
-class HighContrastButton : public Button {
-public:
-  using Button::Button;
-  KDColor highlightedBackgroundColor() const override { return Palette::ButtonBackgroundSelectedHighContrast; }
-};
 
 class PopUpController : public ViewController {
 public:
   PopUpController(int numberOfLines, Invocation OkInvocation);
   View * view() override;
+  void viewWillAppear() override;
   void didBecomeFirstResponder() override;
   bool handleEvent(Ion::Events::Event event) override;
 protected:
   class ContentView : public View, public Responder {
   public:
     ContentView(Responder * parentResponder, int numberOfLines, Invocation okInvocation);
-    void drawRect(KDContext * ctx, KDRect rect) const override { ctx->fillRect(bounds(), Palette::BackgroundHard); }
+    void drawRect(KDContext * ctx, KDRect rect) const override;
     void setSelectedButton(int selectedButton);
     int selectedButton();
     void setMessage(int index, I18n::Message message);
+    void reloadColors();
   private:
     constexpr static KDCoordinate k_buttonMargin = 10;
     constexpr static KDCoordinate k_buttonHeight = 20;
@@ -34,8 +30,8 @@ protected:
     int numberOfSubviews() const override;
     View * subviewAtIndex(int index) override;
     void layoutSubviews(bool force = false) override;
-    HighContrastButton m_cancelButton;
-    HighContrastButton m_okButton;
+    RoundedButton m_cancelButton;
+    RoundedButton m_okButton;
     MessageTextView m_warningTextView;
     const int m_numberOfLines;
     constexpr static int k_maxNumberOfLines = 4;

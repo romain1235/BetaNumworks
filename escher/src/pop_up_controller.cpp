@@ -11,6 +11,10 @@ View * PopUpController::view() {
   return &m_contentView;
 }
 
+void PopUpController::viewWillAppear() {
+  m_contentView.reloadColors();
+}
+
 void PopUpController::didBecomeFirstResponder() {
   m_contentView.setSelectedButton(0);
 }
@@ -38,7 +42,7 @@ PopUpController::ContentView::ContentView(Responder * parentResponder, int numbe
       }, this),
     KDFont::SmallFont),
   m_okButton(this, I18n::Message::Ok, okInvocation, KDFont::SmallFont),
-  m_warningTextView(KDFont::SmallFont, I18n::Message::Warning, 0.5, 0.5, Palette::PrimaryText, Palette::BackgroundHard),
+  m_warningTextView(KDFont::LargeFont, I18n::Message::Warning, 0.5, 0.5, Palette::LowBattery, Palette::PopUpBackground),
   m_numberOfLines(numberOfLines),
   m_messageTextViews{}
 {
@@ -46,8 +50,16 @@ PopUpController::ContentView::ContentView(Responder * parentResponder, int numbe
   for (int i = 0; i < m_numberOfLines; i++) {
     m_messageTextViews[i].setFont(KDFont::SmallFont);
     m_messageTextViews[i].setAlignment(0.5f, 0.5f);
-    m_messageTextViews[i].setBackgroundColor(Palette::BackgroundHard);
+  }
+  reloadColors();
+}
+
+void PopUpController::ContentView::reloadColors() {
+  m_warningTextView.setTextColor(Palette::LowBattery);
+  m_warningTextView.setBackgroundColor(Palette::PopUpBackground);
+  for (int i = 0; i < m_numberOfLines; i++) {
     m_messageTextViews[i].setTextColor(Palette::PrimaryText);
+    m_messageTextViews[i].setBackgroundColor(Palette::PopUpBackground);
   }
 }
 
@@ -93,7 +105,7 @@ void PopUpController::ContentView::layoutSubviews(bool force) {
   KDCoordinate height = bounds().height();
   KDCoordinate width = bounds().width();
   KDCoordinate textHeight = KDFont::SmallFont->glyphSize().height();
-  m_warningTextView.setFrame(KDRect(0, k_topMargin, width, textHeight), force);
+  m_warningTextView.setFrame(KDRect(0, k_topMargin, width, KDFont::LargeFont->glyphSize().height()), force);
 
   // Offset to center text vertically
   const int offset = (k_maxNumberOfLines - m_numberOfLines) / 2;
@@ -104,4 +116,8 @@ void PopUpController::ContentView::layoutSubviews(bool force) {
 
   m_cancelButton.setFrame(KDRect(k_buttonMargin, height - k_buttonMargin - k_buttonHeight, (width - 3 * k_buttonMargin) / 2, k_buttonHeight), force);
   m_okButton.setFrame(KDRect(2 * k_buttonMargin + (width - 3 * k_buttonMargin) / 2, height - k_buttonMargin - k_buttonHeight, (width - 3 * k_buttonMargin) / 2, k_buttonHeight), force);
+}
+
+void PopUpController::ContentView::drawRect(KDContext * ctx, KDRect rect) const {
+  ctx->fillRoundedRect(bounds(), 8, Palette::PopUpBackground);
 }
