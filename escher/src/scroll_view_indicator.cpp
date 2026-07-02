@@ -45,7 +45,14 @@ void ScrollViewHorizontalBar::drawRect(KDContext * ctx, KDRect rect) const {
   ctx->fillRect(
     KDRect(
       m_margin, y+1,
-      totalLengthValue, k_indicatorThickness-2
+      1, k_indicatorThickness-2
+    ),
+    m_trackColor
+  );
+  ctx->fillRect(
+    KDRect(
+      m_margin+totalLengthValue-1, y+1,
+      1, k_indicatorThickness-2
     ),
     m_trackColor
   );
@@ -59,7 +66,14 @@ void ScrollViewHorizontalBar::drawRect(KDContext * ctx, KDRect rect) const {
   ctx->fillRect(
     KDRect(
       indicatorX, y+1,
-      visibleLength, k_indicatorThickness-2
+      1, k_indicatorThickness-2
+    ),
+    m_color
+  );
+  ctx->fillRect(
+    KDRect(
+      indicatorX+visibleLength-1, y+1,
+      1, k_indicatorThickness-2
     ),
     m_color
   );
@@ -83,7 +97,14 @@ void ScrollViewVerticalBar::drawRect(KDContext * ctx, KDRect rect) const {
   ctx->fillRect(
     KDRect(
       x+1, m_margin,
-      k_indicatorThickness-2, totalLengthValue
+      k_indicatorThickness-2, 1
+    ),
+    m_trackColor
+  );
+  ctx->fillRect(
+    KDRect(
+      x+1, m_margin+totalLengthValue-1,
+      k_indicatorThickness-2, 1
     ),
     m_trackColor
   );
@@ -97,10 +118,17 @@ void ScrollViewVerticalBar::drawRect(KDContext * ctx, KDRect rect) const {
   ctx->fillRect(
     KDRect(
       x+1, indicatorY,
-      k_indicatorThickness-2, visibleLength
+      k_indicatorThickness-2, 1
     ),
     m_color
-  );
+  ); 
+  ctx->fillRect(
+    KDRect(
+      x+1, indicatorY+visibleLength-1,
+      k_indicatorThickness-2, 1
+    ),
+    m_color
+  ); 
   ctx->fillRect(
     KDRect(
       x, indicatorY+1,
