@@ -91,6 +91,30 @@ void TableCell::roundedCornerContentInsets(KDCoordinate & extraLeft, KDCoordinat
   extraTop = 0;
   extraRight = 0;
   extraBottom = 0;
+  if (!shouldInsetContentForRoundedCorners()) {
+    return;
+  }
+  KDCoordinate inset = k_cornerRadius - k_separatorThickness;
+  if (useUniformRoundedCornerContentInsets()) {
+    extraLeft = inset;
+    extraRight = inset;
+    return;
+  }
+  if (m_squareCorners == KDSquareCornerAll) {
+    return;
+  }
+  if ((m_squareCorners & KDSquareCornerTopLeft) == 0 || (m_squareCorners & KDSquareCornerBottomLeft) == 0) {
+    extraLeft = inset;
+  }
+  if ((m_squareCorners & KDSquareCornerTopLeft) == 0 || (m_squareCorners & KDSquareCornerTopRight) == 0) {
+    extraTop = inset;
+  }
+  if ((m_squareCorners & KDSquareCornerTopRight) == 0 || (m_squareCorners & KDSquareCornerBottomRight) == 0) {
+    extraRight = inset;
+  }
+  if ((m_squareCorners & KDSquareCornerBottomLeft) == 0 || (m_squareCorners & KDSquareCornerBottomRight) == 0) {
+    extraBottom = inset;
+  }
 }
 
 void TableCell::layoutSubviews(bool force) {

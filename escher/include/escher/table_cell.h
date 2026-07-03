@@ -39,6 +39,8 @@ protected:
   int numberOfSubviews() const override;
   View * subviewAtIndex(int index) override;
   void layoutSubviews(bool force = false) override;
+  virtual bool shouldInsetContentForRoundedCorners() const { return false; }
+  virtual bool useUniformRoundedCornerContentInsets() const { return false; }
   constexpr static KDCoordinate k_verticalMargin = Metric::TableCellVerticalMargin;
   constexpr static KDCoordinate k_horizontalMargin = Metric::TableCellHorizontalMargin;
 private:

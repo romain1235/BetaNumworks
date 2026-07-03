@@ -9,6 +9,14 @@ namespace Sequence {
 
 class ListController;
 
+class SequenceTypeTableCell : public ExpressionTableCellWithPointer {
+public:
+  using ExpressionTableCellWithPointer::ExpressionTableCellWithPointer;
+protected:
+  bool shouldInsetContentForRoundedCorners() const override { return true; }
+  bool useUniformRoundedCornerContentInsets() const override { return true; }
+};
+
 class TypeParameterController : public ViewController, public SimpleListViewDataSource, public SelectableTableViewDataSource {
 public:
   TypeParameterController(Responder * parentResponder, ListController * list,
@@ -36,9 +44,9 @@ private:
   }
   Shared::SequenceStore * sequenceStore();
   constexpr static int k_totalNumberOfCell = 3;
-  ExpressionTableCellWithPointer m_explicitCell;
-  ExpressionTableCellWithPointer m_singleRecurrenceCell;
-  ExpressionTableCellWithPointer m_doubleRecurrenceCell;
+  SequenceTypeTableCell m_explicitCell;
+  SequenceTypeTableCell m_singleRecurrenceCell;
+  SequenceTypeTableCell m_doubleRecurrenceCell;
   Poincare::Layout m_layouts[k_totalNumberOfCell];
   SelectableTableView m_selectableTableView;
   Ion::Storage::Record m_record;
