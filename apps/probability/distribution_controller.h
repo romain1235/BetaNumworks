@@ -19,6 +19,7 @@ public:
   TELEMETRY_ID("Distribution");
   int numberOfRows() const override { return k_totalNumberOfModels; }
   void willDisplayCellForIndex(HighlightCell * cell, int index) override;
+  KDColor listBorderBackgroundColor() const override;
   KDCoordinate cellHeight() override { return k_cellHeight; }
   HighlightCell * reusableCell(int index) override;
   int reusableCellCount() const override { return k_numberOfCells; }

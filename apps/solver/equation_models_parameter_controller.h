@@ -23,6 +23,7 @@ public:
   HighlightCell * reusableCell(int index, int type) override;
   int reusableCellCount(int type) override;
   int typeAtLocation(int i, int j) override;
+  bool listCellsHaveRoundedCorners() const override { return false; }
 private:
   constexpr static int k_numberOfModels = 6;
   static constexpr const char * k_models[k_numberOfModels] = {

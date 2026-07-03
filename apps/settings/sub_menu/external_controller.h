@@ -17,6 +17,8 @@ public:
   HighlightCell* reusableCell(int index, int type) override;
   int reusableCellCount(int type) override;
   void willDisplayCellForIndex(HighlightCell* cell, int index) override;
+  uint8_t listSquareCorners(int index) const override;
+  KDColor listBorderBackgroundColor() const override;
 private:
   static constexpr int k_numberOfExplanationMessages = 3;
   SelectableViewWithMessages m_contentView;

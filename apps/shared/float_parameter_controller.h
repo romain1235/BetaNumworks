@@ -24,9 +24,9 @@ public:
   int reusableCellCount(int type) override;
   HighlightCell * reusableCell(int index, int type) override;
   KDCoordinate rowHeight(int j) override;
-  KDCoordinate cumulatedHeightFromIndex(int j) override;
-  int indexFromCumulatedHeight(KDCoordinate offsetY) override;
   void willDisplayCellForIndex(HighlightCell * cell, int index) override;
+  uint8_t listSquareCorners(int index) const override;
+  KDColor listBorderBackgroundColor() const override;
   bool textFieldShouldFinishEditing(TextField * textField, Ion::Events::Event event) override;
   bool textFieldDidFinishEditing(TextField * textField, const char * text, Ion::Events::Event event) override;
 protected:
@@ -42,7 +42,6 @@ protected:
   SelectableTableView m_selectableTableView;
   ButtonWithSeparator m_okButton;
 private:
-  constexpr static int k_buttonMargin = 6;
   virtual InfinityTolerance infinityAllowanceForRow(int row) const { return InfinityTolerance::None; }
   virtual int reusableParameterCellCount(int type) = 0;
   virtual HighlightCell * reusableParameterCell(int index, int type) = 0;

@@ -3,6 +3,7 @@
 
 #include <escher/table_view_data_source.h>
 #include <escher/highlight_cell.h>
+#include <kandinsky/color.h>
 
 class ListViewDataSource : public TableViewDataSource {
 public:
@@ -13,6 +14,9 @@ public:
   int indexFromCumulatedWidth(KDCoordinate offsetX) override;
   KDCoordinate cumulatedWidthFromIndex(int i) override;
   virtual void willDisplayCellForIndex(HighlightCell * cell, int index);
+  virtual KDColor listBorderBackgroundColor() const;
+  virtual bool listCellsHaveRoundedCorners() const;
+  virtual uint8_t listSquareCorners(int index) const;
 };
 
 #endif

@@ -1,4 +1,5 @@
 #include "exam_mode_controller.h"
+#include <escher/bordered.h>
 #include "../../global_preferences.h"
 #include "../../apps_container.h"
 #include "../../exam_mode_configuration.h"
@@ -41,6 +42,14 @@ bool ExamModeController::handleEvent(Ion::Events::Event event) {
     }
   }
   return GenericSubController::handleEvent(event);
+}
+
+uint8_t ExamModeController::listSquareCorners(int index) const {
+  return listSquareCornersForTableWithDetachedFooter(index, numberOfRows());
+}
+
+KDColor ExamModeController::listBorderBackgroundColor() const {
+  return Palette::BackgroundApps;
 }
 
 void ExamModeController::didEnterResponderChain(Responder * previousFirstResponder) {

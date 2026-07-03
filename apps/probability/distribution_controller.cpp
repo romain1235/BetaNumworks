@@ -69,6 +69,7 @@ DistributionController::DistributionController(Responder * parentResponder, Dist
   assert(m_distribution != nullptr);
   m_messages = sMessages;
   m_selectableTableView.setTopMargin(Metric::CommonTopMargin-ContentView::k_titleMargin);
+  m_selectableTableView.setBackgroundColor(Palette::BackgroundApps);
 }
 
 void Probability::DistributionController::viewWillAppear() {
@@ -129,6 +130,10 @@ void Probability::DistributionController::willDisplayCellForIndex(HighlightCell 
   };
   myCell->setImage(images[index], focusedImages[index]);
   myCell->reloadCell();
+}
+
+KDColor DistributionController::listBorderBackgroundColor() const {
+  return Palette::BackgroundApps;
 }
 
 void Probability::DistributionController::setDistributionAccordingToIndex(int index) {

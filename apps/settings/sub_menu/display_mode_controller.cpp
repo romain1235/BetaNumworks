@@ -1,5 +1,7 @@
 #include "display_mode_controller.h"
 #include "../../shared/poincare_helpers.h"
+#include "../../shared/button_with_separator.h"
+#include <escher/bordered.h>
 #include <assert.h>
 #include <cmath>
 #include "../app.h"
@@ -15,13 +17,15 @@ DisplayModeController::DisplayModeController(Responder * parentResponder, InputE
   PreferencesController(parentResponder),
   m_editableCell(&m_selectableTableView, inputEventHandlerDelegate, this)
 {
+  m_selectableTableView.setBackgroundColor(Palette::BackgroundApps);
+  m_selectableTableView.setVerticalCellOverlap(0);
   m_editableCell.messageTableCellWithEditableText()->setMessage(I18n::Message::SignificantFigures);
   m_editableCell.messageTableCellWithEditableText()->setMessageFont(KDFont::LargeFont);
 }
 
 KDCoordinate DisplayModeController::rowHeight(int j) {
   if (j == numberOfRows()-1) {
-    return Metric::ParameterCellHeight+MessageTableCellWithEditableTextWithSeparator::k_margin;
+    return Metric::ParameterCellHeight + ButtonWithSeparator::k_topGap;
   }
   return Metric::ParameterCellHeight;
 }
@@ -52,6 +56,14 @@ int DisplayModeController::reusableCellCount(int type) {
 
 int DisplayModeController::typeAtLocation(int i, int j) {
   return (j == numberOfRows() - 1 ? k_significantDigitsType : k_resultFormatType);
+}
+
+uint8_t DisplayModeController::listSquareCorners(int index) const {
+  return listSquareCornersForTableWithFooterRow(index, numberOfRows());
+}
+
+KDColor DisplayModeController::listBorderBackgroundColor() const {
+  return Palette::BackgroundApps;
 }
 
 void DisplayModeController::willDisplayCellForIndex(HighlightCell * cell, int index) {

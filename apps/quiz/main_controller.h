@@ -24,7 +24,7 @@ public:
   int numberOfRows() const override;
   int numberOfColumns() const override { return 1; }
   KDCoordinate columnWidth(int i) override { return cellWidth(); }
-  void willDisplayCellAtLocation(HighlightCell * cell, int i, int j) override { willDisplayCellForIndex(cell, j); }
+  void willDisplayCellAtLocation(HighlightCell * cell, int i, int j) override { ListViewDataSource::willDisplayCellAtLocation(cell, i, j); }
   void willDisplayCellForIndex(HighlightCell * cell, int index) override;
   KDCoordinate rowHeight(int j) override;
 

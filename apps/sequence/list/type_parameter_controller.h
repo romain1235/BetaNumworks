@@ -24,7 +24,9 @@ public:
   KDCoordinate cellHeight() override;
   HighlightCell * reusableCell(int index) override;
   int reusableCellCount() const override;
-  void willDisplayCellAtLocation(HighlightCell * cell, int i, int j) override;
+  void willDisplayCellForIndex(HighlightCell * cell, int index) override;
+  KDColor listBorderBackgroundColor() const override;
+  bool listCellsHaveRoundedCorners() const override { return !m_record.isNull(); }
   void setRecord(Ion::Storage::Record record);
 private:
   StackViewController * stackController() const;

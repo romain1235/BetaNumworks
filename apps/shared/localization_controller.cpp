@@ -11,7 +11,7 @@ LocalizationController::ContentView::ContentView(LocalizationController * contro
   m_controller(controller),
   m_selectableTableView(controller, controller, dataSource),
   m_countryTitleMessage(KDFont::LargeFont, I18n::Message::Country),
-  m_borderView(Palette::BackgroundApps)
+  m_borderView(Palette::ListCellBorder)
 {
   m_countryTitleMessage.setBackgroundColor(Palette::BackgroundHard);
   m_countryTitleMessage.setAlignment(0.5f, 0.5f);
@@ -56,7 +56,7 @@ void LocalizationController::ContentView::layoutSubviews(bool force) {
     origin = layoutTitleSubview(force, Metric::CommonTopMargin + origin);
   }
   if (m_controller->shouldDisplayWarning()) {
-    origin = layoutWarningSubview(force, Metric::CommonTopMargin + origin) + Metric::CommonTopMargin;
+    origin = layoutWarningSubview(force, Metric::CommonTopMargin + origin) + k_tableTopSpacing;
   }
   origin = layoutTableSubview(force, origin);
   assert(origin <= bounds().height());
@@ -74,6 +74,9 @@ KDCoordinate LocalizationController::ContentView::layoutWarningSubview(bool forc
   for (int i = 0; i < k_numberOfCountryWarningLines; i++) {
     m_countryWarningLines[i].setFrame(KDRect(0, verticalOrigin, bounds().width(), textHeight), force);
     verticalOrigin += textHeight;
+    if (i < k_numberOfCountryWarningLines - 1) {
+      verticalOrigin += k_warningLineSpacing;
+    }
   }
   return verticalOrigin;
 }
@@ -92,9 +95,9 @@ KDCoordinate LocalizationController::ContentView::layoutTableSubview(bool force,
     KDCoordinate incompleteCellHeight = tableHeightSansMargin - (tableHeightSansMargin / rowHeight) * rowHeight;
     KDCoordinate offset = std::max(0, incompleteCellHeight - rowHeight / 2);
     tableHeight -= offset;
-    verticalOrigin += offset;
 
-    m_borderView.setFrame(KDRect(Metric::CommonLeftMargin, verticalOrigin, bounds().width() - Metric::CommonLeftMargin - Metric::CommonRightMargin, Metric::CellSeparatorThickness), force);
+    m_borderView.setFrame(KDRect(0, verticalOrigin, bounds().width(), Metric::CellSeparatorThickness), force);
+    verticalOrigin += Metric::CellSeparatorThickness;
   }
   m_selectableTableView.setFrame(KDRect(0, verticalOrigin, bounds().width(), tableHeight), force);
   return verticalOrigin + tableHeight;
@@ -137,7 +140,7 @@ LocalizationController::LocalizationController(Responder * parentResponder, KDCo
   m_contentView(this, this),
   m_mode(mode)
 {
-  selectableTableView()->setTopMargin((shouldDisplayWarning()) ? 0 : verticalMargin);
+  selectableTableView()->setTopMargin((shouldDisplayWarning()) ? Metric::CellSeparatorThickness : verticalMargin);
   selectableTableView()->setBottomMargin(verticalMargin);
   for (int i = 0; i < k_numberOfCells; i++) {
     m_cells[i].setMessageFont(KDFont::LargeFont);
@@ -152,7 +155,7 @@ void LocalizationController::resetSelection() {
 void LocalizationController::setMode(LocalizationController::Mode mode) {
   selectableTableView()->deselectTable();
   m_mode = mode;
-  selectableTableView()->setTopMargin((shouldDisplayWarning()) ? 0 : selectableTableView()->bottomMargin());
+  selectableTableView()->setTopMargin((shouldDisplayWarning()) ? Metric::CellSeparatorThickness : selectableTableView()->bottomMargin());
   m_contentView.modeHasChanged();
 }
 
@@ -196,5 +199,9 @@ void LocalizationController::willDisplayCellForIndex(HighlightCell * cell, int i
   }
   assert(mode() == Mode::Country);
   static_cast<MessageTableCell<> *>(cell)->setMessage(I18n::CountryNames[static_cast<uint8_t>(CountryAtIndex(index))]);
+}
+
+KDColor LocalizationController::listBorderBackgroundColor() const {
+  return Palette::BackgroundApps;
 }
 }

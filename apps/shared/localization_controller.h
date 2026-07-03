@@ -38,6 +38,7 @@ public:
   int reusableCellCount() const override { return (mode() == Mode::Country) ? I18n::NumberOfCountries : I18n::NumberOfLanguages; }
 
   void willDisplayCellForIndex(HighlightCell * cell, int index) override;
+  KDColor listBorderBackgroundColor() const override;
 
 protected:
   class ContentView : public View {
@@ -50,6 +51,8 @@ protected:
 
   private:
     constexpr static int k_numberOfCountryWarningLines = 2;
+    constexpr static KDCoordinate k_warningLineSpacing = 2;
+    constexpr static KDCoordinate k_tableTopSpacing = 5;
 
     void layoutSubviews(bool force = false) override;
     KDCoordinate layoutTitleSubview(bool force, KDCoordinate verticalOrigin);

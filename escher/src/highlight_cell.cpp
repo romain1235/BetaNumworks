@@ -16,3 +16,6 @@ void HighlightCell::setHighlighted(bool highlight) {
 void HighlightCell::reloadCell() {
   markRectAsDirty(bounds());
 }
+
+void HighlightCell::configureListAppearance(uint8_t squareCorners, KDColor borderBackgroundColor) {
+}

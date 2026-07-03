@@ -24,6 +24,7 @@ public:
   virtual View * accessoryView() const;
   virtual View * subAccessoryView() const;
   void drawRect(KDContext * ctx, KDRect rect) const override;
+  void configureListAppearance(uint8_t squareCorners, KDColor borderBackgroundColor) override;
   /* Resolves the layout actually used: for Adaptive, picks Horizontal when all
    * subviews fit side by side, Vertical otherwise. */
   Layout effectiveLayout() const;
@@ -41,7 +42,10 @@ protected:
   constexpr static KDCoordinate k_verticalMargin = Metric::TableCellVerticalMargin;
   constexpr static KDCoordinate k_horizontalMargin = Metric::TableCellHorizontalMargin;
 private:
+  void roundedCornerContentInsets(KDCoordinate & extraLeft, KDCoordinate & extraTop, KDCoordinate & extraRight, KDCoordinate & extraBottom) const;
   Layout m_layout;
+  uint8_t m_squareCorners;
+  KDColor m_borderBackgroundColor;
 };
 
 #endif

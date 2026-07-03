@@ -1,4 +1,5 @@
 #include "external_controller.h"
+#include <escher/bordered.h>
 
 #include <apps/i18n.h>
 #include <apps/settings/main_controller.h>
@@ -62,6 +63,14 @@ void ExternalController::willDisplayCellForIndex(HighlightCell *cell, int index)
     SwitchView *mySwitch = (SwitchView *)myCell->accessoryView();
     mySwitch->setState(GlobalPreferences::sharedGlobalPreferences()->externalAppShown());
   }
+}
+
+uint8_t ExternalController::listSquareCorners(int index) const {
+  return listSquareCornersForTableWithDetachedFooter(index, numberOfRows());
+}
+
+KDColor ExternalController::listBorderBackgroundColor() const {
+  return Palette::BackgroundApps;
 }
 
 void ExternalController::didEnterResponderChain(Responder *previousFirstResponder) {

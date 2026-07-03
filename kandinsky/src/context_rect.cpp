@@ -55,18 +55,38 @@ static void fillAntiAliasedQuarterCircle(KDContext * ctx, KDPoint center, KDCoor
   ctx->fillRectWithPixels(cornerRect, workingBuffer, nullptr);
 }
 
-static void fillRoundedRectBody(KDContext * ctx, KDRect rect, KDCoordinate r, KDColor color, const KDColor * backgroundColor) {
+static void fillRoundedRectBody(KDContext * ctx, KDRect rect, KDCoordinate r, KDColor color, const KDColor * backgroundColor, uint8_t squareCorners) {
   KDCoordinate x = rect.x();
   KDCoordinate y = rect.y();
   KDCoordinate w = rect.width();
   KDCoordinate h = rect.height();
-  ctx->fillRect(KDRect(x + r, y, w - 2 * r, h), color);
-  ctx->fillRect(KDRect(x, y + r, r, h - 2 * r), color);
-  ctx->fillRect(KDRect(x + w - r, y + r, r, h - 2 * r), color);
-  fillAntiAliasedQuarterCircle(ctx, KDPoint(x + r, y + r), r, color, backgroundColor, true, true);
-  fillAntiAliasedQuarterCircle(ctx, KDPoint(x + w - r, y + r), r, color, backgroundColor, true, false);
-  fillAntiAliasedQuarterCircle(ctx, KDPoint(x + r, y + h - r), r, color, backgroundColor, false, true);
-  fillAntiAliasedQuarterCircle(ctx, KDPoint(x + w - r, y + h - r), r, color, backgroundColor, false, false);
+  bool roundTL = (squareCorners & KDSquareCornerTopLeft) == 0;
+  bool roundTR = (squareCorners & KDSquareCornerTopRight) == 0;
+  bool roundBL = (squareCorners & KDSquareCornerBottomLeft) == 0;
+  bool roundBR = (squareCorners & KDSquareCornerBottomRight) == 0;
+  KDCoordinate leftInset = (roundTL || roundBL) ? r : 0;
+  KDCoordinate rightInset = (roundTR || roundBR) ? r : 0;
+  KDCoordinate topInset = (roundTL || roundTR) ? r : 0;
+  KDCoordinate bottomInset = (roundBL || roundBR) ? r : 0;
+  ctx->fillRect(KDRect(x + leftInset, y, w - leftInset - rightInset, h), color);
+  if (leftInset > 0) {
+    ctx->fillRect(KDRect(x, y + topInset, leftInset, h - topInset - bottomInset), color);
+  }
+  if (rightInset > 0) {
+    ctx->fillRect(KDRect(x + w - rightInset, y + topInset, rightInset, h - topInset - bottomInset), color);
+  }
+  if (roundTL) {
+    fillAntiAliasedQuarterCircle(ctx, KDPoint(x + r, y + r), r, color, backgroundColor, true, true);
+  }
+  if (roundTR) {
+    fillAntiAliasedQuarterCircle(ctx, KDPoint(x + w - r, y + r), r, color, backgroundColor, true, false);
+  }
+  if (roundBL) {
+    fillAntiAliasedQuarterCircle(ctx, KDPoint(x + r, y + h - r), r, color, backgroundColor, false, true);
+  }
+  if (roundBR) {
+    fillAntiAliasedQuarterCircle(ctx, KDPoint(x + w - r, y + h - r), r, color, backgroundColor, false, false);
+  }
 }
 
 KDRect KDContext::absoluteFillRect(KDRect rect) {
@@ -94,7 +114,7 @@ void KDContext::fillRoundedRect(KDRect rect, KDCoordinate radius, KDColor color)
     fillRect(rect, color);
     return;
   }
-  fillRoundedRectBody(this, rect, r, color, nullptr);
+  fillRoundedRectBody(this, rect, r, color, nullptr, 0);
 }
 
 void KDContext::fillRoundedRect(KDRect rect, KDCoordinate radius, KDColor color, KDColor backgroundColor) {
@@ -110,7 +130,39 @@ void KDContext::fillRoundedRect(KDRect rect, KDCoordinate radius, KDColor color,
     fillRect(rect, color);
     return;
   }
-  fillRoundedRectBody(this, rect, r, color, &backgroundColor);
+  fillRoundedRectBody(this, rect, r, color, &backgroundColor, 0);
+}
+
+void KDContext::fillRoundedRect(KDRect rect, KDCoordinate radius, KDColor color, uint8_t squareCorners) {
+  if (rect.isEmpty()) {
+    return;
+  }
+  KDCoordinate r = radius;
+  KDCoordinate maxRadius = std::min(rect.width(), rect.height()) / 2;
+  if (r > maxRadius) {
+    r = maxRadius;
+  }
+  if (r <= 0) {
+    fillRect(rect, color);
+    return;
+  }
+  fillRoundedRectBody(this, rect, r, color, nullptr, squareCorners);
+}
+
+void KDContext::fillRoundedRect(KDRect rect, KDCoordinate radius, KDColor color, KDColor backgroundColor, uint8_t squareCorners) {
+  if (rect.isEmpty()) {
+    return;
+  }
+  KDCoordinate r = radius;
+  KDCoordinate maxRadius = std::min(rect.width(), rect.height()) / 2;
+  if (r > maxRadius) {
+    r = maxRadius;
+  }
+  if (r <= 0) {
+    fillRect(rect, color);
+    return;
+  }
+  fillRoundedRectBody(this, rect, r, color, &backgroundColor, squareCorners);
 }
 
 /* Note: we support the case where workingBuffer IS equal to pixels */

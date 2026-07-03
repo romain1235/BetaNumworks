@@ -19,6 +19,7 @@ public:
   KDCoordinate rowHeight(int j) override;
   int reusableCellCount(int type) override;
   void willDisplayCellForIndex(HighlightCell * cell, int index) override;
+  bool listCellsHaveRoundedCorners() const override { return false; }
   int typeAtLocation(int i, int j) override;
 
 protected:

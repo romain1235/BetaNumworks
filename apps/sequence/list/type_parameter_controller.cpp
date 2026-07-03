@@ -25,6 +25,7 @@ TypeParameterController::TypeParameterController(Responder * parentResponder, Li
 {
   m_selectableTableView.setMargins(topMargin, rightMargin, bottomMargin, leftMargin);
   m_selectableTableView.setDecoratorType(ScrollView::Decorator::Type::None);
+  m_selectableTableView.setBackgroundColor(Palette::ListCellBackground);
 }
 
 const char * TypeParameterController::title() {
@@ -115,7 +116,7 @@ KDCoordinate TypeParameterController::cellHeight() {
   return Metric::ParameterCellHeight;
 }
 
-void TypeParameterController::willDisplayCellAtLocation(HighlightCell * cell, int i, int j) {
+void TypeParameterController::willDisplayCellForIndex(HighlightCell * cell, int index) {
   const char * nextName = sequenceStore()->firstAvailableName();
   const KDFont * font = KDFont::LargeFont;
   if (!m_record.isNull()) {
@@ -123,12 +124,16 @@ void TypeParameterController::willDisplayCellAtLocation(HighlightCell * cell, in
     font = KDFont::SmallFont;
   }
   const char * subscripts[3] = {"n", "n+1", "n+2"};
-  m_layouts[j] = HorizontalLayout::Builder(
+  m_layouts[index] = HorizontalLayout::Builder(
         CodePointLayout::Builder(nextName[0], font),
-        VerticalOffsetLayout::Builder(LayoutHelper::String(subscripts[j], strlen(subscripts[j]), font), VerticalOffsetLayoutNode::Position::Subscript)
+        VerticalOffsetLayout::Builder(LayoutHelper::String(subscripts[index], strlen(subscripts[index]), font), VerticalOffsetLayoutNode::Position::Subscript)
       );
   ExpressionTableCellWithPointer * myCell = (ExpressionTableCellWithPointer *)cell;
-  myCell->setLayout(m_layouts[j]);
+  myCell->setLayout(m_layouts[index]);
+}
+
+KDColor TypeParameterController::listBorderBackgroundColor() const {
+  return Palette::ListCellBackground;
 }
 
 void TypeParameterController::setRecord(Ion::Storage::Record record) {

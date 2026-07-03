@@ -3,7 +3,8 @@ app_headers += apps/settings/app.h
 
 app_settings_src = $(addprefix apps/settings/,\
   app.cpp \
-  cell_with_separator.cpp \
+  cell_with_separator.cpp \
+  sub_menu/message_table_cell_with_editable_text_with_separator.cpp \
   main_controller.cpp \
   main_controller_prompt_beta.cpp:+beta \
   main_controller_prompt_none.cpp:-beta \

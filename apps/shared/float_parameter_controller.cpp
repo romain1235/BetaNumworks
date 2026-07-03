@@ -1,5 +1,6 @@
 #include "float_parameter_controller.h"
 #include "../shared/poincare_helpers.h"
+#include <escher/bordered.h>
 #include <poincare/preferences.h>
 #include <assert.h>
 #include <cmath>
@@ -18,6 +19,8 @@ FloatParameterController<T>::FloatParameterController(Responder * parentResponde
       return true;
     }, this))
 {
+  m_selectableTableView.setBackgroundColor(Palette::BackgroundApps);
+  m_selectableTableView.setVerticalCellOverlap(0);
 }
 
 template<typename T>
@@ -94,25 +97,19 @@ HighlightCell * FloatParameterController<T>::reusableCell(int index, int type) {
 template<typename T>
 KDCoordinate FloatParameterController<T>::rowHeight(int j) {
   if (j == numberOfRows()-1) {
-    return Metric::ParameterCellHeight+k_buttonMargin;
+    return Metric::ParameterCellHeight + ButtonWithSeparator::k_topGap;
   }
   return Metric::ParameterCellHeight;
 }
 
 template<typename T>
-KDCoordinate FloatParameterController<T>::cumulatedHeightFromIndex(int j) {
-  if (j == numberOfRows()) {
-    return j*Metric::ParameterCellHeight+k_buttonMargin;
-  }
-  return Metric::ParameterCellHeight*j;
+uint8_t FloatParameterController<T>::listSquareCorners(int index) const {
+  return listSquareCornersForTableWithFooterRow(index, numberOfRows());
 }
 
 template<typename T>
-int FloatParameterController<T>::indexFromCumulatedHeight(KDCoordinate offsetY) {
-  if (offsetY > numberOfRows()*Metric::ParameterCellHeight + k_buttonMargin) {
-    return numberOfRows();
-  }
-  return (offsetY - 1) / Metric::ParameterCellHeight;
+KDColor FloatParameterController<T>::listBorderBackgroundColor() const {
+  return Palette::BackgroundApps;
 }
 
 template<typename T>

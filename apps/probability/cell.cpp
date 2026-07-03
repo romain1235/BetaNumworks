@@ -4,10 +4,13 @@
 namespace Probability {
 
 Cell::Cell() :
+  Bordered(),
   HighlightCell(),
   m_labelView(KDFont::LargeFont, (I18n::Message)0, 0, 0.5, Palette::PrimaryText, Palette::BackgroundHard),
   m_icon(nullptr),
-  m_focusedIcon(nullptr)
+  m_focusedIcon(nullptr),
+  m_squareCorners(KDSquareCornerAll),
+  m_borderBackgroundColor(Palette::BackgroundApps)
 {
 }
 
@@ -54,15 +57,21 @@ void Cell::setImage(const Image * image, const Image * focusedImage) {
   m_focusedIcon = focusedImage;
 }
 
+void Cell::configureListAppearance(uint8_t squareCorners, KDColor borderBackgroundColor) {
+  m_squareCorners = squareCorners;
+  m_borderBackgroundColor = borderBackgroundColor;
+}
+
 void Cell::drawRect(KDContext * ctx, KDRect rect) const {
-  KDCoordinate width = bounds().width();
-  KDCoordinate height = bounds().height();
   KDColor backgroundColor = isHighlighted() ? Palette::ListCellBackgroundSelected : Palette::ListCellBackground;
-  ctx->fillRect(KDRect(1, 1, width-2, height-1), backgroundColor);
-  ctx->fillRect(KDRect(0, 0, width, 1), Palette::ProbabilityCellBorder);
-  ctx->fillRect(KDRect(0, 1, 1, height-1), Palette::ProbabilityCellBorder);
-  ctx->fillRect(KDRect(width-1, 1, 1, height-1), Palette::ProbabilityCellBorder);
-  ctx->fillRect(KDRect(0, height-1, width, 1), Palette::ProbabilityCellBorder);
- }
+  KDRect cellBounds = bounds();
+  if (m_squareCorners == KDSquareCornerAll) {
+    drawInnerRect(ctx, cellBounds, backgroundColor);
+    drawBorderOfRect(ctx, cellBounds, Palette::ProbabilityCellBorder, m_borderBackgroundColor);
+    return;
+  }
+  ctx->fillRect(cellBounds, m_borderBackgroundColor);
+  drawBorderOfRect(ctx, cellBounds, Palette::ProbabilityCellBorder, m_borderBackgroundColor, m_squareCorners, backgroundColor);
+}
 
 }

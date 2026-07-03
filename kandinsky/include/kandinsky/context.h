@@ -4,6 +4,12 @@
 #include <kandinsky/color.h>
 #include <kandinsky/rect.h>
 #include <kandinsky/font.h>
+#include <stdint.h>
+
+constexpr uint8_t KDSquareCornerTopLeft = 0x01;
+constexpr uint8_t KDSquareCornerTopRight = 0x02;
+constexpr uint8_t KDSquareCornerBottomLeft = 0x04;
+constexpr uint8_t KDSquareCornerBottomRight = 0x08;
 
 class KDPostProcessContext;
 
@@ -36,6 +42,8 @@ public:
   void fillRect(KDRect rect, KDColor color);
   void fillRoundedRect(KDRect rect, KDCoordinate radius, KDColor color);
   void fillRoundedRect(KDRect rect, KDCoordinate radius, KDColor color, KDColor backgroundColor);
+  void fillRoundedRect(KDRect rect, KDCoordinate radius, KDColor color, uint8_t squareCorners);
+  void fillRoundedRect(KDRect rect, KDCoordinate radius, KDColor color, KDColor backgroundColor, uint8_t squareCorners);
   void fillRectWithPixels(KDRect rect, const KDColor * pixels, KDColor * workingBuffer);
   void blendRectWithMask(KDRect rect, KDColor color, const uint8_t * mask, KDColor * workingBuffer);
   void strokeRect(KDRect rect, KDColor color);

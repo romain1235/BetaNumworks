@@ -5,13 +5,14 @@
 
 namespace Probability {
 
-class Cell : public HighlightCell {
+class Cell : public Bordered, public HighlightCell {
 public:
   Cell();
   void reloadCell() override;
   void setLabel(I18n::Message message);
   void setImage(const Image * image, const Image * focusedImage);
   void drawRect(KDContext * ctx, KDRect rect) const override;
+  void configureListAppearance(uint8_t squareCorners, KDColor borderBackgroundColor) override;
 private:
   constexpr static KDCoordinate k_iconWidth = 35;
   constexpr static KDCoordinate k_iconHeight = 19;
@@ -28,6 +29,8 @@ private:
   const Image * m_icon;
   const Image * m_focusedIcon;
   ChevronView m_chevronView;
+  uint8_t m_squareCorners;
+  KDColor m_borderBackgroundColor;
 };
 
 }

@@ -62,7 +62,7 @@
         },
         "Probability": {
             "Curve": "ffd400",
-            "CellBorder": "111111",
+            "CellBorder": "222222",
             "HistogramBar": "45ada8"
         },
         "Statistics": {

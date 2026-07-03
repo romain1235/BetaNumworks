@@ -31,7 +31,7 @@ void StackView::setNamedController(ViewController * controller) {
 
 void StackView::drawRect(KDContext * ctx, KDRect rect) const {
   KDRect b = bounds();
-  drawBorderOfRect(ctx, b, m_separatorColor);
+  drawBorderOfRect(ctx, b, m_separatorColor, m_backgroundColor);
   drawInnerRect(ctx, b, m_backgroundColor);
   // Write title
   const KDFont * font = KDFont::SmallFont;
