@@ -31,7 +31,7 @@ Beta is a fork of Upsilon (itself derived from Omega and Epsilon). Beta adds man
 - Spacing between thousands of 3px(1000->1 000)
 - Python editor improvements
 - New theme `beta_dark`
-- New "Minuscule" font for python
+- New "Tiny" font for python
 - Installing multiple themes at the same time
 - Bugs and other small changes
 
