@@ -63,6 +63,7 @@ protected:
      * These do NOT force a full re-lex: prefer using them only when the
      * cache is already valid (checked via delimiterColoringCacheIsValid()). */
     bool delimiterColoringCacheIsValid() const;
+    bool positionIsInsideString(const char * location) const;
     bool hasInvalidClosingAfter(const char * position, int maxDistance = 256) const;
     /* Estimate the change in number of invalid delimiters when inserting
      * `insertedText` at `position`. The function lexes a local window around
@@ -87,6 +88,7 @@ protected:
 
     void updateDelimiterColoringCache() const;
     int delimiterDepthAtLine(int line) const;
+    char stringQuoteAtLine(int line) const;
     bool isInvalidOpeningDelimiter(const char * position) const;
     bool isInvalidClosingDelimiter(const char * position) const;
     char * invalidEstimateScratchBuffer() const;
@@ -106,6 +108,9 @@ protected:
     mutable DelimiterOffset m_invalidClosings[kInvalidDelimitersCapacity];
     mutable int m_lineDepthCount;
     mutable DelimiterDepth m_lineStartDelimiterDepths[kLineDepthCapacity];
+    /* Non-zero when the line continues a triple-quoted string opened earlier.
+     * Stores the quote character (' or ") of that string. */
+    mutable char m_lineStartStringQuotes[kLineDepthCapacity];
 
   };
 private:

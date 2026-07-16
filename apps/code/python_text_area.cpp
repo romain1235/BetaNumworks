@@ -82,6 +82,77 @@ static inline bool TextContainsDelimiter(const char * text, int textLength = -1)
   return false;
 }
 
+static inline bool TextContainsStringQuote(const char * text, int textLength = -1) {
+  if (textLength < 0) {
+    for (const char * c = text; *c != 0; c++) {
+      if (*c == '"' || *c == '\'') {
+        return true;
+      }
+    }
+    return false;
+  }
+  for (int i = 0; i < textLength; i++) {
+    char c = text[i];
+    if (c == '"' || c == '\'') {
+      return true;
+    }
+  }
+  return false;
+}
+
+static inline bool IsStringToken(mp_token_kind_t tokenKind) {
+  return tokenKind == MP_TOKEN_STRING
+      || tokenKind == MP_TOKEN_BYTES
+      || tokenKind == MP_TOKEN_LONELY_STRING_OPEN;
+}
+
+static inline char QuoteCharAtStringToken(const char * tokenPosition) {
+  const char * p = tokenPosition;
+  while (*p == 'r' || *p == 'u' || *p == 'b' || *p == 'f') {
+    p++;
+  }
+  if (*p == '"' || *p == '\'') {
+    return *p;
+  }
+  return '"';
+}
+
+/* Find the closing triple quotes of a multi-line string continuation.
+ * Escaped quotes (\\ followed by a character) are skipped so they do not
+ * count as closers, matching MicroPython's lexer. */
+static const char * FindTripleQuoteCloser(const char * text, size_t length, char quoteChar) {
+  const char * end = text + length;
+  for (const char * p = text; p + 2 < end; ) {
+    if (*p == '\\' && p + 1 < end) {
+      p += 2;
+      continue;
+    }
+    if (p[0] == quoteChar && p[1] == quoteChar && p[2] == quoteChar) {
+      return p;
+    }
+    p++;
+  }
+  return nullptr;
+}
+
+static void MarkMultilineStringContinuation(char * lineStartStringQuotes, int capacity, size_t tokLine, size_t endLine, size_t endColumn, char quoteChar) {
+  if (endLine <= tokLine) {
+    return;
+  }
+  for (size_t mpLine = tokLine + 1; mpLine < endLine; mpLine++) {
+    int index = static_cast<int>(mpLine) - 1;
+    if (index >= 0 && index < capacity) {
+      lineStartStringQuotes[index] = quoteChar;
+    }
+  }
+  if (endColumn > 1) {
+    int index = static_cast<int>(endLine) - 1;
+    if (index >= 0 && index < capacity) {
+      lineStartStringQuotes[index] = quoteChar;
+    }
+  }
+}
+
 static inline bool IsOpeningDelimiterChar(char c) {
   return c == '(' || c == '[' || c == '{';
 }
@@ -183,7 +254,7 @@ bool isItalic(mp_token_kind_t tokenKind) {
   if (!GlobalPreferences::sharedGlobalPreferences()->syntaxhighlighting()) {
     return false;
   }
-  if (tokenKind == MP_TOKEN_STRING) {
+  if (IsStringToken(tokenKind)) {
     return true;
   }
   return false;
@@ -193,7 +264,7 @@ static inline KDColor TokenColor(mp_token_kind_t tokenKind) {
   if (!GlobalPreferences::sharedGlobalPreferences()->syntaxhighlighting()) {
     return Palette::CodeText;
   }
-  if (tokenKind == MP_TOKEN_STRING) {
+  if (IsStringToken(tokenKind)) {
     return StringColor;
   }
   if (tokenKind == MP_TOKEN_INTEGER || tokenKind == MP_TOKEN_FLOAT_OR_IMAG) {
@@ -318,6 +389,15 @@ PythonTextArea::AutocompletionType PythonTextArea::autocompletionType(const char
   if (autocompletionLocationBeginning == nullptr && autocompletionLocationEnd == nullptr) {
     return autocompleteType;
   }
+  if (!isAutocompleting() && m_contentView.positionIsInsideString(location)) {
+    if (autocompletionLocationBeginning != nullptr) {
+      *autocompletionLocationBeginning = nullptr;
+    }
+    if (autocompletionLocationEnd != nullptr) {
+      *autocompletionLocationEnd = location;
+    }
+    return AutocompletionType::NoIdentifier;
+  }
   nlr_buf_t nlr;
   if (nlr_push(&nlr) == 0) {
     const char * firstNonSpace = UTF8Helper::BeginningOfWord(m_contentView.editedText(), location);
@@ -399,6 +479,77 @@ int PythonTextArea::ContentView::delimiterDepthAtLine(int line) const {
     return m_lineStartDelimiterDepths[line];
   }
   return m_lineStartDelimiterDepths[m_lineDepthCount - 1];
+}
+
+char PythonTextArea::ContentView::stringQuoteAtLine(int line) const {
+  updateDelimiterColoringCache();
+  if (line < 0 || line >= kLineDepthCapacity) {
+    return 0;
+  }
+  return m_lineStartStringQuotes[line];
+}
+
+bool PythonTextArea::ContentView::positionIsInsideString(const char * location) const {
+  const char * fullText = editedText();
+  if (location == nullptr || location < fullText) {
+    return false;
+  }
+
+  updateDelimiterColoringCache();
+
+  int lineIndex = 0;
+  const char * lineStart = fullText;
+  for (const char * p = fullText; p < location; p++) {
+    if (*p == '\n') {
+      lineIndex++;
+      lineStart = p + 1;
+    }
+  }
+
+  const char * lineEnd = UTF8Helper::CodePointSearch(lineStart, '\n');
+  size_t lineLength = lineEnd - lineStart;
+  const char * scanFrom = lineStart;
+
+  char quote = stringQuoteAtLine(lineIndex);
+  if (quote != 0) {
+    const char * closer = FindTripleQuoteCloser(lineStart, lineLength, quote);
+    if (closer == nullptr) {
+      return true;
+    }
+    if (location < closer + 3) {
+      return true;
+    }
+    scanFrom = closer + 3;
+  }
+
+  if (location <= scanFrom) {
+    return false;
+  }
+
+  bool insideString = false;
+  nlr_buf_t nlr;
+  if (nlr_push(&nlr) == 0) {
+    const char * firstNonSpace = UTF8Helper::NotCodePointSearch(scanFrom, ' ');
+    if (firstNonSpace < lineEnd && !UTF8Helper::CodePointIs(firstNonSpace, UCodePointNull)) {
+      mp_lexer_t * lex = mp_lexer_new_from_str_len(0, firstNonSpace, lineEnd - firstNonSpace, 0);
+      while (lex->tok_kind != MP_TOKEN_NEWLINE && lex->tok_kind != MP_TOKEN_END && lex->fstring_args.alloc <= 1) {
+        const char * tokenFrom = firstNonSpace + lex->tok_column - 1;
+        size_t tokenLength = TokenLength(lex, tokenFrom);
+        const char * tokenEnd = tokenFrom + tokenLength;
+        if (location < tokenFrom) {
+          break;
+        }
+        if (location < tokenEnd) {
+          insideString = IsStringToken(lex->tok_kind);
+          break;
+        }
+        mp_lexer_to_next(lex);
+      }
+      mp_lexer_free(lex);
+    }
+    nlr_pop();
+  }
+  return insideString;
 }
 
 bool PythonTextArea::ContentView::isInvalidOpeningDelimiter(const char * position) const {
@@ -590,6 +741,7 @@ void PythonTextArea::ContentView::updateDelimiterColoringCache() const {
   m_invalidClosingsCount = 0;
   m_lineDepthCount = 1;
   m_lineStartDelimiterDepths[0] = 0;
+  memset(m_lineStartStringQuotes, 0, sizeof(m_lineStartStringQuotes));
 
   const char * fullText = editedText();
   const char * lineStart = fullText;
@@ -611,6 +763,17 @@ void PythonTextArea::ContentView::updateDelimiterColoringCache() const {
       if (m_lineDepthCount < kLineDepthCapacity) {
         m_lineStartDelimiterDepths[m_lineDepthCount++] = delimiterDepth;
       }
+    }
+
+    if (IsStringToken(lex->tok_kind) && lex->line > lex->tok_line) {
+      const char * tokenPosition = lineStart + lex->tok_column - 1;
+      MarkMultilineStringContinuation(
+          m_lineStartStringQuotes,
+          kLineDepthCapacity,
+          lex->tok_line,
+          lex->line,
+          lex->column,
+          QuoteCharAtStringToken(tokenPosition));
     }
 
     int delimiterType = DelimiterTypeIndex(lex->tok_kind);
@@ -734,33 +897,72 @@ void PythonTextArea::ContentView::drawLine(KDContext * ctx, int line, const char
 
   assert(m_pythonDelegate->isPythonUser(this));
 
-  /* We're using the MicroPython lexer to do syntax highlighting on a per-line
-   * basis. This can work, however the MicroPython lexer won't accept a line
-   * starting with a whitespace. So we're discarding leading whitespaces
-   * beforehand. */
-  const char * firstNonSpace = UTF8Helper::NotCodePointSearch(text, ' ');
-  if (firstNonSpace != text) {
-    // Color the discarded leading whitespaces
-    const char * spacesStart = UTF8Helper::CodePointAtGlyphOffset(text, fromColumn);
-    drawStringAt(
-        ctx,
-        line,
-        fromColumn,
-        spacesStart,
-        std::min(text + byteLength, firstNonSpace) - spacesStart,
-        StringColor,
-        BackgroundColor,
-        selectionStart,
-        selectionEnd,
-        HighlightColor,
-        false);
-  }
-  if (UTF8Helper::CodePointIs(firstNonSpace, UCodePointNull)) {
-    return;
-  }
-
   const char * autocompleteStart = m_autocomplete ? m_cursorLocation : nullptr;
+  const char * firstNonSpace = text;
 
+  char continuingQuote = stringQuoteAtLine(line);
+  if (continuingQuote != 0 && GlobalPreferences::sharedGlobalPreferences()->syntaxhighlighting()) {
+    const char * closer = FindTripleQuoteCloser(text, byteLength, continuingQuote);
+    const char * stringEnd = closer != nullptr ? closer + 3 : text + byteLength;
+    const char * drawStart = UTF8Helper::CodePointAtGlyphOffset(text, fromColumn);
+    if (stringEnd > drawStart) {
+      drawStringAt(
+          ctx,
+          line,
+          fromColumn,
+          drawStart,
+          std::min(text + byteLength, stringEnd) - drawStart,
+          StringColor,
+          BackgroundColor,
+          selectionStart,
+          selectionEnd,
+          HighlightColor,
+          true);
+    }
+    if (closer == nullptr || stringEnd >= text + byteLength) {
+      firstNonSpace = text + byteLength;
+    } else {
+      firstNonSpace = UTF8Helper::NotCodePointSearch(stringEnd, ' ');
+      if (firstNonSpace != stringEnd) {
+        drawStringAt(
+            ctx,
+            line,
+            UTF8Helper::GlyphOffsetAtCodePoint(text, stringEnd),
+            stringEnd,
+            std::min(text + byteLength, firstNonSpace) - stringEnd,
+            StringColor,
+            BackgroundColor,
+            selectionStart,
+            selectionEnd,
+            HighlightColor,
+            false);
+      }
+    }
+  } else {
+    /* We're using the MicroPython lexer to do syntax highlighting on a per-line
+     * basis. This can work, however the MicroPython lexer won't accept a line
+     * starting with a whitespace. So we're discarding leading whitespaces
+     * beforehand. */
+    firstNonSpace = UTF8Helper::NotCodePointSearch(text, ' ');
+    if (firstNonSpace != text) {
+      // Color the discarded leading whitespaces
+      const char * spacesStart = UTF8Helper::CodePointAtGlyphOffset(text, fromColumn);
+      drawStringAt(
+          ctx,
+          line,
+          fromColumn,
+          spacesStart,
+          std::min(text + byteLength, firstNonSpace) - spacesStart,
+          StringColor,
+          BackgroundColor,
+          selectionStart,
+          selectionEnd,
+          HighlightColor,
+          false);
+    }
+  }
+
+  if (firstNonSpace < text + byteLength && !UTF8Helper::CodePointIs(firstNonSpace, UCodePointNull)) {
   nlr_buf_t nlr;
   if (nlr_push(&nlr) == 0) {
     int delimiterDepth = delimiterDepthAtLine(line);
@@ -861,6 +1063,7 @@ void PythonTextArea::ContentView::drawLine(KDContext * ctx, int line, const char
     mp_lexer_free(lex);
     nlr_pop();
   }
+  }
 
   // Redraw the autocompleted word in the right color
   if (m_autocomplete && autocompleteStart >= text && autocompleteStart < text + byteLength) {
@@ -883,8 +1086,9 @@ void PythonTextArea::ContentView::drawLine(KDContext * ctx, int line, const char
    * stop within the leading whitespace of this line. This is cheap and uses
    * no persistent memory. */
   {
-    int leadingGlyphs = UTF8Helper::GlyphOffsetAtCodePoint(text, firstNonSpace);
-    if (leadingGlyphs > 0) {
+    const char * indentProbe = UTF8Helper::NotCodePointSearch(text, ' ');
+    int leadingGlyphs = UTF8Helper::GlyphOffsetAtCodePoint(text, indentProbe);
+    if (leadingGlyphs > 0 && continuingQuote == 0) {
       const int kTabWidth = 2;
       int guideCount = 0;
       if (leadingGlyphs > 0) {
@@ -933,6 +1137,7 @@ void PythonTextArea::ContentView::insertTextAtLocation(const char * text, char *
 
   bool lineBreak = UTF8Helper::HasCodePoint(text, '\n', text + textLen);
   bool delimiterEdit = TextContainsDelimiter(text, textLen);
+  bool quoteEdit = TextContainsStringQuote(text, textLen);
   int invalidDelta = 0;
   if (!lineBreak && !delimiterEdit) {
     invalidDelta = estimateInvalidDeltaForInsertion(location, text, textLen);
@@ -941,7 +1146,7 @@ void PythonTextArea::ContentView::insertTextAtLocation(const char * text, char *
   m_text.insertText(text, textLen, location);
   Poincare::SerializationHelper::ReplaceSystemParenthesesByUserParentheses(location, textLen);
   invalidateDelimiterColoringCache();
-  reloadRectFromPosition(location, lineBreak || delimiterEdit || invalidDelta != 0);
+  reloadRectFromPosition(location, lineBreak || delimiterEdit || quoteEdit || invalidDelta != 0);
 }
 
 bool PythonTextArea::ContentView::removePreviousGlyph() {
@@ -955,6 +1160,7 @@ bool PythonTextArea::ContentView::removePreviousGlyph() {
   assert(previousGlyphPos != nullptr);
   int deletionLen = previousCursorLocation - previousGlyphPos;
   bool deletedDelimiter = IsOpeningDelimiterChar(*previousGlyphPos) || IsClosingDelimiterChar(*previousGlyphPos);
+  bool deletedQuote = *previousGlyphPos == '"' || *previousGlyphPos == '\'';
 
   bool lineBreak = false;
   char * cursorLoc = const_cast<char *>(previousCursorLocation);
@@ -967,7 +1173,7 @@ bool PythonTextArea::ContentView::removePreviousGlyph() {
     invalidDelta = estimateInvalidDeltaForDeletion(previousGlyphPos, deletionLen);
   }
   invalidateDelimiterColoringCache();
-  reloadRectFromPosition(cursorLocation(), lineBreak || deletedDelimiter || invalidDelta != 0);
+  reloadRectFromPosition(cursorLocation(), lineBreak || deletedDelimiter || deletedQuote || invalidDelta != 0);
   return true;
 }
 
@@ -1196,7 +1402,7 @@ bool PythonTextArea::handleEventWithText(const char * text, bool indentation, bo
     }
   }
 
-  bool shouldRefreshVisibleArea = TextContainsDelimiter(text);
+  bool shouldRefreshVisibleArea = TextContainsDelimiter(text) || TextContainsStringQuote(text);
   if (m_contentView.isAutocompleting()) {
     removeAutocompletion();
   }
