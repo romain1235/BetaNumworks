@@ -14,7 +14,7 @@ public:
   constexpr static KDCoordinate CommonSmallMargin = 1;
   constexpr static KDCoordinate TitleBarExternHorizontalMargin = 5;
   constexpr static KDCoordinate TitleBarHeight = 18;
-  constexpr static KDCoordinate ParameterCellHeight = 26;
+  constexpr static KDCoordinate ParameterCellHeight = 30;
   constexpr static KDCoordinate ModalTopMargin = 5;
   constexpr static KDCoordinate ModalBottomMargin = 18;
   constexpr static KDCoordinate TableCellVerticalMargin = 3;
