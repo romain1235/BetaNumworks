@@ -38,7 +38,7 @@ ToolboxIonKeys::toolboxIonView::toolboxIonView() :
 }
 
 void ToolboxIonKeys::toolboxIonView::drawRect(KDContext * ctx, KDRect rect) const {
-  ctx->fillRect(rect, Palette::WallScreen);
+  ctx->fillRect(rect, Palette::BackgroundHard);
   ctx->strokeRect(rect, Palette::ListCellBorder);
   KDSize fontSize = KDFont::LargeFont->glyphSize();
   const char * message = I18n::translate(I18n::Message::PressAKey);
@@ -46,7 +46,7 @@ void ToolboxIonKeys::toolboxIonView::drawRect(KDContext * ctx, KDRect rect) cons
   KDPoint textPosition = KDPoint(rect.size().width() / 2 - strlen(message) * fontSize.width() / 2,
                                  rect.size().height() / 2 - fontSize.height() / 2);
 
-  ctx->drawString(message, textPosition, KDFont::LargeFont, Palette::PrimaryText, Palette::WallScreen);
+  ctx->drawString(message, textPosition, KDFont::LargeFont, Palette::PrimaryText, Palette::BackgroundHard);
 
 }
 
