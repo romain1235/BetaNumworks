@@ -790,7 +790,10 @@ const ToolboxMessageTree toolboxModel = ToolboxMessageTree::Node(I18n::Message::
 
 
 PythonToolbox::PythonToolbox() :
-  Toolbox(nullptr, rootModel()->label())
+  Toolbox(nullptr, rootModel()->label()),
+  m_heightCacheModel(nullptr),
+  m_heightCacheRowCount(0),
+  m_heightCacheValid(false)
 {
   for (int i=0; i < k_maxNumberOfDisplayedRows; i++) {
     m_leafCells[i].setMessageFont(KDFont::LargeFont);
@@ -842,6 +845,57 @@ KDCoordinate PythonToolbox::rowHeight(int j) {
     return k_fontForMultiLine->glyphSize().height() * messageTree->numberOfLines() + 2*Metric::TableCellVerticalMargin + (messageTree->text() == I18n::Message::Default ? 0 : Metric::ToolboxRowHeight);
   }
   return Toolbox::rowHeight(j);
+}
+
+void PythonToolbox::rebuildHeightCacheIfNeeded() {
+  if (m_messageTreeModel == nullptr) {
+    m_messageTreeModel = rootModel();
+  }
+  int n = numberOfRows();
+  if (m_heightCacheValid && m_heightCacheModel == m_messageTreeModel && m_heightCacheRowCount == n) {
+    return;
+  }
+  if (n > k_maxNumberOfRows) {
+    // Should not happen, but stay correct by falling back to the base behavior.
+    m_heightCacheValid = false;
+    return;
+  }
+  KDCoordinate cumulated = 0;
+  m_cumulatedHeights[0] = 0;
+  for (int k = 0; k < n; k++) {
+    cumulated += rowHeight(k);
+    m_cumulatedHeights[k + 1] = cumulated;
+  }
+  m_heightCacheRowCount = n;
+  m_heightCacheModel = m_messageTreeModel;
+  m_heightCacheValid = true;
+}
+
+KDCoordinate PythonToolbox::cumulatedHeightFromIndex(int j) {
+  rebuildHeightCacheIfNeeded();
+  if (!m_heightCacheValid) {
+    return Toolbox::cumulatedHeightFromIndex(j);
+  }
+  if (j < 0) {
+    j = 0;
+  } else if (j > m_heightCacheRowCount) {
+    j = m_heightCacheRowCount;
+  }
+  return m_cumulatedHeights[j];
+}
+
+int PythonToolbox::indexFromCumulatedHeight(KDCoordinate offsetY) {
+  rebuildHeightCacheIfNeeded();
+  if (!m_heightCacheValid) {
+    return Toolbox::indexFromCumulatedHeight(offsetY);
+  }
+  int n = m_heightCacheRowCount;
+  int j = 0;
+  while (j < n && m_cumulatedHeights[j] < offsetY) {
+    j++;
+  }
+  KDCoordinate result = m_cumulatedHeights[j];
+  return (result < offsetY || offsetY == 0) ? j : j - 1;
 }
 
 bool PythonToolbox::selectLeaf(int selectedRow, bool quitToolbox) {
