@@ -24,7 +24,7 @@ public:
 protected:
   virtual const char * recordExtension() const override { return Ion::Storage::funcExtension; }
 private:
-  constexpr static int k_maxNumberOfDisplayableRows = 5;
+  constexpr static int k_maxNumberOfDisplayableRows = 9; // (240 - 18 - 27 - 20) / 25 + 2
   Shared::ListParameterController * parameterController() override;
   int maxNumberOfDisplayableRows() override;
   Shared::FunctionTitleCell * titleCells(int index) override;

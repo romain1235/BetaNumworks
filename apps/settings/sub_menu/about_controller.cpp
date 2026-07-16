@@ -27,7 +27,7 @@ AboutController::AboutController(Responder * parentResponder) :
   m_contributorsCell(KDFont::LargeFont, KDFont::SmallFont)
   //m_view(&m_selectableTableView)
 {
-  for (int i = 0; i < k_totalNumberOfCell - 1; i++) {
+  for (int i = 0; i < k_maxNumberOfDisplayableRows; i++) {
     m_cells[i].setMessageFont(KDFont::LargeFont);
     m_cells[i].setAccessoryFont(KDFont::SmallFont);
     m_cells[i].setAccessoryTextColor(Palette::SecondaryText);
@@ -158,7 +158,7 @@ int AboutController::numberOfRows() const {
 HighlightCell * AboutController::reusableCell(int index, int type) {
   assert(index >= 0);
   if (type == 0) {
-    assert(index < k_totalNumberOfCell-1);
+    assert(index < k_maxNumberOfDisplayableRows);
     return &m_cells[index];
   }
   assert(index == 0);
@@ -172,7 +172,7 @@ int AboutController::typeAtLocation(int i, int j) {
 int AboutController::reusableCellCount(int type) {
   switch (type) {
     case 0:
-      return k_totalNumberOfCell-1;
+      return k_maxNumberOfDisplayableRows;
     case 1:
       return 1;
     default:

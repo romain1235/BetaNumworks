@@ -3,6 +3,7 @@
 
 #include <escher.h>
 #include <apps/shared/settings_message_tree.h>
+#include <ion/display.h>
 
 namespace Settings {
 
@@ -27,6 +28,9 @@ protected:
   StackViewController * stackController() const;
   virtual int initialSelectedRow() const { return m_lastSelect; }
   constexpr static KDCoordinate k_topBottomMargin = 13;
+  /* Same formula as ThemeController / MainController: covers margins & partial rows. */
+  constexpr static int k_maxNumberOfDisplayableRows =
+    Ion::Display::Height / Metric::ParameterCellHeight;
   SelectableTableView m_selectableTableView;
   MessageTree * m_messageTreeModel;
 };

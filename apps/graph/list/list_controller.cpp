@@ -17,6 +17,10 @@ ListController::ListController(Responder * parentResponder, ButtonRowController 
     TextFieldFunctionTitleCell(this),
     TextFieldFunctionTitleCell(this),
     TextFieldFunctionTitleCell(this),
+    TextFieldFunctionTitleCell(this),
+    TextFieldFunctionTitleCell(this),
+    TextFieldFunctionTitleCell(this),
+    TextFieldFunctionTitleCell(this),
   },
   m_expressionCells{},
   m_parameterController(this, this, I18n::Message::FunctionColor, I18n::Message::DeleteFunction, inputEventHandlerDelegate)

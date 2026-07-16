@@ -33,7 +33,7 @@ private:
   External::Archive::File m_files[k_maxFilesNumber];
   int m_txtFilesNumber;
   int m_urtFilesNumber;
-  static const int k_cellsNumber = 6;
+  static const int k_cellsNumber = 10; // (240 - 18) / 25 + 2
   MessageTableCellWithChevron<> m_cells[k_cellsNumber];
   ReadBookController m_readBookController;
 };

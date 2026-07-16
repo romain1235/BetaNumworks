@@ -32,7 +32,7 @@ public:
   void willDisplayCellAtLocation(HighlightCell * cell, int i, int j) override;
 private:
   constexpr static int k_numberOfRows = 10;
-  constexpr static int k_numberOfCells = 6; // (240 - 70) / 35
+  constexpr static int k_numberOfCells = 8; // (240 - 70) / 25 + 2
   MessageTableCellWithExpression m_regressionCells[k_numberOfCells];
   SelectableTableView m_selectableTableView;
   Store * m_store;

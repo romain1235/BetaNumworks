@@ -13,6 +13,7 @@ GenericSubController::GenericSubController(Responder * parentResponder) :
 {
   m_selectableTableView.setTopMargin(k_topBottomMargin);
   m_selectableTableView.setBottomMargin(k_topBottomMargin);
+  m_selectableTableView.setVerticalCellOverlap(0);
 }
 
 const char * GenericSubController::title() {
@@ -67,7 +68,7 @@ int GenericSubController::indexFromCumulatedHeight(KDCoordinate offsetY) {
   if (height == 0) {
     return 0;
   }
-  return (offsetY - 1) / height;
+  return offsetY / height;
 }
 
 int GenericSubController::typeAtLocation(int i, int j) {

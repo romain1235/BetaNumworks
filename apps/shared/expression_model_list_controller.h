@@ -37,17 +37,17 @@ protected:
   virtual ExpressionModelStore * modelStore() = 0;
   virtual InputViewController * inputController() = 0;
   // Memoization
-  static constexpr int k_memoizedCellsCount = 7;
+  static constexpr int k_memoizedCellsCount = 13;
   /* We use memoization to speed up indexFromHeight(offset) in the children
    * classes: if offset is "around" the memoized cumulatedHeightForIndex, we can
    * compute its value easily by adding/substracting memoized row heights. We
-   * thus need to memoize 3 cells (see under for explanation on the 3) above the
-   * selected one, and 3 under, which gives 7 cells.
-   * 3 is the maximal number of non selected visible rows if the selected cell
+   * thus need to memoize 6 cells (see under for explanation on the 6) above the
+   * selected one, and 6 under, which gives 13 cells.
+   * 6 is the maximal number of non selected visible rows if the selected cell
    * is completely [on top/at the bottom] of the screen. To compute this value:
    * (ScreenHeight - Metric::TitleBarHeight - Metric::TabHeight - ButtonRowHeight
    * - currentSelectedRowHeight) / Metric::StoreRowHeight
-   *   =  (240-18-27-20-50)/50 = 2.5 */
+   *   =  (240-18-27-20-25)/25 = 6 */
   static_assert(ExpressionModelListController::k_memoizedCellsCount % 2 == 1, "ExpressionModelListController::k_memoizedCellsCount should be odd.");
   /* We memoize values for indexes around the selectedRow index.
    * k_memoizedCellsCount needs to be odd to compute things such as:

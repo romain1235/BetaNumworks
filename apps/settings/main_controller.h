@@ -15,6 +15,7 @@
 #include "sub_menu/external_controller.h"
 #include "sub_menu/brightness_controller.h"
 #include "../theme/theme_controller.h"
+#include <ion/display.h>
 
 namespace Settings {
 
@@ -70,7 +71,9 @@ private:
   StackViewController * stackController() const;
   I18n::Message promptMessage() const;
   bool hasPrompt() const { return promptMessage() != I18n::Message::Default; }
-  constexpr static int k_numberOfSimpleChevronCells = 10;
+  /* Match ThemeController: Height/cellHeight+2 covers margins and partial rows. */
+  constexpr static int k_numberOfSimpleChevronCells =
+    Ion::Display::Height / Metric::ParameterCellHeight;
   MessageTableCellWithChevronAndBuffer m_cells[k_numberOfSimpleChevronCells];
   MessageTableCellWithSwitch m_popUpCell;
   SelectableTableView m_selectableTableView;

@@ -49,7 +49,7 @@ public:
 protected:
   virtual const char * recordExtension() const override { return Ion::Storage::eqExtension; }
 private:
-  constexpr static int k_maxNumberOfRows = 5; // Ion::Display::Height / Metric::StoreRowHeight = 4.8;
+  constexpr static int k_maxNumberOfRows = 10; // Ion::Display::Height / Metric::StoreRowHeight = 9.6;
   SelectableTableView * selectableTableView() override;
   void reloadButtonMessage();
   void addEmptyModel() override;

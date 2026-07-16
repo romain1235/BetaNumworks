@@ -21,11 +21,10 @@ public:
   int typeAtLocation(int i, int j) override;
   int numberOfRows() const override;
 private:
-  constexpr static int k_totalNumberOfCell = 8;
   bool hasUsernameCell() const;
   ContributorsController m_contributorsController;
   MessageTableCellWithChevronAndMessage m_contributorsCell;
-  MessageTableCellWithBuffer m_cells[k_totalNumberOfCell - 1];
+  MessageTableCellWithBuffer m_cells[k_maxNumberOfDisplayableRows];
   HardwareTest::PopUpController m_hardwareTestPopUpController;
 };
 

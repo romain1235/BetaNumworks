@@ -83,6 +83,7 @@ MainController::MainController(Responder * parentResponder, InputEventHandlerDel
   m_externalController(this),
   m_themeController(this)
 {
+  m_selectableTableView.setVerticalCellOverlap(0);
   for (int i = 0; i < k_numberOfSimpleChevronCells; i++) {
     m_cells[i].setMessageFont(KDFont::LargeFont);
   }
@@ -159,9 +160,6 @@ int MainController::numberOfRows() const {
 };
 
 KDCoordinate MainController::rowHeight(int j) {
-  if (model()->childAtIndex(j)->label() == I18n::Message::Brightness) {
-    return Metric::ParameterCellHeight + CellWithSeparator::k_margin;
-  }
   return Metric::ParameterCellHeight;
 }
 
@@ -170,10 +168,11 @@ KDCoordinate MainController::cumulatedHeightFromIndex(int j) {
 }
 
 int MainController::indexFromCumulatedHeight(KDCoordinate offsetY) {
-  if (offsetY < rowHeight(0)*k_indexOfBrightnessCell + CellWithSeparator::k_margin) {
-    return offsetY/rowHeight(0);
+  KDCoordinate height = rowHeight(0);
+  if (height == 0) {
+    return 0;
   }
-  return (offsetY - CellWithSeparator::k_margin)/rowHeight(0);
+  return offsetY / height;
 }
 
 HighlightCell * MainController::reusableCell(int index, int type) {
@@ -195,9 +194,6 @@ int MainController::reusableCellCount(int type) {
 }
 
 int MainController::typeAtLocation(int i, int j) {
-  if (model()->childAtIndex(j)->label() == I18n::Message::Brightness) {
-    return 1;
-  }
   if (model()->childAtIndex(j)->label() == I18n::Message::UpdatePopUp || model()->childAtIndex(j)->label() == I18n::Message::BetaPopUp) {
     return 2;
   }

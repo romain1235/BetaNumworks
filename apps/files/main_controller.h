@@ -32,7 +32,7 @@ private:
   ::App * m_app;
   SelectableTableView m_selectableTableView;
   int m_numberOfRows = 1;
-  constexpr static int k_maxNumberOfCells = 8;
+  constexpr static int k_maxNumberOfCells = 10; // (240 - 18) / 25 + 2
   FileNameCell m_cells[k_maxNumberOfCells];
   Files::FilesParameterController m_parameterController;
 };
