@@ -40,9 +40,10 @@ static void ensureTexture(SDL_Renderer * renderer, int width, int height) {
   sTextureHeight = height;
 }
 
-/* Box filter: each destination pixel averages every source pixel it covers.
- * When downscaling below 320×240 this keeps thin features visible, like the
- * web simulator canvas CSS scaling. */
+/* Box filter: each destination pixel averages the source area it covers.
+ * - Downscale: every source pixel still contributes (thin features stay visible).
+ * - Upscale: source pixels stay sharp blocks; blending only happens on edges
+ *   that fall between two source pixels (non-integer scales). */
 static KDColor sampleBox(const KDColor * src, float x0, float y0, float x1, float y1) {
   constexpr int srcW = Ion::Display::Width;
   constexpr int srcH = Ion::Display::Height;
@@ -89,36 +90,6 @@ static KDColor sampleBox(const KDColor * src, float x0, float y0, float x1, floa
   );
 }
 
-static KDColor sampleBilinear(const KDColor * src, float fx, float fy) {
-  constexpr int srcW = Ion::Display::Width;
-  constexpr int srcH = Ion::Display::Height;
-
-  fx = std::max(0.f, std::min(fx, static_cast<float>(srcW - 1)));
-  fy = std::max(0.f, std::min(fy, static_cast<float>(srcH - 1)));
-
-  int x0 = static_cast<int>(fx);
-  int y0 = static_cast<int>(fy);
-  int x1 = std::min(srcW - 1, x0 + 1);
-  int y1 = std::min(srcH - 1, y0 + 1);
-  float tx = fx - static_cast<float>(x0);
-  float ty = fy - static_cast<float>(y0);
-
-  KDColor c00 = src[y0 * srcW + x0];
-  KDColor c10 = src[y0 * srcW + x1];
-  KDColor c01 = src[y1 * srcW + x0];
-  KDColor c11 = src[y1 * srcW + x1];
-
-  auto lerp = [](float a, float b, float t) { return a + (b - a) * t; };
-  float r = lerp(lerp(c00.red(), c10.red(), tx), lerp(c01.red(), c11.red(), tx), ty);
-  float g = lerp(lerp(c00.green(), c10.green(), tx), lerp(c01.green(), c11.green(), tx), ty);
-  float b = lerp(lerp(c00.blue(), c10.blue(), tx), lerp(c01.blue(), c11.blue(), tx), ty);
-  return KDColor::RGB888(
-    static_cast<uint8_t>(r + 0.5f),
-    static_cast<uint8_t>(g + 0.5f),
-    static_cast<uint8_t>(b + 0.5f)
-  );
-}
-
 static void scaleFramebuffer(KDColor * dst, int dstPitchPixels, int dstW, int dstH) {
   constexpr int srcW = Ion::Display::Width;
   constexpr int srcH = Ion::Display::Height;
@@ -131,23 +102,14 @@ static void scaleFramebuffer(KDColor * dst, int dstPitchPixels, int dstW, int ds
     return;
   }
 
-  const bool downscaling = dstW < srcW || dstH < srcH;
   for (int dy = 0; dy < dstH; dy++) {
     KDColor * row = dst + dy * dstPitchPixels;
-    if (downscaling) {
-      float y0 = static_cast<float>(dy) * static_cast<float>(srcH) / static_cast<float>(dstH);
-      float y1 = static_cast<float>(dy + 1) * static_cast<float>(srcH) / static_cast<float>(dstH);
-      for (int dx = 0; dx < dstW; dx++) {
-        float x0 = static_cast<float>(dx) * static_cast<float>(srcW) / static_cast<float>(dstW);
-        float x1 = static_cast<float>(dx + 1) * static_cast<float>(srcW) / static_cast<float>(dstW);
-        row[dx] = sampleBox(src, x0, y0, x1, y1);
-      }
-    } else {
-      float fy = (static_cast<float>(dy) + 0.5f) * static_cast<float>(srcH) / static_cast<float>(dstH) - 0.5f;
-      for (int dx = 0; dx < dstW; dx++) {
-        float fx = (static_cast<float>(dx) + 0.5f) * static_cast<float>(srcW) / static_cast<float>(dstW) - 0.5f;
-        row[dx] = sampleBilinear(src, fx, fy);
-      }
+    float y0 = static_cast<float>(dy) * static_cast<float>(srcH) / static_cast<float>(dstH);
+    float y1 = static_cast<float>(dy + 1) * static_cast<float>(srcH) / static_cast<float>(dstH);
+    for (int dx = 0; dx < dstW; dx++) {
+      float x0 = static_cast<float>(dx) * static_cast<float>(srcW) / static_cast<float>(dstW);
+      float x1 = static_cast<float>(dx + 1) * static_cast<float>(srcW) / static_cast<float>(dstW);
+      row[dx] = sampleBox(src, x0, y0, x1, y1);
     }
   }
 }
