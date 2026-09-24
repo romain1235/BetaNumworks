@@ -8,6 +8,8 @@
 </p>
 
 > 🇫🇷 Vous ne comprenez pas l'anglais ? Vous êtes francophone ? Regardez le [*LISEZ-MOI* français](./README.fr.md) ! 🇫🇷
+# warning
+## this OS is made with ai and can maybe be illegal, do not use it
 
 ## About
 
